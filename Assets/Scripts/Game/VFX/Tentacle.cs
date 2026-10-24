@@ -57,6 +57,7 @@ public class Tentacle
 
     public bool IsActive => _isActive;
     public Vector3 RootPosition => _positions.Length > 0 ? _positions[0] : Vector3.zero;
+    public Vector3 TipPosition => _renderPoints.Length > 0 ? _renderPoints[^1] : Vector3.zero;
 
     internal Texture2D Texture => _texture;
 
