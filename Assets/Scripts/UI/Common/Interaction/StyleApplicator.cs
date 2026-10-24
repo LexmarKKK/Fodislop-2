@@ -16,12 +16,39 @@ public static class StyleApplicator
             return;
         }
 
+        // UILine красит себя сам по GUIStylePacket.Background (см.
+        // LinePacketBuilder): фоновая заливка бокса здесь превратила бы
+        // линию в залитый прямоугольник.
+        if (element is UILine)
+        {
+            return;
+        }
+
         var style = packet.Style.Value;
 
-        element.style.borderTopWidth = style.BorderWidth;
-        element.style.borderBottomWidth = style.BorderWidth;
-        element.style.borderLeftWidth = style.BorderWidth;
-        element.style.borderRightWidth = style.BorderWidth;
+        // Заливка фона — цвет линии, плашки уровня, подложки карточек.
+        // Прозрачный (не заданный сервером) цвет не перекрывает тему USS.
+        if (style.Background.A > 0)
+        {
+            element.style.backgroundColor = ToUnityColor(style.Background);
+        }
+
+        if (style.BorderWidth > 0)
+        {
+            element.style.borderTopWidth = style.BorderWidth;
+            element.style.borderBottomWidth = style.BorderWidth;
+            element.style.borderLeftWidth = style.BorderWidth;
+            element.style.borderRightWidth = style.BorderWidth;
+
+            if (style.Border.A > 0)
+            {
+                Color border = ToUnityColor(style.Border);
+                element.style.borderTopColor = border;
+                element.style.borderBottomColor = border;
+                element.style.borderLeftColor = border;
+                element.style.borderRightColor = border;
+            }
+        }
 
         ApplyMargins(style.Margin,
             left => element.style.marginLeft = left,
@@ -36,6 +63,9 @@ public static class StyleApplicator
             bottom => element.style.paddingBottom = bottom);
     }
 
+    private static Color ToUnityColor(System.Drawing.Color color) =>
+        new Color32(color.R, color.G, color.B, color.A);
+
     private static void ApplyMargins(
         Margins margins,
         System.Action<int> left,
@@ -48,5 +78,4 @@ public static class StyleApplicator
         right(margins.Right);
         bottom(margins.Bottom);
     }
-
 }

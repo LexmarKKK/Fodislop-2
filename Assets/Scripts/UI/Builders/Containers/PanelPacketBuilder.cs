@@ -11,6 +11,13 @@ public class PanelPacketBuilder : PacketUIBuilderBase<PanelPacket>
         var element = new VisualElement();
         element.AddToClassList("sci-fi-panel");
 
+        // Некликабельная панель не ловит мышь: рамка выбранного слота лежит
+        // поверх кликабельной иконки и не должна съедать её клик.
+        if (string.IsNullOrEmpty(packet.OnClickContext))
+        {
+            element.pickingMode = PickingMode.Ignore;
+        }
+
         return element;
     }
 }

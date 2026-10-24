@@ -10,6 +10,9 @@ using UnityEngine.UIElements;
 namespace Kern.UI;
 public class PacketUIBuilder
 {
+    /// <summary>Закрывающая кнопка легаси-окна (мост ProtocolWindow).</summary>
+    internal const string ExitActionKey = "PacketUI.ExitAction";
+
     private readonly IAssetLoader _assetLoader;
     private readonly IAsyncOperationSupervisor _operations;
     private readonly IWebAssetLoader _webAssetLoader;
@@ -18,25 +21,16 @@ public class PacketUIBuilder
     public PacketUIBuilder(
         IAssetLoader assetLoader,
         IAsyncOperationSupervisor operations,
-        IWebAssetLoader webAssetLoader,
-        IItemCatalog? itemCatalog = null)
+        IWebAssetLoader webAssetLoader)
     {
         _assetLoader = assetLoader ?? throw new ArgumentNullException(nameof(assetLoader));
         _operations = operations ?? throw new ArgumentNullException(nameof(operations));
         _webAssetLoader = webAssetLoader ?? throw new ArgumentNullException(nameof(webAssetLoader));
-        ItemCatalog = itemCatalog;
     }
 
     internal IAssetLoader AssetLoader => _assetLoader;
     internal IAsyncOperationSupervisor Operations => _operations;
     internal IWebAssetLoader WebAssetLoader => _webAssetLoader;
-
-    /// <summary>
-    /// Каталог предметов для карточек инвентаря легаси-окон (метка
-    /// PacketUI.InventoryCard): иконка берётся локально, как у инвентаря HUD.
-    /// null — карточки строятся без иконок, окно остаётся читаемым.
-    /// </summary>
-    internal IItemCatalog? ItemCatalog { get; }
 
     public VisualElement Build(IGUIComponentPacket packet)
     {
@@ -52,52 +46,19 @@ public class PacketUIBuilder
         VisualElement element = builder.Build(packet, this);
         StyleApplicator.ApplyStyles(element, packet);
         ApplyCanvasGeometry(element, packet);
-        ApplyServerElementProperties(element, packet);
-        element.userData = packet;
 
-        return element;
-    }
-
-    /// <summary>
-    /// Разметка сервера: "UI.Id" становится именем элемента, "UI.Class" —
-    /// семантическими классами, "UI.Hidden" — display:none, "UI.Disabled" —
-    /// блокировкой интерактива.
-    /// </summary>
-    private static void ApplyServerElementProperties(VisualElement element, IGUIComponentPacket packet)
-    {
-        if (packet.AttachedProperties == null || packet.AttachedProperties.Length == 0)
-        {
-            return;
-        }
-
-        string? id = AttachedProperties.Find(packet, "UI.Id");
-        if (!string.IsNullOrEmpty(id))
-        {
-            element.name = $"ui-el-{id}";
-        }
-
-        string? classes = AttachedProperties.Find(packet, "UI.Class");
-        if (!string.IsNullOrEmpty(classes))
-        {
-            foreach (string className in classes.Split(';', StringSplitOptions.RemoveEmptyEntries))
-            {
-                string trimmed = className.Trim();
-                if (trimmed.Length > 0)
-                {
-                    element.AddToClassList(trimmed);
-                }
-            }
-        }
-
-        if (AttachedProperties.Has(packet, "UI.Hidden"))
+        // Закрывающая кнопка не рисуется: окно закрывают крестик рамки и
+        // ESC, шлющие клик по её индексу (как в старом клиенте, где кнопка
+        // с action "exit" не попадала в ряд кнопок). Пакет остаётся в
+        // дереве — индексы кликабельных для сервера не сдвигаются.
+        if (AttachedProperties.Has(packet, ExitActionKey))
         {
             element.style.display = DisplayStyle.None;
         }
 
-        if (AttachedProperties.Has(packet, "UI.Disabled"))
-        {
-            element.SetEnabled(false);
-        }
+        element.userData = packet;
+
+        return element;
     }
 
     public void AddChildren(VisualElement parent, IContainerComponentPacket packet)

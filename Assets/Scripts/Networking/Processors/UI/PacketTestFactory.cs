@@ -29,6 +29,27 @@ internal static class PacketTestFactory
         AttachedProperties = attachedProperties,
     };
 
+    internal static ImagePacket Image(
+        string uri,
+        byte width,
+        byte height,
+        string onClickContext,
+        params StringPairPacket[] attachedProperties) => new()
+    {
+        URI = uri,
+        Width = width,
+        Height = height,
+        OnClickContext = onClickContext,
+        AttachedProperties = attachedProperties,
+    };
+
+    internal static DockPanelPacket DockPanel(params IGUIComponentPacket[] children) => new()
+    {
+        Children = [.. children],
+    };
+
+    internal static StringPairPacket Pair(string key, string value) => new(key, value);
+
     internal static SliderPacket Slider(
         string name,
         float min,

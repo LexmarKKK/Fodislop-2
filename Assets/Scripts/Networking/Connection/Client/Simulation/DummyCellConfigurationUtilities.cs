@@ -65,6 +65,14 @@ internal static class DummyCellConfigurationUtilities
                 props |= CellConfigProperties.Breakable | CellConfigProperties.Diggable;
             }
 
+            // Стена и угол пака несут Structure, как BuildingWall/BuildingCorner
+            // на сервере: не бурятся, только обход. Дверь проходима (isEmpty на
+            // сервере) - бита не несёт; своих стройблоков офлайн-мир не имеет.
+            if (!def.IsPassable && def.Outline is CellOutline.Wall or CellOutline.Corner)
+            {
+                props |= CellConfigProperties.Structure;
+            }
+
             if (def.Glow > 0f)
             {
                 props |= CellConfigProperties.Glowing;

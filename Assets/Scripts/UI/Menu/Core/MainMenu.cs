@@ -61,15 +61,6 @@ namespace Kern.UI
         private Label? _serverDetailPing;
         private float _serverCardPingAppliedAt = -ServerCardPingRefreshSeconds;
 
-        // Профиль шахтёра для бейджа и досье: сокет поднимается только при
-        // спуске в шахту, поэтому ник и уровень меню получает по HTTP —
-        // GET /api/status/profile?token=…, токен сохранён прошлым входом
-        // (AuthTokenPacket). Запрос однократный: профили не меняются, пока
-        // игрок в меню.
-        private const int ProfileRequestTimeoutSeconds = 4;
-        private bool _profileRequestInFlight;
-        private bool _profileFailureLogged;
-
         // Живая проверка файлов в окне «Диагностика и целостность файлов»: при
         // открытии запускает IMenuFileDiagnosticsService, рисует статус каждой
         // проверки и общий прогресс; «Перепроверить кэш» прогоняет заново.
@@ -101,8 +92,6 @@ namespace Kern.UI
         private WindowCommandStream _windowCommands = null!;
         [Inject]
         private IPlayerStats _playerStats = null!;
-        [Inject]
-        private Kern.Networking.Auth.IGameTokenStore _gameTokens = null!;
 
         private Label? _userNameLabel;
         private Label? _userRankLabel;
@@ -279,7 +268,6 @@ namespace Kern.UI
             _profileNameLabel = tree.Q<Label>(className: "mm-profile-name");
             _profileClanLabel = tree.Q<Label>(className: "mm-profile-clan");
             SubscribePlayerIdentity();
-            RequestProfileAsync(destroyCancellationToken).Forget();
 
             // Строка и карточка реального сервера в окне выбора: метки без
             // имён, ищутся классами внутри карточки ServerItemHades.
@@ -855,77 +843,6 @@ namespace Kern.UI
             ApplyRepairTexts();
             ApplyPlayerIdentity();
             UILocalizer.AssertLocalized(_tree, _loc);
-        }
-
-        /// <summary>
-        /// Ник и уровень по HTTP для бейджа меню: сокет и авторизация живут
-        /// только в игре, поэтому спрашиваем профиль сервера с сохранённым
-        /// токеном (тот же, с которым ClientHello реконнектит). Ответ ложится
-        /// в IPlayerStats — подписка ApplyPlayerIdentity обновит бейдж и досье.
-        /// Отсутствие токена/аккаунта не ошибка: меню остаётся на заглушках.
-        /// </summary>
-        private async UniTaskVoid RequestProfileAsync(CancellationToken cancellationToken)
-        {
-            if (_profileRequestInFlight || _gameTokens == null || !_gameTokens.HasToken)
-            {
-                return;
-            }
-
-            ClientConfig? config = _clientConfig != null ? _clientConfig.Config : null;
-            if (config == null)
-            {
-                return;
-            }
-
-            _profileRequestInFlight = true;
-            try
-            {
-                ConnectionSettings connection = config.Connection;
-                string url = $"http://{connection.ServerHost}:{connection.ApiPort}/api/status/profile" +
-                    $"?token={Uri.EscapeDataString(_gameTokens.Load())}";
-                using UnityWebRequest request = UnityWebRequest.Get(url);
-                request.timeout = ProfileRequestTimeoutSeconds;
-                await request.SendWebRequest().WithCancellation(cancellationToken);
-                if (request.result != UnityWebRequest.Result.Success || request.responseCode == 404)
-                {
-                    return;
-                }
-
-                var payload = JsonUtility.FromJson<ProfilePayload>(request.downloadHandler.text);
-                if (payload == null || string.IsNullOrWhiteSpace(payload.Nickname))
-                {
-                    return;
-                }
-
-                _playerStats.SetNickname(payload.Nickname);
-                if (payload.Level > 0)
-                {
-                    _playerStats.SetLevel(payload.Level);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Меню закрывается — тихо выходим.
-            }
-            catch (Exception exception)
-            {
-                if (!_profileFailureLogged)
-                {
-                    _profileFailureLogged = true;
-                    Debug.LogWarning($"[MainMenu] Профиль недоступен: {exception.Message}");
-                }
-            }
-            finally
-            {
-                _profileRequestInFlight = false;
-            }
-        }
-
-        [Serializable]
-        private sealed class ProfilePayload
-        {
-            public string Nickname = "";
-            public long Level;
         }
 
         /// <summary>

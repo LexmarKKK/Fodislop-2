@@ -24,19 +24,6 @@ public class CanvasPacketBuilder : PacketUIBuilderBase<CanvasPacket>
             element.style.height = parsed;
         }
 
-        // Ширина legacy-пространства канваса (мост присылает 600 по умолчанию):
-        // координаты Canvas.X считаются в этой системе, поэтому контейнер обязан
-        // быть ровно такой ширины и стоять по центру колонки окна. Неположительное
-        // значение игнорируем по той же причине, что и высоту: это данные страницы,
-        // а не повод убивать окно.
-        const string widthKey = "PacketUI.CanvasWidth";
-        if (AttachedProperties.TryGetFloat(packet, widthKey, out float parsedWidth) && parsedWidth > 0f)
-        {
-            element.style.width = parsedWidth;
-            element.style.marginLeft = new StyleLength(StyleKeyword.Auto);
-            element.style.marginRight = new StyleLength(StyleKeyword.Auto);
-        }
-
         builder.AddChildren(element, packet);
 
         // Дети канваса позиционируются абсолютно (Canvas.X/Y) и выпадают из

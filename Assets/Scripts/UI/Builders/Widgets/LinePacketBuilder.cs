@@ -10,21 +10,26 @@ public class LinePacketBuilder : PacketUIBuilderBase<LinePacket>
 {
     protected override VisualElement BuildTyped(LinePacket packet, PacketUIBuilder builder)
     {
-        // Цвета в LinePacket нет: линия всегда белая (UILine рисует painter2D
-        // по LineColor). Тематический циан из packet-line-themed убран вместе
-        // с колбэком перекраски - без класса resolvedStyle.color наследовался
-        // бы от предка и зависел от окна.
+        // Цвет линии приходит стилем — заливкой фона (GUIStylePacket.Background),
+        // как и толщина (BorderWidth): цвет задаёт сервер, клиент только
+        // рендерит. Без стиля или с прозрачной заливкой остаётся белый -
+        // так линии рисовались до появления цвета в протоколе.
         var line = new UILine
         {
             Direction = packet.Direction,
             LineColor = Color.white,
         };
 
-        if (packet.Style.HasValue)
+        if (packet.Style is { } style)
         {
-            if (packet.Style.Value.BorderWidth > 0)
+            if (style.BorderWidth > 0)
             {
-                line.Thickness = packet.Style.Value.BorderWidth;
+                line.Thickness = style.BorderWidth;
+            }
+
+            if (style.Background.A > 0)
+            {
+                line.LineColor = new Color32(style.Background.R, style.Background.G, style.Background.B, style.Background.A);
             }
         }
 
