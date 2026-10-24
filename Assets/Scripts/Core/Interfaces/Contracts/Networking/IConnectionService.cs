@@ -9,7 +9,7 @@ public interface IConnectionService
 {
     bool IsConnected { get; }
     bool IsOffline { get; }
-    void Connect(bool oldClient = false);
+    void Connect();
     void Disconnect();
     void TriggerDisconnect(string reason);
     void TriggerReconnect(string reason);

@@ -51,7 +51,6 @@ namespace Kern.Networking.Connection
             }
         }
 
-        private bool _useOldClient;
         public event Action<ServerPacket>? OnPacketReceived;
         public event Action? OnPacketBatchStarted;
         public event Action? OnPacketBatchCompleted;
@@ -202,7 +201,7 @@ namespace Kern.Networking.Connection
             }
         }
 
-        public void Connect(bool oldClient = false)
+        public void Connect()
         {
             if (Connection != null && Connection.ConnectionStatus != ConnectionStatus.Disconnected)
             {
@@ -226,7 +225,6 @@ namespace Kern.Networking.Connection
                 Connection = null;
             }
 
-            _useOldClient = oldClient;
             Connection = _transportFactory.Create();
             Connection.OnReceived += OnReceived;
             Connection.OnConnected += OnConnected;
@@ -349,13 +347,21 @@ namespace Kern.Networking.Connection
             _reconnectStatus = string.Empty;
             OnReconnectHidden?.Invoke();
 
-            int version = _useOldClient ? 0 : ProjectRuntimeContracts.Networking.ClientVersion;
             string token = _tokens.Load();
             Debug.Log($"[Auth] Sending ClientHello with token: {(string.IsNullOrEmpty(token) ? "EMPTY" : "PRESENT")}");
+
+            // ClientHello несёт только метаданные наблюдаемости
+            // (protocol-trust-audit.md §1.4); сервер ветвится на них не вправе,
+            // доверие — исключительно AuthToken. Осознанные хардкоды:
+            // - ClientVersion — константа клиента, синхронная с серверным
+            //   гейтом актуальности (иначе OutdatedClientPacket (0));
+            // - OS — зашитые строки «Windows»/«macOS» (GetClientOperatingSystem);
+            // - OSVersion — только Major (Windows 10/11 неразличимы);
+            // - HardwareFingerprint — SystemInfo.deviceUniqueIdentifier.
             Connection?.SendAsync(new ClientPacket(
                 (uint)DateTimeOffset.UtcNow.Ticks,
                 new ClientHelloPacket(
-                    version,
+                    ProjectRuntimeContracts.Networking.ClientVersion,
                     GetClientOperatingSystem(),
                     Environment.OSVersion.Version.Major,
                     SystemInfo.deviceUniqueIdentifier,

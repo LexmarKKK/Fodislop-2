@@ -164,6 +164,13 @@ namespace Kern.Networking.Connection
             var stream = _stream;
             if (stream == null || ConnectionStatus != ConnectionStatus.Connected)
             {
+                // Раньше пакет отбрасывался молча, и отправитель не узнавал о
+                // потере (страдало прежде всего рукопожатие ClientHello). Диагностика:
+                // какой пакет, при каком статусе и с каким стримом.
+                Debug.LogWarning(
+                    $"[ManagedTcpConnection] Send dropped before write: " +
+                    $"status={ConnectionStatus}, stream={(stream != null ? "open" : "null")}, " +
+                    $"packet={packet.GetType().Name}.");
                 return;
             }
 

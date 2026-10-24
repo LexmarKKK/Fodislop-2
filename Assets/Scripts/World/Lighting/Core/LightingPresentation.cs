@@ -46,6 +46,23 @@ internal sealed class LightingPresentation
             return;
         }
 
+        PublishDisabledGlobals();
+        _disabledStatePublished = true;
+    }
+
+    /// <summary>
+    /// Публикует согласованное «свет не готов»-состояние глобалов без
+    /// инстансного флага. Вызывается в точке входа доменной перезагрузки
+    /// (до загрузки сцены): первый отрисованный кадр может случиться раньше
+    /// любого MonoBehaviour Start — перерисовка Game-вью при входе в Play
+    /// Mode, а построение графа объектов освещения ждёт DI и конфиг
+    /// клиента. Пустой _WorldLightRect в этом окне роняет bloom-проход и
+    /// весь render graph кадра. Реальные публикации затем перезаписывают
+    /// эти глобалы, переход обрабатывает LightingUpdateCoordinator через
+    /// IsDisabledStatePublished.
+    /// </summary>
+    internal static void PublishDisabledGlobals()
+    {
         Shader.DisableKeyword(WorldLightingKeyword);
         Shader.SetGlobalTexture(s_worldLightTextureId, Texture2D.whiteTexture);
         Shader.SetGlobalVector(s_worldLightRectId, new Vector4(-1000f, -1000f, 2000f, 2000f));
@@ -55,7 +72,6 @@ internal sealed class LightingPresentation
         LightingFieldOrientation.PublishGlobals();
         Shader.SetGlobalFloat(s_worldGlowScaleId, LightingConfigHolder.GlowScale);
         Shader.SetGlobalTexture(s_worldGlowTextureId, Texture2D.blackTexture);
-        _disabledStatePublished = true;
     }
 
     public void PublishAmbientOcclusionOnly(

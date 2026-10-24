@@ -53,7 +53,8 @@ public static class ProjectRuntimeContracts
     public static class Networking
     {
         // Must stay aligned with the server's accepted ClientHello protocol
-        // version. A development-only old-client path may still send 0.
+        // version. Metadata-only handshake (docs/operations/
+        // protocol-trust-audit.md §1.4); trust belongs to AuthToken only.
         public const int ClientVersion = 1;
     }
 
