@@ -11,13 +11,17 @@ public sealed class PlayerHUDPopups
 {
     private readonly Action<SuicidePacket> _sendSuicide;
     private readonly Action<OpenHelpClickPacket> _sendHelpRequest;
+    private readonly Action<OpenBuildingsClickPacket> _sendBuildingsRequest;
     private VisualElement? _respawnPopup;
-    private VisualElement? _buildingsPopup;
 
-    public PlayerHUDPopups(Action<SuicidePacket> sendSuicide, Action<OpenHelpClickPacket> sendHelpRequest)
+    public PlayerHUDPopups(
+        Action<SuicidePacket> sendSuicide,
+        Action<OpenHelpClickPacket> sendHelpRequest,
+        Action<OpenBuildingsClickPacket> sendBuildingsRequest)
     {
         _sendSuicide = sendSuicide;
         _sendHelpRequest = sendHelpRequest;
+        _sendBuildingsRequest = sendBuildingsRequest;
     }
 
     public void Initialize(VisualElement root)
@@ -38,19 +42,14 @@ public sealed class PlayerHUDPopups
             throw new InvalidOperationException("[PlayerHUD] RespawnButton is missing from PlayerHUD.uxml.");
         respawnButton.clicked += () => _respawnPopup.style.display = DisplayStyle.Flex;
 
-        _buildingsPopup = root.Q<VisualElement>("BuildingsPopup") ??
-            throw new InvalidOperationException("[PlayerHUD] BuildingsPopup is missing from PlayerHUD.uxml.");
-        Button buildingsClose = root.Q<Button>("BuildingsCloseButton") ??
-            throw new InvalidOperationException("[PlayerHUD] BuildingsCloseButton is missing from PlayerHUD.uxml.");
-        buildingsClose.clicked += () => _buildingsPopup.style.display = DisplayStyle.None;
+        // «Мои здания» и FAQ — серверные страницы: кнопки шлют OpenBuildingsClickPacket (26)
+        // и OpenHelpClickPacket (18); сервер отвечает окном (Session.BuildingsHandler →
+        // Player.MyBuildingsWindow, Session.HelpHandler → Settings.FAQWindow) через
+        // ServerWindowPresenter. Локальные попапы из UXML удалены.
         Button buildingsButton = root.Q<Button>("BuildingsButton") ??
             throw new InvalidOperationException("[PlayerHUD] BuildingsButton is missing from PlayerHUD.uxml.");
-        buildingsButton.clicked += () => _buildingsPopup.style.display = DisplayStyle.Flex;
+        buildingsButton.clicked += () => _sendBuildingsRequest(new OpenBuildingsClickPacket());
 
-        // FAQ — серверная страница: кнопка шлёт OpenHelpClickPacket, сервер
-        // (Session.HelpHandler → Settings.FAQWindow) отвечает модальным окном
-        // FAQ через ServerWindowPresenter. Локальный FaqPopup из UXML больше
-        // не используется.
         Button faqButton = root.Q<Button>("FaqButton") ??
             throw new InvalidOperationException("[PlayerHUD] FaqButton is missing from PlayerHUD.uxml.");
         faqButton.clicked += () => _sendHelpRequest(new OpenHelpClickPacket());

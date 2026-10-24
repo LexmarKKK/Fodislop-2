@@ -401,7 +401,10 @@ namespace Kern.UI.HUD.Player.View
                 Tooltip.AttachTo(bonusButton, () => _loc.Get("hud.tooltip.bonus"), _tooltip!);
             }
 
-            _popups = new PlayerHUDPopups(packet => _networkService?.SendAction(packet), packet => _networkService?.Send(packet));
+            _popups = new PlayerHUDPopups(
+                packet => _networkService?.SendAction(packet),
+                packet => _networkService?.Send(packet),
+                packet => _networkService?.Send(packet));
             _popups.Initialize(tree);
 
             _statusPanel.Initialize(tree);
