@@ -8,6 +8,7 @@ public sealed class Gun : PackBuilding
 {
     public override BuildingType Type => BuildingType.Gun;
 
+
     public override IEnumerable<((int X, int Y) Pos, CellType Cell)> CellsToPlace()
     {
         // Зеркало сервера (MinesServer: Game/Buildings/Gun.cs): крест из

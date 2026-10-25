@@ -8,6 +8,7 @@ public sealed class BuildingShop : PackBuilding
 {
     public override BuildingType Type => BuildingType.BombShop;
 
+
     public override IEnumerable<((int X, int Y) Pos, CellType Cell)> CellsToPlace()
     {
         yield return ((0, 0), CellType.BuildingDoor);

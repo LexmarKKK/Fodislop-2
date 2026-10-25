@@ -45,6 +45,16 @@ public sealed class UIInputManager
         _escapeConsumedFrame = Time.frameCount;
     }
 
+    // Колесо в этом кадре отдано прокрутке UI (лог глобального чата). Ставится
+    // обработчиком WheelEvent на окне чата и живёт ровно кадр: зум камеры
+    // на жест молчит. События UI Toolkit разбираются до Update скриптов,
+    // поэтому флаг уже актуален, когда CameraFollow читает колесо.
+    public int WheelClaimedByUIFrame { get; private set; } = -1;
+
+    public bool IsWheelClaimedByUI => WheelClaimedByUIFrame == Time.frameCount;
+
+    public void NotifyWheelClaimedByUI() => WheelClaimedByUIFrame = Time.frameCount;
+
     public void PushModal(VisualElement modalElement)
     {
         if (modalElement != null && !_modalStack.Contains(modalElement))

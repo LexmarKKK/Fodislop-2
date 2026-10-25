@@ -58,6 +58,8 @@ namespace Kern.UI.HUD.Player.View
         private Label? _geologyLabel;
         private Label? _basketPercentLabel;
         private VisualElement? _basketSeparator;
+        private VisualElement? _basketRow;
+        private Button? _dropBoxButton;
         private VisualElement? _basketContainer;
         private VisualElement? _skillContainer;
 
@@ -265,7 +267,7 @@ namespace Kern.UI.HUD.Player.View
         private void InitializeHUD()
         {
             _programmatorData ??= new ProgrammatorData();
-            _programmatorTextures ??= new ProgrammatorTextureRegistry();
+            _programmatorTextures ??= new ProgrammatorTextureRegistry(_assetLoader);
             _programmatorGrid ??= new ProgrammatorGrid(
                 _doc,
                 _loc,
@@ -357,6 +359,11 @@ namespace Kern.UI.HUD.Player.View
                 throw new InvalidOperationException("[PlayerHUD] BasketPercentLabel is missing from PlayerHUD.uxml.");
             _basketSeparator = tree.Q<VisualElement>("BasketSeparator") ??
                 throw new InvalidOperationException("[PlayerHUD] BasketSeparator is missing from PlayerHUD.uxml.");
+            _basketRow = tree.Q<VisualElement>("BasketRow") ??
+                throw new InvalidOperationException("[PlayerHUD] BasketRow is missing from PlayerHUD.uxml.");
+            _dropBoxButton = tree.Q<Button>("DropBoxButton") ??
+                throw new InvalidOperationException("[PlayerHUD] DropBoxButton is missing from PlayerHUD.uxml.");
+            _dropBoxButton.clicked += () => _networkService?.Send(new DropBoxClickPacket());
             _geologyLabel = tree.Q<Label>("GeologyLabel") ??
                 throw new InvalidOperationException("[PlayerHUD] GeologyLabel is missing from PlayerHUD.uxml.");
 
@@ -607,11 +614,12 @@ namespace Kern.UI.HUD.Player.View
 
             if (_basketPercentLabel != null)
             {
-                // Общий груз == 0 - груз и разделитель скрываются.
+                // Общий груз == 0 - груз, разделитель и кнопка выброса бокса скрываются.
                 bool showBasket = _isLoaded && stats.BasketMaxPercent > 0;
                 _basketPercentLabel.text = showBasket ? $"Груз: {stats.BasketMaxPercent}%" : string.Empty;
                 _basketPercentLabel.style.display = showBasket ? DisplayStyle.Flex : DisplayStyle.None;
                 SetDisplayed(_basketSeparator, showBasket);
+                SetDisplayed(_basketRow, showBasket);
             }
 
             _basketView.Refresh(stats);

@@ -70,7 +70,7 @@ internal sealed class TerrainCellOracle(
             }
             else
             {
-                typeIndex = Under(fgType);
+                typeIndex = ResolveUnderfill(fgType, nbType);
             }
         }
 
@@ -263,7 +263,47 @@ internal sealed class TerrainCellOracle(
     private static bool Bit(uint word, int bit) => ((word >> bit) & 1u) != 0;
 
     // Фон (бит 3) лежит сам на себе, передний план — на подложке.
-    private uint Under(uint type) => Bit(typeOf(type).Look, 3) ? type : groundType;
+        private uint Under(uint type) => Bit(typeOf(type).Look, 3) ? type : groundType;
+
+        // Фон под сплошной клеткой — по фоновым соседям, как
+        // TerrainResolveUnderfill в TerrainCellData.hlsl: большинство из
+        // восьми соседей-фоновых клеток (порядок L..TL задаёт разрешение
+        // ничьих), при отсутствии — глобальная подложка.
+        private uint ResolveUnderfill(uint ownType, uint[] nbTypes)
+        {
+            if (Bit(typeOf(ownType).Look, 3))
+            {
+                return ownType;
+            }
+
+            uint chosen = 0u;
+            int bestCount = 0;
+            for (int candidate = 0; candidate < 8; candidate++)
+            {
+                if (!Bit(typeOf(nbTypes[candidate]).Look, 3))
+                {
+                    continue;
+                }
+
+                uint candidateType = nbTypes[candidate];
+                int count = 0;
+                for (int other = 0; other < 8; other++)
+                {
+                    if (Bit(typeOf(nbTypes[other]).Look, 3) && nbTypes[other] == candidateType)
+                    {
+                        count++;
+                    }
+                }
+
+                if (count > bestCount)
+                {
+                    bestCount = count;
+                    chosen = candidateType;
+                }
+            }
+
+            return chosen != 0u ? chosen : Under(ownType);
+        }
 
     // Контур: 0 гибкий, 1 волнистый, 2 жёсткий, 3 капля, 4 стена, 5 угол, 6 дверь.
     private static uint Outline(uint look) => (look >> 7) & 7u;

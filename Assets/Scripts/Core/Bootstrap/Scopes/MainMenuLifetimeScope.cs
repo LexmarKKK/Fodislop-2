@@ -60,6 +60,10 @@ namespace Kern.Core
             builder.Register<AsyncOperationSupervisor>(Lifetime.Singleton)
                 .AsSelf()
                 .As<IAsyncOperationSupervisor>();
+            // Живое имя и уровень (PlayerStatsModel + PlayerIdentityProcessor)
+            // зарегистрированы на постоянном Bootstrap-scope: пакеты приходят
+            // в фазе гейтвея, до существования этой области. MainMenu наследует
+            // IPlayerStats от родителя.
             builder.RegisterEntryPoint<MainMenuBootstrap>();
         }
 

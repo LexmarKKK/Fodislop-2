@@ -461,6 +461,56 @@ float2 TerrainCornerBase(float corner)
     return float2(index == 1 || index == 2 ? 1.0 : 0.0, index >= 2 ? 1.0 : 0.0);
 }
 
+// Фон под сплошной (передней) клеткой — по её фоновым соседям: тип фона
+// выбирает большинство из восьми соседей-фоновых клеток (дороги, полы),
+// при ничьей и отсутствии — глобальная подложка. Так под скруглёнными
+// углами капель и паковых стен зазор закрывает соседний пол, а не
+// глобальная подложка; до GPU-сборки то же делала заливка фона
+// (BackgroundFloodFill: passable-клетки распространяли свой тип).
+// Незагруженный сосед фоном не считается: Unloaded — передний план.
+uint TerrainResolveUnderfill(
+    uint ownType,
+    TerrainTypeRow ownRow,
+    uint neighbours[8],
+    TerrainTypeRow neighbourRows[8])
+{
+    if (TerrainTypeIsBackground(ownRow))
+    {
+        return ownType;
+    }
+
+    uint chosen = 0u;
+    uint bestCount = 0u;
+    [unroll]
+    for (int candidate = 0; candidate < 8; candidate++)
+    {
+        if (!TerrainTypeIsBackground(neighbourRows[candidate]))
+        {
+            continue;
+        }
+
+        uint candidateType = TerrainCellType(neighbours[candidate]);
+        uint count = 0u;
+        [unroll]
+        for (int other = 0; other < 8; other++)
+        {
+            if (TerrainTypeIsBackground(neighbourRows[other]) &&
+                TerrainCellType(neighbours[other]) == candidateType)
+            {
+                count++;
+            }
+        }
+
+        if (count > bestCount)
+        {
+            bestCount = count;
+            chosen = candidateType;
+        }
+    }
+
+    return chosen != 0u ? chosen : TerrainTypeUnder(ownType, ownRow);
+}
+
 TerrainCellVertex LoadTerrainCellVertex(
     float3 address,
     float2 cornerBase)
@@ -511,10 +561,11 @@ TerrainCellVertex LoadTerrainCellVertex(
     bool organicTerrain = _TerrainDistortionStyle == KERN_TERRAIN_DISTORTION_STYLE_ORGANIC && foregroundCause;
 
     // Какой тип рисует слой — как TerrainQuadBuilder. Фон лежит сам на себе
-    // и рисуется только фоном; под передним планом фоном рисуется подложка.
+    // и рисуется только фоном; под передним планом фоном рисуется подложка,
+    // у сплошной клетки — по фоновым соседям (TerrainResolveUnderfill).
     uint layerType = foreground
         ? (foregroundIsBackground ? 0u : foregroundType)
-        : TerrainTypeUnder(foregroundType, foregroundRow);
+        : TerrainResolveUnderfill(foregroundType, foregroundRow, neighbours, neighbourRows);
 
     if (layerType == 0u)
     {

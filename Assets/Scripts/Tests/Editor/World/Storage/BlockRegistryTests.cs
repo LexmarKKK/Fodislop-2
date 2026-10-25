@@ -23,7 +23,7 @@ public sealed class BlockRegistryTests
     [TestCase(CellType.Road, CellType.Road)]
     [TestCase(CellType.Gate, CellType.Gate)]
     [TestCase(CellType.VolcanoBackground, CellType.VolcanoBackground)]
-    [TestCase(CellType.BuildingDoor, CellType.BuildingDoor)]
+    [TestCase(CellType.BuildingDoor, CellType.Empty)]
     [TestCase(CellType.BuildingWall, CellType.Empty)]
     [TestCase(CellType.Rock, CellType.Empty)]
     [TestCase(CellType.Unloaded, CellType.Empty)]

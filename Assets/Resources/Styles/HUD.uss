@@ -117,7 +117,7 @@
     min-height: 360px;
     flex-direction: column;
     background-color: var(--surface-panel);
-    border-color: var(--border-subtle);
+    border-color: var(--border-cyan);
     border-width: 1px;
     border-radius: var(--radius-md);
     overflow: hidden;
@@ -131,12 +131,13 @@
     justify-content: space-between;
     padding-left: var(--space-5);
     padding-right: var(--space-3);
-    background-color: var(--surface-raised);
+    background-color: var(--surface-slate-solid);
     border-bottom-color: var(--border-subtle);
     border-bottom-width: 1px;
 }
 
 .world-map-title {
+    -unity-font-definition: var(--face-display);
     color: var(--text-primary);
     font-size: var(--size-sm);
     -unity-font-style: bold;
@@ -201,9 +202,9 @@
     width: 10px;
     height: 10px;
     background-color: var(--state-danger);
-    border-color: #ffffff;
+    border-color: var(--light-solid);
     border-width: 1.5px;
-    border-radius: 5px;
+    border-radius: var(--radius-pill);
     translate: -50% -50%;
 }
 
@@ -345,8 +346,11 @@
     width: 240px;
     padding: var(--space-6);
     background-color: var(--surface-panel);
-    border-color: var(--border-subtle);
-    border-width: var(--space-1);
+    /* Рецепт окна меню (mm-modal-card / hud-minimap-panel): тонкая
+       бирюзовая рамка со скруглением вместо серого прямогольника. */
+    border-color: var(--border-cyan);
+    border-width: 1px;
+    border-radius: var(--radius-md);
     flex-direction: column;
 }
 
@@ -389,7 +393,7 @@
 
 .hud-panel .hud-separator {
     height: 1px;
-    background-color: var(--text-secondary);
+    background-color: var(--border-line);
     margin-bottom: var(--space-2);
 }
 
@@ -418,6 +422,37 @@
     font-size: var(--size-md);
     color: var(--accent-gold);
     margin-bottom: var(--space-1);
+}
+
+/* Строка "Груз: X% [▣]": процент груза + кнопка выброса бокса справа.
+   По мотивам старой кнопки dropbox, стиль — как у .hud-clan-button. */
+.hud-basket-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-1);
+}
+
+.hud-basket-row .hud-basket {
+    margin-bottom: 0;
+}
+
+.hud-panel .hud-dropbox-button {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    padding: 0;
+    margin-left: var(--space-2);
+    font-size: var(--size-sm);
+    -unity-text-align: middle-center;
+    color: var(--accent-gold);
+    background-color: var(--accent-gold-glow);
+    border-width: 1px;
+    border-color: var(--text-disabled);
+}
+
+.hud-panel .hud-dropbox-button:hover {
+    background-color: var(--accent-gold);
+    color: var(--surface-panel);
 }
 
 .hud-basket-container {
@@ -451,8 +486,8 @@
     bottom: 0;
     -unity-text-align: middle-center;
     -unity-font-style: bold;
-    font-size: 14px;
-    color: rgb(255, 255, 255);
+    font-size: var(--size-base);
+    color: var(--light-solid);
     letter-spacing: 1px;
 
     /* Мягкое тёмное хало вокруг цифр на светлой заливке и тёмном треке. */
@@ -478,7 +513,7 @@
 }
 
 .hud-drag-handle > .unity-label {
-    font-size: 14px;
+    font-size: var(--size-base);
     color: var(--text-secondary);
     -unity-text-align: middle-center;
     padding: 0;
@@ -551,7 +586,7 @@
     padding: var(--space-5);
     background-color: var(--surface-panel);
     border-color: var(--border-subtle);
-    border-width: var(--space-1);
+    border-width: 1px;
     border-radius: var(--radius-md);
     flex-direction: column;
 }
@@ -579,7 +614,8 @@
     padding: var(--space-6);
     background-color: var(--surface-panel);
     border-color: var(--border-subtle);
-    border-width: var(--space-1);
+    border-width: 1px;
+    border-radius: var(--radius-md);
     flex-direction: column;
 }
 
@@ -601,36 +637,86 @@
 .hud-skill-row {
     flex-direction: row;
     align-items: flex-start;
-    margin-bottom: var(--space-1);
 }
 
+/* Ячейка умения - колонка БЕЗ подложки: рамка с иконкой, под ней полоса
+   опыта с процентами. Никаких фонов вокруг - HUD не перекрывает сцену. */
 .hud-skill-icon {
     position: relative;
-    flex-direction: row;
-    align-items: flex-end;
-    margin-right: var(--space-2);
-    margin-bottom: var(--space-1);
+    flex-direction: column;
+    align-items: center;
+    margin-right: var(--space-4);
+    margin-bottom: var(--space-4);
 }
 
+/* Рамка иконки - точка привязки "up". Верхний отступ 16px - зарезервированное
+   место под надпись: держится всегда, даже когда текста нет. Центрируется
+   общим align-items: center ячейки. */
+.hud-skill-icon-frame {
+    position: relative;
+    margin-top: 16px;
+}
+
+/* Надпись "up" при готовности апгрейда: абсолютный слой строго над иконкой,
+   растянут ровно на ширину рамки - middle-center центрирует текст по боксу
+   надписи. Бокс чуть сдвинут вправо (left/right парой) - оптическая подгонка:
+   при 0px надпись выглядела немного левее центра, при 14px - сильно правее.
+   Подстройка: менять left и right ВМЕСТЕ (right = -left), шаг 1-2px; прыжок
+   в PlayerHUDSkillGrid сдвигает только по Y и подгонку не затирает. */
 .hud-skill-arrow {
     position: absolute;
-    top: -13px;
-    left: 0;
-    width: var(--space-10);
+    left: 2px;
+    right: -2px;
+    top: -16px;
+    height: 14px;
     font-size: var(--size-xs);
     -unity-font-style: bold;
     color: var(--accent-gold);
     -unity-text-align: middle-center;
 }
 
-/* Круговой прогресс-бар умения: лаймовое кольцо вокруг иконки
- * (рисуется кодом в SkillProgressRing, слоем поверх иконки). */
-.hud-skill-ring {
+/* Полоса опыта умения ПОД иконкой: трек, лаймовая заливка и ОДНО число
+   процентов ПРЯМО В треке - без копий и слоёв. Читаемость и на лайме, и на
+   тёмном треке - обводка из рецепта числа корзины (.hud-crystal-count):
+   тонкий чёрный контур 1px и мягкое хало. Высота 20px - как у полосы
+   корзины, чтобы числа выглядели одинаково. */
+.hud-skill-bar {
+    width: 44px;
+    height: 20px;
+    position: relative;
+    margin-top: var(--space-3);
+    border-radius: var(--radius-sm);
+    background-color: var(--surface-panel);
+    border-width: 1px;
+    border-color: var(--border-subtle);
+    overflow: hidden;
+}
+
+.hud-skill-bar-fill {
+    height: 100%;
+    border-radius: var(--radius-sm);
+}
+
+/* Проценты В треке: цифры крупно (15px), знак "%" мельче - его размер
+   задаётся rich-тегом <size> из кода. Цвет всегда белый - при любом
+   заполнении: и на лайме, и на красном переливе, и на тёмном треке.
+   Рецепт числа корзины: моно-шрифт данных, контур 1px, мягкое хало. */
+.hud-skill-bar-pct {
     position: absolute;
-    left: -7px;
-    top: -7px;
-    right: -7px;
-    bottom: -7px;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    -unity-text-align: middle-center;
+    -unity-font-definition: var(--face-data);
+    -unity-font-style: bold;
+    font-size: var(--size-md);
+    color: var(--light-solid);
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.95);
+    text-shadow: 0 0 6px rgba(0, 0, 0, 0.85);
+    translate: 0 -1px;
+    padding: 0;
 }
 
 .hud-crystal-row {
@@ -654,7 +740,7 @@
  * Зона: <100% лайм, 100-114% жёлтый, 114%+ коралл (перегруз). */
 .hud-crystal-bar {
     flex-grow: 1;
-    height: 18px;
+    height: 20px;
     border-radius: var(--radius-sm);
     overflow: hidden;
 }
@@ -664,9 +750,11 @@
     border-radius: var(--radius-sm);
 }
 
-/* Число внутри полосы: белый жирный текст с плотной чёрной обводкой по всем
- * направлениям + мягкое хало - читается одинаково и на светлой лаймовой
- * заливке, и на тёмной части трека. */
+/* Число внутри полосы: моно-шрифт данных (язык меню: числа - JetBrainsMono),
+ * белый жирный, тонкий чёрный контур 1px и мягкое хало - читается одинаково
+ * и на светлой лаймовой заливке, и на тёмной части трека. Прежний контур
+ * 2px съедал цифру: обводка рисуется по центру штриха, при кегле 15px внутрь
+ * уходила половина - от белого оставалась щель, и число читалось тёмным. */
 .hud-crystal-count {
     position: absolute;
     left: 0;
@@ -674,45 +762,50 @@
     right: 0;
     bottom: 0;
     -unity-text-align: middle-center;
+    -unity-font-definition: var(--face-data);
     -unity-font-style: bold;
-    font-size: 15px;
-    color: rgb(255, 255, 255);
-    letter-spacing: 0.5px;
-    -unity-text-outline-width: 2px;
+    font-size: var(--size-md);
+    color: var(--light-solid);
+    -unity-text-outline-width: 1px;
     -unity-text-outline-color: rgba(0, 0, 0, 0.95);
     text-shadow: 0 0 6px rgba(0, 0, 0, 0.85);
     translate: 0 -1px;
     padding: 0;
 }
 
+/* Зоны корзины: оттенки взяты из семантических токенов меню —
+   state-ok (норма), accent-gold (близко к переполнению), state-danger
+   (перегруз). Заливка почти плотная (0.8): сквозь полосу силуэт мира
+   виден, но под цифрами остаётся ровный цвет - шумная текстура руды
+   сквозь сильно прозрачный фон контраст цифр убивала. */
 .hud-crystal-row--ok .hud-crystal-bar {
-    background-color: rgba(163, 230, 53, 0.22);
+    background-color: rgba(74, 222, 128, 0.3);
     border-width: 1px;
-    border-color: rgba(163, 230, 53, 0.45);
+    border-color: rgba(74, 222, 128, 0.45);
 }
 
 .hud-crystal-row--ok .hud-crystal-fill {
-    background-color: rgba(163, 230, 53, 0.62); /* лайм, полупрозрачный */
+    background-color: rgba(74, 222, 128, 0.8); /* state-ok */
 }
 
 .hud-crystal-row--warn .hud-crystal-bar {
-    background-color: rgba(246, 217, 68, 0.24);
+    background-color: rgba(245, 197, 66, 0.3);
     border-width: 1px;
-    border-color: rgba(246, 217, 68, 0.5);
+    border-color: var(--border-gold);
 }
 
 .hud-crystal-row--warn .hud-crystal-fill {
-    background-color: rgba(246, 217, 68, 0.62); /* жёлтый, полупрозрачный */
+    background-color: rgba(245, 197, 66, 0.8); /* accent-gold */
 }
 
 .hud-crystal-row--over .hud-crystal-bar {
-    background-color: rgba(229, 115, 115, 0.26);
+    background-color: rgba(255, 85, 85, 0.3);
     border-width: 1px;
-    border-color: rgba(229, 115, 115, 0.55);
+    border-color: var(--border-danger);
 }
 
 .hud-crystal-row--over .hud-crystal-fill {
-    background-color: rgba(229, 115, 115, 0.62); /* коралл, полупрозрачный */
+    background-color: rgba(255, 85, 85, 0.8); /* state-danger */
 }
 
 .hud-skill-icon-image {
@@ -728,8 +821,9 @@
     min-width: 300px;
     padding: var(--space-4);
     background-color: var(--surface-panel);
-    border-color: var(--border-subtle);
+    border-color: var(--border-cyan);
     border-width: 1px;
+    border-radius: var(--radius-md);
     flex-direction: column;
 }
 
@@ -768,10 +862,12 @@
 
 .hud-btn-action {
     position: absolute;
-    background-color: var(--surface-shelf-dense);
-    border-color: var(--accent-cyan-deep);
-    border-width: var(--space-1);
-    border-radius: var(--radius-sm);
+    /* Рецепт меню (mm-side-btn): тёмный сланец с яркой бирюзовой рамкой;
+       наведение — тонированная подложка, как у mm-user-pill. */
+    background-color: var(--surface-slate-dense);
+    border-color: var(--border-cyan);
+    border-width: 1px;
+    border-radius: var(--radius-md);
     font-size: var(--size-sm);
     -unity-font-style: bold;
     color: var(--text-primary);
@@ -784,13 +880,18 @@
 }
 
 .hud-btn-action:hover {
-    background-color: var(--light-sheen);
+    background-color: var(--accent-cyan-wash);
+    border-color: var(--accent-cyan);
 }
 
 .hud-toggle-btn {
     position: absolute;
     left: var(--space-5);
+    /* Выключенная автокопа/агрессия — состояние «опасность»: кризисная
+       подложка и красная рамка; включённая — сланец с бирюзовой рамкой,
+       как у остальных кнопок колонки. */
     background-color: var(--surface-crisis-dense);
+    border-color: var(--border-danger);
 }
 
 .hud-toggle-btn:hover {
@@ -807,6 +908,7 @@
 
 .hud-toggle-btn.enabled {
     background-color: var(--surface-slate-dense);
+    border-color: var(--border-cyan);
 }
 
 .hud-toggle-btn.enabled:hover {
@@ -817,10 +919,11 @@
     color: var(--state-ok);
 }
 
-/* Включённая автокопка - лаймовый текст (выключенная остаётся красной).
-   Класс enabled вешается на саму кнопку, поэтому селектор потомственный. */
+/* Включённая автокопка - текст цвета состояния «норма» (выключенная
+   остаётся красной). Класс enabled вешается на саму кнопку, поэтому
+   селектор потомственный. */
 .hud-toggle-btn.enabled .hud-toggle-btn-label {
-    color: rgb(0, 255, 0);
+    color: var(--state-ok);
 }
 
 /* Колонка управления СТРОГО над мини-картой (как в старом клиенте): автокопа ->
@@ -860,9 +963,9 @@
 }
 
 /* Смещения и спрайты кнопок верхнего ряда. Порядок от правого верхнего угла
-   влево: Помощь -> Мои здания -> Респаун. Шаг 38px = 32px спрайт + 6px зазор
-   (--space-3), правый край ряда - --space-5.
-   Все три иконки векторные: тип импорта SVG (VectorImage) рисуется USS-фоном
+   влево: Помощь -> Мои здания -> Респаун -> Серверная консоль. Шаг 38px =
+   32px спрайт + 6px зазор (--space-3), правый край ряда - --space-5.
+   Все иконки векторные: тип импорта SVG (VectorImage) рисуется USS-фоном
    через UIRUtility.IsVectorImageBackground. */
 .hud-btn-top-row--faq {
     right: var(--space-5);
@@ -875,6 +978,10 @@
 .hud-btn-top-row--respawn {
     right: 86px;
     background-image: url("project://database/Assets/Textures/UI/respawn.svg");
+}
+.hud-btn-top-row--mconsole {
+    right: 124px;
+    background-image: url("project://database/Assets/Textures/UI/console.svg");
 }
 
 /* Hover-подложка темы перекрыла бы спрайт - на иконках её нет. */
@@ -907,7 +1014,7 @@
 
 /* Старт/стоп - плоская кликабельная зона в левой части кнопки программатора:
    без фона и рамки (чтобы не выглядела кнопкой в кнопке), только цветной
-   символ - лаймовый ▶ когда программа стоит, тёмно-красный ■ когда выполняется. */
+   символ - зелёный ▶ когда программа стоит, красный ■ когда выполняется. */
 .hud-program-run-btn {
     position: absolute;
     left: var(--space-8);
@@ -917,8 +1024,8 @@
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
     border-radius: 0;
-    color: rgb(0, 255, 0);
-    font-size: 20px;
+    color: var(--state-ok);
+    font-size: var(--size-lg);
     padding: 0;
 }
 .hud-program-run-btn:hover,
@@ -926,8 +1033,8 @@
     background-color: rgba(0, 0, 0, 0);
 }
 .hud-program-run-btn--running {
-    color: rgb(139, 0, 0);
-    font-size: 16px;
+    color: var(--state-danger);
+    font-size: var(--size-md);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1160,9 +1267,9 @@
     width: 6px;
     height: 6px;
     background-color: var(--state-danger);
-    border-color: #ffffff;
+    border-color: var(--light-solid);
     border-width: 1px;
-    border-radius: 3px;
+    border-radius: var(--radius-pill);
     translate: -50% -50%;
 }
 
@@ -1196,5 +1303,5 @@
    служит ему прозрачностью элемента. */
 .mission-ring {
     position: absolute;
-    background-color: rgba(255, 255, 255, 1);
+    background-color: var(--light-solid);
 }

@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using MinesServer.Networking.Server.Packets.GUI.Components.Visual;
 using UnityEngine.UIElements;
 
@@ -8,50 +9,38 @@ public class TextPacketBuilder : PacketUIBuilderBase<TextPacket>
 {
     protected override VisualElement BuildTyped(TextPacket packet, PacketUIBuilder builder)
     {
-        string? imageUri = AttachedProperties.Find(packet, "PacketUI.ImageURI");
-        if (imageUri != null)
-        {
-            return ImagePacketBuilder.BuildUriImage(imageUri, builder);
-        }
-
         if (!string.IsNullOrEmpty(packet.OnClickContext))
         {
             var button = new Button { text = packet.Text };
             button.AddToClassList("packet-window-action");
-            if (AttachedProperties.Has(packet, "PacketUI.TabAction"))
+            // Кнопка канваса — тот же кликабельный текст, но с геометрией
+            // (Canvas.X/Y/Width/Height задаёт сервер): фикс-минимум обычного
+            // экшена сбрасывается, размер кнопки приходит из пакета.
+            if (AttachedProperties.Has(packet, "Canvas.X"))
             {
-                button.AddToClassList("packet-window-tab");
-            }
-
-            if (AttachedProperties.Has(packet, "PacketUI.FooterAction"))
-            {
-                button.AddToClassList("packet-window-footer-action");
-            }
-
-            if (AttachedProperties.Has(packet, "PacketUI.ExitAction"))
-            {
-                button.AddToClassList("packet-window-exit");
+                button.AddToClassList("packet-window-action--canvas");
             }
 
             return button;
         }
 
         var label = new Label(packet.Text);
-        label.AddToClassList(AttachedProperties.Has(packet, "PacketUI.Title")
-            ? "sci-fi-text-title"
-            : "sci-fi-text-body");
-        // Активная вкладка легаси-окна: подсвечивается золотом и не растягивается.
-        if (AttachedProperties.Has(packet, "PacketUI.TabActive"))
-        {
-            label.AddToClassList("packet-window-tab-active");
-        }
-
+        label.AddToClassList("sci-fi-text-body");
         label.AddToClassList("fit-wrap");
-        // Серверное выравнивание текста: по умолчанию Label слева, мост легаси-окон
-        // помечает центрируемый текст attached-свойством "Text.Align"="Center".
-        if (AttachedProperties.Find(packet, "Text.Align") == "Center")
+        // Некликабельный текст не ловит мышь: плашки уровней и подписи лежат
+        // поверх кликабельных иконок канваса и не должны съедать их клики.
+        label.pickingMode = PickingMode.Ignore;
+        // Выравнивание в приёме legacy-клиента: текст по центру; префикс "@@"
+        // (две собачки) — маркер автора страницы, такой текст прижат влево.
+        bool leftAligned = packet.Text.StartsWith("@@", StringComparison.Ordinal);
+        if (leftAligned)
         {
-            label.style.unityTextAlign = UnityEngine.TextAnchor.MiddleCenter;
+            label.text = packet.Text[2..];
+            label.style.unityTextAlign = TextAnchor.MiddleLeft;
+        }
+        else
+        {
+            label.style.unityTextAlign = TextAnchor.MiddleCenter;
         }
 
         return label;

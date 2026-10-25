@@ -24,6 +24,7 @@
 }
 
 .modal-title {
+    -unity-font-definition: var(--face-display);
     font-size: var(--size-lg);
     color: var(--accent-gold);
     margin-bottom: var(--space-6);
@@ -84,6 +85,7 @@
 }
 
 .popup-title {
+    -unity-font-definition: var(--face-display);
     font-size: var(--size-lg);
     -unity-font-style: bold;
     color: var(--accent-gold);

@@ -18,9 +18,10 @@
 }
 
 .pause-panel {
-    background-color: var(--surface-solid);
-    border-width: var(--space-1);
-    border-color: var(--border-subtle);
+    background-color: var(--surface-abyss-solid);
+    border-width: 1px;
+    border-color: var(--border-cyan);
+    border-radius: var(--radius-md);
     padding: var(--space-10) 30px;
     flex-direction: column;
     align-items: center;
@@ -54,9 +55,10 @@
 }
 
 .pause-title {
-    font-size: var(--size-lg);
+    -unity-font-definition: var(--face-display);
+    font-size: var(--size-xl);
     -unity-font-style: bold;
-    color: var(--accent-gold);
+    color: var(--light-solid);
     margin-bottom: var(--space-8);
     flex-shrink: 0;
 }
@@ -134,22 +136,38 @@
     padding-bottom: 18px;
 }
 
+/* Вкладка раздела настроек — приём навигации модалки меню (mm-nav-tab):
+   прозрачная кнопка с левой полосой 3px; активная подсвечивается
+   бирюзовым, а не сплошной золотой заливкой. */
 .settings-tab {
     min-width: 0;
     width: 100%;
     margin-bottom: var(--space-5);
     padding: var(--space-5) var(--space-6);
     -unity-text-align: middle-left;
+    background-color: transparent;
+    border-width: 0;
+    border-left-width: 3px;
+    border-left-color: transparent;
+    color: var(--text-secondary);
+    font-size: var(--size-sm);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.settings-tab:hover {
+    color: var(--light-solid);
+    background-color: var(--accent-cyan-tint);
 }
 
 .settings-tab--active {
-    background-color: var(--accent-gold);
-    color: var(--surface-solid);
+    background-color: var(--accent-cyan-wash);
+    border-left-color: var(--accent-cyan);
+    color: var(--accent-cyan);
 }
 
 .settings-tab--advanced {
     margin-top: auto;
-    border-color: var(--accent-gold-fill);
 }
 
 .settings-section {
@@ -158,10 +176,10 @@
     min-width: 0;
     margin-bottom: 22px;
     padding: var(--space-7) var(--space-7) var(--space-8) var(--space-7);
-    background-color: var(--surface-shelf-dense);
+    background-color: var(--surface-raised);
     border-width: 1px;
-    border-color: rgba(105, 112, 125, 0.65);
-    border-radius: var(--radius-sm);
+    border-color: var(--border-subtle);
+    border-radius: var(--radius-md);
 }
 
 .settings-section__title {
@@ -175,7 +193,7 @@
 }
 
 .settings-section__description {
-    color: rgba(190, 196, 205, 1);
+    color: var(--text-secondary);
     font-size: var(--size-sm);
     white-space: normal;
     margin-bottom: var(--space-8);
@@ -248,8 +266,9 @@
 
 .pause-confirm-panel {
     background-color: var(--surface-panel);
-    border-width: var(--space-1);
-    border-color: var(--border-subtle);
+    border-width: 1px;
+    border-color: var(--border-cyan);
+    border-radius: var(--radius-md);
     padding: var(--space-9) var(--space-13);
     flex-direction: column;
     align-items: center;
@@ -278,8 +297,9 @@
 
 .pause-btn-confirm {
     background-color: var(--state-danger-glow);
-    border-width: var(--space-1);
+    border-width: 1px;
     border-color: var(--state-magma-glow);
+    border-radius: var(--radius-sm);
     padding: var(--space-4) var(--space-9);
     min-width: 100px;
     color: var(--text-primary);
@@ -290,8 +310,9 @@
 
 .pause-btn {
     background-color: var(--surface-raised);
-    border-width: var(--space-1);
+    border-width: 1px;
     border-color: var(--border-subtle);
+    border-radius: var(--radius-sm);
     padding: var(--space-4) var(--space-9);
     min-width: 180px;
     margin-bottom: var(--space-5);

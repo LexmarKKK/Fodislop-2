@@ -312,7 +312,19 @@ namespace UnityEngine.Rendering.Universal
             runtimeTextures = GraphicsSettings.GetRenderPipelineSettings<UniversalRenderPipelineRuntimeTextures>();
 
             var shaders = GraphicsSettings.GetRenderPipelineSettings<UniversalRenderPipelineRuntimeShaders>();
-            Blitter.Initialize(shaders.coreBlitPS, shaders.coreBlitColorAndDepthPS);
+            // The engine can invalidate the live pipeline instance (package shader
+            // reimport, quality/asset switch) without calling Dispose on it first.
+            // Blitter then keeps its static state and every later CreatePipeline
+            // throws, so destroy-and-recreate instead of entering that throw loop.
+            try
+            {
+                Blitter.Initialize(shaders.coreBlitPS, shaders.coreBlitColorAndDepthPS);
+            }
+            catch (Exception e) when (e.Message.Contains("already initialized"))
+            {
+                Blitter.Cleanup();
+                Blitter.Initialize(shaders.coreBlitPS, shaders.coreBlitColorAndDepthPS);
+            }
 
             SetSupportedRenderingFeatures(pipelineAsset);
 

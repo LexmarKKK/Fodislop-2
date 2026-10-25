@@ -18,6 +18,9 @@ internal sealed class ProgrammatorSelectionModel
     private readonly ProgrammatorData _data;
 
     private bool _hasSelection;
+    private bool _dragging;
+    private bool _dragMoved;
+    private bool _hadSelectionAtPress;
     private int _selStartRow;
     private int _selStartCol;
     private int _selEndRow;
@@ -94,14 +97,7 @@ internal sealed class ProgrammatorSelectionModel
         {
             for (int c = 0; c < ProgrammatorData.COLS; c++)
             {
-                if (IsSelected(r, c))
-                {
-                    SetSelectionBorder(r, c, true);
-                }
-                else if (_data.HoveredCell != (r * ProgrammatorData.COLS) + c)
-                {
-                    SetSelectionBorder(r, c, false);
-                }
+                SetSelectionBorder(r, c, IsSelected(r, c));
             }
         }
     }
@@ -147,8 +143,68 @@ internal sealed class ProgrammatorSelectionModel
         SetSelectionBorder(row, col, true);
     }
 
-    public void ExtendSelection(int row, int col)
+    // ─── Выделение протяжкой (зажать ЛКМ и вести) ───
+    // Клик без протяжки — переключатель: не было выделения — выделяется
+    // кликнутая ячейка; было — выделение снимается («нажал — и его нет»).
+    // Протяжка от точки нажатия всегда выделяет прямоугольник.
+
+    public bool IsDragging => _dragging;
+
+    public void BeginDragSelect(int row, int col)
     {
+        _hadSelectionAtPress = HasAnySelection();
+        ClearSelection();
+        _dragging = true;
+        _dragMoved = false;
+        _selStartRow = _selEndRow = row;
+        _selStartCol = _selEndCol = col;
+        _hasSelection = true;
+        SetSelectionBorder(row, col, true);
+    }
+
+    public void DragSelectTo(int row, int col)
+    {
+        if (!_dragging)
+        {
+            return;
+        }
+
+        row = Mathf.Clamp(row, 0, ProgrammatorData.ROWS - 1);
+        col = Mathf.Clamp(col, 0, ProgrammatorData.COLS - 1);
+        if (row == _selEndRow && col == _selEndCol)
+        {
+            return;
+        }
+
+        _selEndRow = row;
+        _selEndCol = col;
+        _dragMoved = true;
+        RefreshSelectionBorders();
+    }
+
+    public void EndDragSelect()
+    {
+        _dragging = false;
+        if (_dragMoved)
+        {
+            // Протяжка — прямоугольник остаётся выделенным.
+            return;
+        }
+
+        if (_hadSelectionAtPress)
+        {
+            // Клик без протяжки при активном выделении — снимаем его.
+            ClearSelection();
+        }
+
+        // Иначе клик по свободной сетке — одиночная ячейка остаётся выделенной.
+    }
+
+    public void ClearSelection()
+    {
+        // Рамки снимаем со всех ячеек без исключений: пропуск ячейки под
+        // курсором оставлял ей класс выделения навсегда (hover-подсветка —
+        // отдельный класс и от --selected не зависит).
         if (_selectedCells.Count > 0)
         {
             foreach (long key in _selectedCells)
@@ -156,57 +212,6 @@ internal sealed class ProgrammatorSelectionModel
                 int r = (int)(key / ProgrammatorData.COLS);
                 int c = (int)(key % ProgrammatorData.COLS);
                 SetSelectionBorder(r, c, false);
-            }
-
-            _selectedCells.Clear();
-            _hasSelection = false;
-        }
-
-        if (!_hasSelection)
-        {
-            SelectCell(row, col);
-            return;
-        }
-
-        int oldMinRow = Mathf.Min(_selStartRow, _selEndRow);
-        int oldMaxRow = Mathf.Max(_selStartRow, _selEndRow);
-        int oldMinCol = Mathf.Min(_selStartCol, _selEndCol);
-        int oldMaxCol = Mathf.Max(_selStartCol, _selEndCol);
-        _selEndRow = row;
-        _selEndCol = col;
-        int newMinRow = Mathf.Min(_selStartRow, _selEndRow);
-        int newMaxRow = Mathf.Max(_selStartRow, _selEndRow);
-        int newMinCol = Mathf.Min(_selStartCol, _selEndCol);
-        int newMaxCol = Mathf.Max(_selStartCol, _selEndCol);
-        for (int r = Mathf.Min(oldMinRow, newMinRow); r <= Mathf.Max(oldMaxRow, newMaxRow); r++)
-        {
-            for (int c = Mathf.Min(oldMinCol, newMinCol); c <= Mathf.Max(oldMaxCol, newMaxCol); c++)
-            {
-                bool nowSelected = r >= newMinRow && r <= newMaxRow && c >= newMinCol && c <= newMaxCol;
-                if (nowSelected)
-                {
-                    SetSelectionBorder(r, c, true);
-                }
-                else if (_data.HoveredCell != (r * ProgrammatorData.COLS) + c)
-                {
-                    SetSelectionBorder(r, c, false);
-                }
-            }
-        }
-    }
-
-    public void ClearSelection()
-    {
-        if (_selectedCells.Count > 0)
-        {
-            foreach (long key in _selectedCells)
-            {
-                int r = (int)(key / ProgrammatorData.COLS);
-                int c = (int)(key % ProgrammatorData.COLS);
-                if (_data.HoveredCell != (r * ProgrammatorData.COLS) + c)
-                {
-                    SetSelectionBorder(r, c, false);
-                }
             }
 
             _selectedCells.Clear();
@@ -222,10 +227,7 @@ internal sealed class ProgrammatorSelectionModel
             {
                 for (int c = minCol; c <= maxCol; c++)
                 {
-                    if (_data.HoveredCell != (r * ProgrammatorData.COLS) + c)
-                    {
-                        SetSelectionBorder(r, c, false);
-                    }
+                    SetSelectionBorder(r, c, false);
                 }
             }
 

@@ -11,7 +11,6 @@ public sealed class MenuNavigationPresenter
 {
     private Button? _playButton;
     private Button? _serverSelectButton;
-    private Button? _updateAlertBanner;
     private Button? _userPillButton;
     private Button? _cancelDescentButton;
 
@@ -22,7 +21,6 @@ public sealed class MenuNavigationPresenter
     private Button? _sideChronicleButton;
     private Button? _sideSettingsButton;
     private Button? _sideRepairButton;
-    private Button? _sideUpdateButton;
     private Button? _sideDiscordButton;
     private Button? _sideTelegramButton;
     private Button? _sideVKButton;
@@ -44,14 +42,12 @@ public sealed class MenuNavigationPresenter
 
         _playButton = tree.Q<Button>("PlayButton");
         _serverSelectButton = tree.Q<Button>("ServerSelectButton");
-        _updateAlertBanner = tree.Q<Button>("UpdateAlertBanner");
         _userPillButton = tree.Q<Button>("UserPillButton");
         _cancelDescentButton = tree.Q<Button>("CancelDescentButton");
 
         _sideChronicleButton = tree.Q<Button>("SideChronicleButton");
         _sideSettingsButton = tree.Q<Button>("SideSettingsButton");
         _sideRepairButton = tree.Q<Button>("SideRepairButton");
-        _sideUpdateButton = tree.Q<Button>("SideUpdateButton");
         _sideDiscordButton = tree.Q<Button>("SideDiscordButton");
         _sideTelegramButton = tree.Q<Button>("SideTelegramButton");
         _sideVKButton = tree.Q<Button>("SideVkButton");
@@ -68,11 +64,6 @@ public sealed class MenuNavigationPresenter
         if (_serverSelectButton != null)
         {
             _serverSelectButton.clicked += modalManager.OpenServerBrowser;
-        }
-
-        if (_updateAlertBanner != null)
-        {
-            _updateAlertBanner.clicked += modalManager.OpenUpdate;
         }
 
         if (_userPillButton != null)
@@ -100,11 +91,6 @@ public sealed class MenuNavigationPresenter
             _sideRepairButton.clicked += modalManager.OpenRepair;
         }
 
-        if (_sideUpdateButton != null)
-        {
-            _sideUpdateButton.clicked += modalManager.OpenUpdate;
-        }
-
         if (_sideDiscordButton != null)
         {
             _sideDiscordButton.clicked += OpenDiscord;
@@ -130,11 +116,6 @@ public sealed class MenuNavigationPresenter
             _newsTickerButton.clicked += modalManager.OpenChronicle;
         }
 
-        if (_footerVersionButton != null)
-        {
-            _footerVersionButton.clicked += modalManager.OpenUpdate;
-        }
-
         ApplyLocalization(loc);
     }
 
@@ -142,6 +123,13 @@ public sealed class MenuNavigationPresenter
     {
         _routeOrbit?.RemoveFromClassList("mm-route-item--active");
         _routeDescent?.AddToClassList("mm-route-item--active");
+    }
+
+    /// <summary>Возврат к исходному маршруту после отмены спуска: снова активна орбита.</summary>
+    public void ResetDescentRoute()
+    {
+        _routeDescent?.RemoveFromClassList("mm-route-item--active");
+        _routeOrbit?.AddToClassList("mm-route-item--active");
     }
 
     public void ApplyLocalization(ILocalizationService? loc)
@@ -193,11 +181,6 @@ public sealed class MenuNavigationPresenter
         if (_sideRepairButton != null)
         {
             _sideRepairButton.tooltip = loc.Get("menu.repair");
-        }
-
-        if (_sideUpdateButton != null)
-        {
-            _sideUpdateButton.tooltip = loc.Get("menu.update");
         }
 
         if (_sideExitButton != null)

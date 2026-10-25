@@ -31,48 +31,10 @@
     flex-grow: 1;
 }
 
-.packet-window-body-layout {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-}
-
-.packet-window-body-scroll {
-    flex-grow: 1;
-    min-height: 0;
-}
-
-.packet-window-footer {
-    flex-direction: row;
-    flex-shrink: 0;
-    margin-top: var(--space-3);
-}
-
-.packet-window-footer-action {
-    flex-grow: 1;
-    flex-basis: 0;
-}
-
-.packet-window-footer-action--spaced {
-    margin-left: var(--space-2);
-}
-
-.packet-window-exit {
-    background-color: var(--state-danger-wash);
-    border-color: var(--border-danger);
-    color: var(--state-danger);
-}
-
-.packet-window-exit:hover {
-    background-color: var(--state-danger-glow);
-    border-color: var(--state-danger);
-    color: var(--text-primary);
-}
-
-/* Белый крестик закрытия в правом верхнем углу окна. Заменяет футерную
-   кнопку «ВЫЙТИ»: клик уходит на сервер как обычный ElementClickPacket.
-   Крестик собран из двух повёрнутых полосок — вид не зависит от глифов
-   шрифта. */
+/* Белый крестик закрытия в правом верхнем углу окна: шлёт клик по индексу
+   закрывающей кнопки ряда (PacketUI.ExitAction) — то же действие, что у
+   видимой кнопки «ВЫЙТИ» и ESC. Крестик собран из двух повёрнутых полосок —
+   вид не зависит от глифов шрифта. */
 .packet-window-close {
     position: absolute;
     top: 3px;
@@ -103,7 +65,7 @@
     width: 12px;
     height: 2px;
     border-radius: 1px;
-    background-color: #ffffff;
+    background-color: var(--light-solid);
 }
 
 .packet-window-close-bar--a {
@@ -114,50 +76,41 @@
     rotate: -45deg;
 }
 
+/* Кнопка действия — приём главного меню (mm-btn-outline): прозрачная,
+   тонкая рамка, при наведении светлеет. Нижние кнопки окна («Продать всё»,
+   «Продать») и кнопки списков выглядят как кнопки меню, а не дефолтные
+   боксы Unity. */
 .packet-window-action {
-    min-height: 30px;
-    padding: 4px 8px;
-    background-color: var(--surface-raised);
+    min-height: 36px;
+    padding: var(--space-3) var(--space-8);
+    background-color: transparent;
     border-width: 1px;
     border-color: var(--border-subtle);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-sharp);
     color: var(--text-primary);
-    -unity-text-align: middle-center;
-}
-
-.packet-window-action:hover {
-    background-color: var(--accent-cyan-wash);
-    border-color: var(--border-cyan);
-}
-
-/* Полоса вкладок легаси-окна: кнопки-вкладки идут в строку под заголовком,
-   ширина — по тексту (в отличие от футерных, которые растягиваются). */
-.packet-window-tab {
-    margin-right: var(--space-2);
-}
-
-/* Активная вкладка: текст без действия, подсвечивается золотом. */
-.packet-window-tab-active {
-    color: var(--accent-gold);
+    -unity-font-definition: var(--face-body);
+    font-size: var(--size-base);
     -unity-font-style: bold;
-    margin-right: var(--space-2);
-}
-
-.packet-window-row {
-    flex-direction: row;
-    align-items: center;
-    margin-bottom: 4px;
-}
-
-.packet-window-row-label {
-    flex-grow: 1;
-    min-width: 0;
+    -unity-text-align: middle-center;
     white-space: normal;
 }
 
-.packet-window-row > .packet-window-action {
-    min-width: 112px;
-    margin-left: 8px;
+.packet-window-action:hover {
+    background-color: var(--light-film);
+    border-color: var(--light-solid);
+    color: var(--light-solid);
+}
+
+/* Кнопка канваса: размер и позицию задаёт сервер через
+   Canvas.X/Y/Width/Height, поэтому фикс-минимум и крупные отступы
+   .packet-window-action сброшены — бокс обязан совпасть с сеткой
+   координат автора канваса. */
+.packet-window-action--canvas {
+    min-height: 0;
+    min-width: 0;
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--size-sm);
+    overflow: hidden;
 }
 
 .packet-scrollbar {
@@ -188,8 +141,4 @@
 .packet-scrollbar .unity-repeat-button {
     background-color: var(--surface-raised);
     color: var(--text-primary);
-}
-
-.packet-line-themed {
-    color: var(--border-cyan);
 }

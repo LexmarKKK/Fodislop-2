@@ -346,6 +346,13 @@ namespace Kern.UI
                 var topTag = _inputBlocker.TopWindowTag;
                 if (topTag != null)
                 {
+                    // v2-окно: NotClosable молча гасит ESC, Closable шлёт
+                    // серверу WindowClosed. Легаси — старый путь action-строкой.
+                    if (_windows.TryRequestCloseTopWindow())
+                    {
+                        return;
+                    }
+
                     _networkService.Send(new ElementClickPacket(topTag, 0, []));
                     return;
                 }

@@ -2,6 +2,7 @@
 
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Kern.Core;
 using Kern.Core.Interfaces;
 using Kern.Core.Lifecycle;
 using UnityEngine;
@@ -23,10 +24,47 @@ public sealed class RobotVisuals
     private bool _tentaclesSettled;
     private Vector3 _lastTentacleRootPosition;
     private float _lastTentacleRotation;
+    private IRuntimeDebugSettings? _debugSettings;
+    private Vector3 _forcedOriginOffset;
 
     public Sprite? SkinSprite => _skinSprite;
     public Transform? ClanTransform => _clanTransform;
     public bool TentaclesSettled => _tentaclesSettled;
+
+    /// <summary>Число прядей хвоста: вдвое больше легаси-четырёх; добавленные короче и едут внутри отрезка пряди ноль.</summary>
+    public const int StrandCount = 8;
+
+    public void SetDebugSettings(IRuntimeDebugSettings? settings) => _debugSettings = settings;
+
+    // Отладочные режимы хвоста (F2) подменяют скорость корня, который получает цепочка:
+    // режим задаёт скорость, смещение копится вдоль взгляда, а при записи геометрии
+    // вычитается обратно - хвост держит длину, не отклеиваясь от корпуса.
+    public static float ForcedTailSpeed(TailMotionDebugMode mode) => mode switch
+    {
+        TailMotionDebugMode.Minimal => ProjectRuntimeContracts.Movement.RobotMoveSpeed * 0.5f,
+        TailMotionDebugMode.Medium => ProjectRuntimeContracts.Movement.RobotMoveSpeed,
+        TailMotionDebugMode.Maximum => ProjectRuntimeContracts.Movement.RobotMoveSpeed * 4f,
+        _ => 0f,
+    };
+
+    public static Vector3 AdvanceForcedOffset(Vector3 offset, Transform transform, float speed, float deltaTime)
+    {
+        if (speed <= 0f || transform == null)
+        {
+            return offset;
+        }
+
+        // Роботы вращаются вокруг Z, поэтому направление взгляда - Transform.up:
+        // у Transform.forward при нулевом угле в плоскости игры не остаётся ничего.
+        Vector3 facing = transform.up;
+        facing.z = 0f;
+        if (facing.sqrMagnitude < 1e-10f)
+        {
+            return offset;
+        }
+
+        return offset + (facing.normalized * (speed * deltaTime));
+    }
 
     public RobotVisuals(Transform transform, bool isLocalPlayer)
     {
@@ -108,18 +146,15 @@ public sealed class RobotVisuals
             return;
         }
 
-        _tentacles = new Tentacle[4];
+        _tentacles = new Tentacle[StrandCount];
         _tentaclesSettled = false;
-        float[] offsets = { -45f, -15f, 15f, 45f };
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < StrandCount; i++)
         {
             _tentacles[i] = new Tentacle(
                 _entityBatchRenderer,
                 tailTexture,
                 position,
-                offsets[i],
-                i,
-                4);
+                strandIndex: i);
         }
     }
 
@@ -154,6 +189,10 @@ public sealed class RobotVisuals
         if (_tentacles != null)
         {
             _tentaclesSettled = false;
+
+            // Снап сбрасывает и накопленное смещение рамки симуляции, иначе корни
+            // прядей утащит далеко от робота и хвост нарисуется торчащей полосой.
+            _forcedOriginOffset = Vector3.zero;
             foreach (Tentacle? tentacle in _tentacles)
             {
                 tentacle?.Snap(position);
@@ -179,16 +218,34 @@ public sealed class RobotVisuals
         return true;
     }
 
-    public void UpdateTentacles(Vector3 rootPosition, float rotationAngle, float movementFactor, float deltaTime)
+    public void UpdateTentacles(Vector3 rootPosition, float movementFactor, float deltaTime)
     {
         if (_tentacles == null)
         {
             return;
         }
 
+        float forcedSpeed = ForcedTailSpeed(
+            _debugSettings?.TailMotionDebugMode ?? TailMotionDebugMode.Normal);
+        if (forcedSpeed > 0f)
+        {
+            _forcedOriginOffset = AdvanceForcedOffset(
+                _forcedOriginOffset, _transform, forcedSpeed, deltaTime);
+        }
+        else if (_forcedOriginOffset.sqrMagnitude > 0f)
+        {
+            // Возврат в обычный режим: рамка симуляции снова совпадает с роботом.
+            _forcedOriginOffset = Vector3.zero;
+        }
+
+        Vector3 simulationRoot = rootPosition + _forcedOriginOffset;
+
+        // Растяжение читается с пряди ноль и раздаётся всем прядям, как в легаси-клиенте.
+        float stretch = _tentacles[0]?.TipDistanceTo(simulationRoot) ?? 0f;
+
         foreach (var tentacle in _tentacles)
         {
-            tentacle?.Update(rootPosition, rotationAngle, movementFactor, deltaTime);
+            tentacle?.Update(simulationRoot, movementFactor, deltaTime, stretch, _forcedOriginOffset);
         }
     }
 
@@ -207,7 +264,7 @@ public sealed class RobotVisuals
 
         if (bodySettled)
         {
-            UpdateTentacles(position, rotationAngle, 0f, deltaTime);
+            UpdateTentacles(position, 0f, deltaTime);
             _tentaclesSettled = AreTentaclesSettled();
             return;
         }
@@ -220,7 +277,7 @@ public sealed class RobotVisuals
 
         if (tentacleStateChanged)
         {
-            UpdateTentacles(position, rotationAngle, movementFactor, deltaTime);
+            UpdateTentacles(position, movementFactor, deltaTime);
             _tentaclesSettled = AreTentaclesSettled();
             _lastTentacleRootPosition = position;
             _lastTentacleRotation = rotationAngle;

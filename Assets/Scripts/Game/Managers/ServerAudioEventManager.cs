@@ -73,6 +73,16 @@ namespace Kern.Game.Managers
                 return;
             }
 
+            // В фоне (MuteInBackground) мастер-шина FMOD на паузе: голос,
+            // запущенный на запаузенной шине, не завершается и копится, а при
+            // возврате фокуса все накопленные голоса снимаются с паузы разом
+            // и наслаиваются. Звук, случившийся в фоне, всё равно не был
+            // слышен — отбрасываем его сразу, а не отыгрываем потом.
+            if (!Application.isFocused && _audioSystem.IsBackgroundMuted)
+            {
+                return;
+            }
+
             _lastSfxTimes[sfxKey] = Time.time;
             if (_lastSfxTimes.Count > 128)
             {

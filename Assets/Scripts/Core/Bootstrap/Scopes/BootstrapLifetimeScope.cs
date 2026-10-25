@@ -415,6 +415,18 @@ namespace Kern.Core
             // Game-tier processors both resolve the same local-player state.
             builder.Register<LocalPlayerState>(Lifetime.Singleton).As<ILocalPlayerState>();
 
+            // Ник и уровень игрока для бейджа меню и досье. Сервер присылает
+            // PlayerInfoPacket/LevelPacket в момент авторизации сокета (Auth:
+            // «без этого gate висит»), когда клиент ещё в гейтвее — меню-скип
+            // опоздал бы, поэтому идентичность живёт здесь, на Application-tier,
+            // и подписывается с самого старта приложения. Игровая область
+            // регистрирует свой PlayerStatsModel для HUD, как и раньше.
+            builder.Register<Kern.UI.HUD.Player.Model.PlayerStatsModel>(Lifetime.Singleton)
+                .AsImplementedInterfaces()
+                .AsSelf();
+            builder.Register<Kern.Networking.Processors.PlayerIdentityProcessor>(Lifetime.Singleton);
+            builder.RegisterEntryPoint<Kern.Networking.Processors.PlayerIdentityProcessor>();
+
             // World-load phases and server-window visibility are published by
             // the Game scope but consumed by the MainMenu sibling scope, so
             // both relays live at the application tier.
@@ -437,6 +449,8 @@ namespace Kern.Core
             RegisterAuthored(builder, _textureStorageManager, nameof(_textureStorageManager));
             RegisterAuthored(builder, _loadingScreen, nameof(_loadingScreen));
             builder.Register<LocalizationService>(Lifetime.Singleton).AsImplementedInterfaces().AsSelf();
+            // Проверки целостности файлов для окна «Диагностика и целостность файлов».
+            builder.Register<MenuFileDiagnosticsService>(Lifetime.Singleton).As<IMenuFileDiagnosticsService>();
             builder.RegisterEntryPoint<HDROutputReconciler>();
             builder.RegisterEntryPoint<ApplicationBootstrap>();
         }

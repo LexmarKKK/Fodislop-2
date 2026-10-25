@@ -18,4 +18,8 @@ public sealed class ConnectionSettings
     [SettingRange(1f, 65535f)]
     [SettingConsumer(SettingConsumerTarget.NetworkService, "ConnectionManager port endpoint")]
     public int ServerPort = ProjectRuntimeContracts.ClientConfiguration.DefaultServerPort;
+
+    [SettingRange(1f, 65535f)]
+    [SettingConsumer(SettingConsumerTarget.NetworkService, "ConnectionManager api port endpoint")]
+    public int ApiPort = ProjectRuntimeContracts.ClientConfiguration.DefaultApiPort;
 }

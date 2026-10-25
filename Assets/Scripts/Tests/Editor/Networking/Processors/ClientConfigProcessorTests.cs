@@ -131,6 +131,7 @@ public class ClientConfigProcessorTests
 
         public bool IsInitialized => true;
         public bool IsDegraded => false;
+        public bool IsBackgroundMuted => false;
 
         public IAudioPlaybackHandle? Play(string eventName, Vector3? worldPosition = null, AudioLayer? overrideLayer = null, float? overrideVolume = null) => null;
         public IAudioPlaybackHandle? PlayAttached(string eventName, GameObject targetGameObject, AudioLayer? overrideLayer = null, float? overrideVolume = null) => null;

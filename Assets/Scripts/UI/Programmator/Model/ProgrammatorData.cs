@@ -12,6 +12,19 @@ public sealed class ProgrammatorData
     public const int ROWS = 12;
     public const int CELLS_PER_PAGE = COLS * ROWS;
 
+    // Шаг сетки: 32px старого клиента (ProgrammatorView: слоты каждые 32px,
+    // иконка родного размера по центру слота), увеличен до 40px — окно
+    // программатора по умолчанию в 1.25 раза крупнее при прежних пропорциях.
+    public const int CELL_SIZE = 40;
+
+    // Иконки масштабируются вместе с шагом сетки (32 → 40), сохраняя
+    // относительные размеры операторов старого клиента.
+    public const float IconScale = 1.25f;
+
+    // Верхний предел страниц программы: один источник для AddPage, клика
+    // «+» и валидации файла программ.
+    public const int MaxPages = 25;
+
     public List<int> Codes = new(new int[CELLS_PER_PAGE]);
     public List<string?> Values = new(new string?[CELLS_PER_PAGE]);
     public List<string?> Labels = new(new string?[CELLS_PER_PAGE]);
@@ -22,7 +35,7 @@ public sealed class ProgrammatorData
 
     public void AddPage()
     {
-        if (PageCount >= 100)
+        if (PageCount >= MaxPages)
         {
             return;
         }

@@ -41,8 +41,11 @@
 
             <ui:VisualElement name="BasketSeparator" class="hud-separator" />
 
-            <!-- Корзина -->
-            <ui:Label name="BasketPercentLabel" class="hud-basket"  text="" />
+            <!-- Корзина: груз + кнопка выброса бокса справа от процента (видна только при грузе > 0%) -->
+            <ui:VisualElement name="BasketRow" class="hud-basket-row">
+                <ui:Label name="BasketPercentLabel" class="hud-basket"  text="" />
+                <ui:Button name="DropBoxButton" class="hud-dropbox-button" text="▣" tooltip="hud.tooltip.dropbox" />
+            </ui:VisualElement>
             <ui:VisualElement name="BasketContainer" class="hud-basket-container" />
 
             <!-- Ручка перетаскивания панели -->
@@ -82,12 +85,13 @@
         <ui:Button name="ProgrammatorButton" class="hud-btn-action hud-programmator-button"  text="" picking-mode="Position" />
         <ui:Button name="ProgramRunButton" class="hud-btn-action hud-program-run-btn" text="▶" tooltip="hud.tooltip.program_start" picking-mode="Position" />
 
-        <!-- ════════════ КНОПКИ ВЕРХНЕГО РЯДА: FAQ / ЗДАНИЯ / РЕСПАВН ════════════ -->
-        <!-- Порядок от правого верхнего угла влево: Помощь, Мои здания, Респаун.
+        <!-- ════════════ КНОПКИ ВЕРХНЕГО РЯДА: FAQ / ЗДАНИЯ / РЕСПАВН / MCONSOLE ════════════ -->
+        <!-- Порядок от правого верхнего угла влево: Помощь, Мои здания, Респаун, Серверная консоль.
              Размер 32x32 и спрайты заданы в HUD.uss, классами hud-btn-top-row, текста нет. -->
         <ui:Button name="FaqButton" class="hud-btn-action hud-btn-top-row hud-btn-top-row--faq" picking-mode="Position" />
         <ui:Button name="BuildingsButton" class="hud-btn-action hud-btn-top-row hud-btn-top-row--buildings" picking-mode="Position" />
         <ui:Button name="RespawnButton" class="hud-btn-action hud-btn-top-row hud-btn-top-row--respawn" picking-mode="Position" />
+        <ui:Button name="MConsoleButton" class="hud-btn-action hud-btn-top-row hud-btn-top-row--mconsole" tooltip="hud.tooltip.mconsole" picking-mode="Position" />
 
         <!-- ════════════ НАВЫКИ И ПРОГРЕСС (справа снизу) ════════════ -->
         <ui:VisualElement name="SkillContainer" class="hud-skill-container" />

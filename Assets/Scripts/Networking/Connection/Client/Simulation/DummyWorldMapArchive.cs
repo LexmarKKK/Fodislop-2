@@ -19,7 +19,9 @@ namespace MinesServer.Networking.Connection.Client;
 internal static class DummyWorldMapArchive
 {
     internal const string CacheFolderName = "DummyServerMaps";
-    private const string StreamingFolderName = "WorldMaps";
+
+    // internal: окно диагностики собирает тот же путь к источнику карты.
+    internal const string StreamingFolderName = "WorldMaps";
     private const string StampSuffix = ".stamp";
     private const string TempSuffix = ".tmp";
     private const long FreeSpaceMarginBytes = 64L * 1024 * 1024;
@@ -519,9 +521,11 @@ internal static class DummyWorldMapArchive
 
     private static bool IsLocalPath(string path) => !path.Contains("://", StringComparison.Ordinal);
 
-    private static string MapFileName(string worldCodeName) => $"{worldCodeName}_cells.mapb";
+    // internal: окно диагностики (DummyWorldMapDiagnostics) собирает те же имена
+    // файлов, чтобы проверить кэш, не трогая его.
+    internal static string MapFileName(string worldCodeName) => $"{worldCodeName}_cells.mapb";
 
-    private static string ArchiveFileName(string worldCodeName) => $"{worldCodeName}_cells.zip";
+    internal static string ArchiveFileName(string worldCodeName) => $"{worldCodeName}_cells.zip";
 
     private static string StampPath(string mapPath) => mapPath + StampSuffix;
 

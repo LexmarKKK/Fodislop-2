@@ -17,8 +17,11 @@ public class ClientConfig
     // 39: DisplaySettings.PeakBrightnessFromDisplay — пик с дисплея до ручной настройки.
     // 40: TerrainSettings EnableReliefRim → EnableRim, *Emission* → *Glow*,
     //     PulseSpeedScale → BlinkingSpeedScale.
-    // Схемы 31–39 мигрируются штатным загрузчиком с созданием backup.
-    public const int CurrentSchemaVersion = 40;
+    // 41: ConnectionSettings.ApiPort (HTTP-порт /api/status/online для бейджа онлайна).
+    // 42: InterfaceSettings.HasChatWindowLayout + ChatWindowX/Y/Width/Height
+    //     (геометрия окна глобального чата).
+    // Схемы 31–40 мигрируются штатным загрузчиком с созданием backup.
+    public const int CurrentSchemaVersion = 42;
 
     public int SchemaVersion;
     public AudioSettings Audio = new();

@@ -8,6 +8,7 @@ public sealed class Teleport : PackBuilding
 {
     public override BuildingType Type => BuildingType.Teleport;
 
+
     public override IEnumerable<((int X, int Y) Pos, CellType Cell)> CellsToPlace()
     {
         yield return ((0, 0), CellType.BuildingDoor);

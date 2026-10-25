@@ -33,6 +33,8 @@ namespace Kern.Audio.Backend
 
         public bool IsDegraded => _backend == null || _backend.IsDegraded;
 
+        public bool IsBackgroundMuted => _pausedInBackground;
+
         public UniTask WaitUntilBanksReadyAsync(CancellationToken cancellationToken = default)
             => _backend.WaitUntilReadyAsync(this, cancellationToken);
 

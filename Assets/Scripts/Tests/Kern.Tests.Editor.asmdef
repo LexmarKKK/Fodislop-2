@@ -18,6 +18,7 @@
         "Kern.AssetPipeline",
         "Kern.Tests.Shared",
         "Kern.World",
+        "Unity.InputSystem",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime",
         "MinesServer.Data",

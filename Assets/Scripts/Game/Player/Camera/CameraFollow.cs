@@ -338,10 +338,13 @@ namespace Kern.Player
         private void HandleZoom()
         {
             // Блокировка ввода (чат, меню, окно) и выключенная прокрутка
-            // запрещают только новое колёсико. Досглаживание уже начатого зума
-            // к цели продолжается: ранний выход замораживал зум на полпути.
+            // запрещают только новое колёсико. Колесо, отданное прокрутке UI
+            // (лог глобального чата), зум тоже не двигает. Досглаживание уже
+            // начатого зума к цели продолжается: ранний выход замораживал
+            // зум на полпути.
             bool acceptsInput = _scrollEnabled &&
-                !(_inputBlocker != null && _inputBlocker.IsInputBlocked);
+                !(_inputBlocker != null &&
+                  (_inputBlocker.IsInputBlocked || _inputBlocker.IsMouseWheelClaimedByUI));
             float scrollInput = acceptsInput ? ReadScroll() : 0f;
 
             if (Mathf.Abs(scrollInput) > 0.001f)

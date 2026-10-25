@@ -35,24 +35,82 @@ public class DockPanelPacketBuilder : PacketUIBuilderBase<DockPanelPacket>
         IReadOnlyList<IGUIComponentPacket> children,
         PacketUIBuilder builder)
     {
-        IGUIComponentPacket? filler = LastUndocked(children);
-        VisualElement current = filler != null
-            ? builder.Build(filler)
-            : new VisualElement();
+        // Полностью пристыкованная влево панель — плоский центрированный ряд:
+        // так сервер присылает вкладки, кнопки и строки кристаллов/форм.
+        // Вложенные обёртки прижимали бы ряд к левому краю под центрированным
+        // заголовком.
+        if (AllDockedLeft(children))
+        {
+            var strip = new VisualElement();
+            strip.AddToClassList("row");
+            strip.AddToClassList("ai-center");
+            strip.AddToClassList("jc-center");
+            foreach (IGUIComponentPacket child in children)
+            {
+                VisualElement built = builder.Build(child);
+                built.AddToClassList("no-shrink");
+                strip.Add(built);
+            }
+
+            return strip;
+        }
+
+        // Панель без стыковки (или со всеми наверх) — обычная колонка: дети
+        // складываются сверху вниз, как секции страницы.
+        if (AllStacked(children))
+        {
+            var column = new VisualElement();
+            column.AddToClassList("col");
+            foreach (IGUIComponentPacket child in children)
+            {
+                column.Add(builder.Build(child));
+            }
+
+            return column;
+        }
+
+        // Смешанная раскладка пакуется обёртками от растущего ядра; филлера
+        // без явного Dock больше нет — сервер присылает стыковки явно.
+        VisualElement current = new VisualElement();
         current.AddToClassList("grow");
 
         for (int i = children.Count - 1; i >= 0; i--)
         {
-            IGUIComponentPacket child = children[i];
-            if (ReferenceEquals(child, filler))
-            {
-                continue;
-            }
-
-            current = Wrap(current, builder.Build(child), DockOf(child));
+            current = Wrap(current, builder.Build(children[i]), DockOf(children[i]));
         }
 
         return current;
+    }
+
+    private static bool AllDockedLeft(IReadOnlyList<IGUIComponentPacket> children)
+    {
+        foreach (IGUIComponentPacket child in children)
+        {
+            if (DockOf(child) != Dock.Left)
+            {
+                return false;
+            }
+        }
+
+        return children.Count > 0;
+    }
+
+    private static bool AllStacked(IReadOnlyList<IGUIComponentPacket> children)
+    {
+        if (children.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (IGUIComponentPacket child in children)
+        {
+            if (DockOf(child) != Dock.Top)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static VisualElement Wrap(VisualElement current, VisualElement child, Dock dock)
@@ -78,14 +136,12 @@ public class DockPanelPacketBuilder : PacketUIBuilderBase<DockPanelPacket>
     {
         // Отсутствие ключа читается через Find, а не через FirstOrDefault:
         // присоединённое свойство — структура, и «первое или умолчание»
-        // возвращает пустую пару, неотличимую от найденной. Из-за этого
-        // ребёнок, у которого есть любые другие свойства, но нет Dock,
-        // молча прибивался влево вместо того, чтобы просто встать в столбец.
+        // возвращает пустую пару, неотличимую от найденной. Ребёнок без
+        // Dock складывается в столбец — как при явном Top.
         string? raw = AttachedProperties.Find(packet, DockKey);
         if (raw == null)
         {
-            throw new InvalidOperationException(
-                $"DockPanel child {packet.GetType().Name} has no {DockKey} property.");
+            return Dock.Top;
         }
 
         if (!Enum.TryParse(raw, true, out Dock dock) || !Enum.IsDefined(typeof(Dock), dock))
@@ -94,18 +150,5 @@ public class DockPanelPacketBuilder : PacketUIBuilderBase<DockPanelPacket>
         }
 
         return dock;
-    }
-
-    private static IGUIComponentPacket? LastUndocked(IReadOnlyList<IGUIComponentPacket> children)
-    {
-        for (int i = children.Count - 1; i >= 0; i--)
-        {
-            if (!AttachedProperties.Has(children[i], DockKey))
-            {
-                return children[i];
-            }
-        }
-
-        return null;
     }
 }

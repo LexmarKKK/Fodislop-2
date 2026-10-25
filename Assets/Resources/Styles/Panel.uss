@@ -12,6 +12,7 @@
 }
 
 .panel-header {
+    -unity-font-definition: var(--face-display);
     font-size: var(--size-xl);
     color: var(--accent-gold);
     margin-bottom: var(--space-4);

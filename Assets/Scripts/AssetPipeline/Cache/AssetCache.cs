@@ -219,11 +219,17 @@ public sealed class AssetCache
 
     private async UniTask RunUnusedAssetsCollectionAsync(CancellationToken cancellationToken)
     {
+        // Временный замер: сборка идёт на главном потоке и способна дать
+        // секундный фриз — её время должно быть видно в логе рядом
+        // с открытиями окон (репорт: лаг при первом заходе в маркет).
+        var collectionWatch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
             var op = Resources.UnloadUnusedAssets();
             await op.ToUniTask(cancellationToken: cancellationToken);
             await UniTask.Yield(cancellationToken);
+            UnityEngine.Debug.Log(
+                $"[AssetCache] UnloadUnusedAssets завершён за {collectionWatch.ElapsedMilliseconds} мс.");
         }
         catch (Exception ex)
         {

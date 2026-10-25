@@ -8,6 +8,10 @@ namespace Kern.UI;
 
 internal sealed class GlobalChatMessagePresenter
 {
+    // Порог «игрок у дна»: ~две строки сообщений, прощает дробные раскладки
+    // и мелкий недокрут после предыдущей автопрокрутки.
+    private const float BottomStickThreshold = 32f;
+
     private readonly ChatMessageHistory _history = new();
     private ScrollView? _scrollView;
     private Action<long>? _messageClicked;
@@ -64,6 +68,12 @@ internal sealed class GlobalChatMessagePresenter
             return;
         }
 
+        // Липкое дно, как в старом клиенте (fixScroll): автопрокрутка только
+        // если игрок и так был внизу. Позиция читается ДО добавления, по
+        // последней завершённой раскладке; прокрутившего историю вверх игрока
+        // к дну не дёргаем.
+        bool stickToBottom = IsAtBottom();
+
         VisualElement line;
         if (messageId > 0 && _messageClicked != null)
         {
@@ -87,6 +97,47 @@ internal sealed class GlobalChatMessagePresenter
             _scrollView.RemoveAt(0);
         }
 
-        _scrollView.scrollOffset = new Vector2(0, float.MaxValue);
+        // ScrollTo при незавершённой раскладке сам откладывает прокрутку тик
+        // за тиком до устояния layout (прямой scrollOffset клампится слайдером
+        // по ещё не обновлённым highLimit и залипает) и отменяется, если
+        // игрок начал скроллить сам.
+        if (stickToBottom)
+        {
+            _scrollView.ScrollTo(label);
+        }
+    }
+
+    private bool IsAtBottom()
+    {
+        if (_scrollView?.contentViewport == null)
+        {
+            return true;
+        }
+
+        float maxScroll = Mathf.Max(
+            0f,
+            _scrollView.contentContainer.layout.height - _scrollView.contentViewport.layout.height);
+        return _scrollView.scrollOffset.y >= maxScroll - BottomStickThreshold;
+    }
+
+    // Принудительный доскролл к последнему сообщению: при открытии окна и
+    // после загрузки истории. Сообщения, пришедшие в скрытое окно (при заходе
+    // на сервер чат закрыт), прокрутить нельзя - layout для display: none не
+    // считается, поэтому окно доскролливает при показе. Deferred-механизм
+    // ScrollTo сам дождётся, когда раскладка устоится.
+    public void ScrollToBottom()
+    {
+        if (_scrollView == null)
+        {
+            return;
+        }
+
+        VisualElement content = _scrollView.contentContainer;
+        if (content.childCount == 0)
+        {
+            return;
+        }
+
+        _scrollView.ScrollTo(content[content.childCount - 1]);
     }
 }

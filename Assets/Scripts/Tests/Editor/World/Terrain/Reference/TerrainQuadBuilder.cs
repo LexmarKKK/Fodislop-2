@@ -96,8 +96,10 @@ internal static class TerrainQuadBuilder
 
         // Какой тип рисует слой. Фон (drawLayer Background или Underlay) лежит сам на себе и
         // рисуется только фоном; у остального передний план — сама клетка,
-        // фон — подложка (drawLayer: Underlay в cells.json).
-        CellType backgroundType = UnderOf(cellFgType);
+        // фон — подложка по фоновым соседям (ResolveUnderfillOf), как
+        // TerrainResolveUnderfill в шейдере.
+        CellType backgroundType = ResolveUnderfillOf(
+            cellFgType, left, bottomLeft, bottom, bottomRight, right, topRight, top, topLeft);
         bool floor = backgroundType == cellFgType;
         CellType cellType = isBackground ? backgroundType : cellFgType;
         if ((floor && !isBackground) || cellType == CellType.Unloaded)
@@ -370,6 +372,65 @@ internal static class TerrainQuadBuilder
 
     internal static CellType UnderOf(CellType type) =>
         BlockRegistry.Get(type).DrawLayer != CellDrawLayer.Foreground ? type : BlockRegistry.UnderlayType;
+
+    /// <summary>
+    /// Фон под сплошной (передней) клеткой — по её фоновым соседям: тип фона
+    /// выбирает большинство из восьми соседей-фоновых клеток (дороги, полы),
+    /// при ничьей и отсутствии — глобальная подложка. Зеркало
+    /// <c>TerrainResolveUnderfill</c> в TerrainCellData.hlsl, включая порядок
+    /// соседей (L, BL, B, BR, R, TR, T, TL) — он задаёт разрешение ничьих.
+    /// Незагруженный сосед фоном не считается: Unloaded — передний план.
+    /// До GPU-сборки клеток то же делала заливка фона (BackgroundFloodFill:
+    /// passable-клетки распространяли свой тип под сплошные клетки).
+    /// </summary>
+    internal static CellType ResolveUnderfillOf(
+        CellType ownType,
+        CachedCellData left,
+        CachedCellData bottomLeft,
+        CachedCellData bottom,
+        CachedCellData bottomRight,
+        CachedCellData right,
+        CachedCellData topRight,
+        CachedCellData top,
+        CachedCellData topLeft)
+    {
+        if (BlockRegistry.Get(ownType).DrawLayer != CellDrawLayer.Foreground)
+        {
+            return ownType;
+        }
+
+        CachedCellData[] neighbours =
+        [
+            left, bottomLeft, bottom, bottomRight, right, topRight, top, topLeft,
+        ];
+        CellType chosen = 0;
+        int bestCount = 0;
+        foreach (CachedCellData candidate in neighbours)
+        {
+            if (BlockRegistry.Get(candidate.Type).DrawLayer == CellDrawLayer.Foreground)
+            {
+                continue;
+            }
+
+            int count = 0;
+            foreach (CachedCellData other in neighbours)
+            {
+                if (BlockRegistry.Get(other.Type).DrawLayer != CellDrawLayer.Foreground &&
+                    other.Type == candidate.Type)
+                {
+                    count++;
+                }
+            }
+
+            if (count > bestCount)
+            {
+                bestCount = count;
+                chosen = candidate.Type;
+            }
+        }
+
+        return chosen != 0 ? chosen : UnderOf(ownType);
+    }
 
     private static uint HashCell(int gridX, int serverY)
     {

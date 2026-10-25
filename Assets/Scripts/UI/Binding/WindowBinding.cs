@@ -2,6 +2,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Kern.Core.Interfaces;
 using Kern.UI.Controls;
 using SmartFormat;
 using SmartFormat.Extensions;
@@ -10,6 +13,33 @@ using UnityEngine.UIElements;
 namespace Kern.UI.Binding;
 public class WindowBinding : IDisposable
 {
+    private static int _warmUpStarted;
+
+    /// <summary>
+    /// Прогрев движка шаблонов (SmartFormat + NCalc) в фоне. Первое реальное
+    /// окно иначе платило за разовую инициализацию парсера ~3 секунды (репорт:
+    /// первое открытие маркета — 3.2 с в биндинге, последующие — 1 мс).
+    /// Форматирование — чистый управляемый код без Unity API, прогреваться
+    /// можно с потока пула; супервизор держит операцию до конца.
+    /// </summary>
+    public static void WarmUpInBackground(IAsyncOperationSupervisor operations)
+    {
+        if (Interlocked.Exchange(ref _warmUpStarted, 1) != 0)
+        {
+            return;
+        }
+
+        operations.Run("window_binding_warmup", cancellationToken => UniTask.RunOnThreadPool(() =>
+        {
+            var formatter = new SmartFormatter();
+            formatter.AddExtensions(new DefaultSource(), new DictionarySource());
+            formatter.AddExtensions(new DefaultFormatter(), new LogiCalcFormatter());
+            var values = new Dictionary<string, object> { ["crys0"] = 12 };
+            formatter.Format("{:calc(0):((359) - ({crys0}))}", values);
+            formatter.Format("{crys0}", values);
+        }));
+    }
+
     private readonly SmartFormatter _formatter;
     private readonly Dictionary<string, VisualElement> _inputs = new();
     private readonly Dictionary<Label, string> _labelTemplates = new();
@@ -130,6 +160,11 @@ public class WindowBinding : IDisposable
             return;
         }
 
+        // Временный замер (репорт: лаги в маркет-окне): путь драга слайдера
+        // гоняет все шаблоны через SmartFormat+NCalc на каждый шаг. В лог
+        // попадают только медленные обновления, без спама.
+        var refreshWatch = System.Diagnostics.Stopwatch.StartNew();
+
         // Collect current values from all input controls by name
         var values = new Dictionary<string, object>(_inputs.Count);
         foreach (var kvp in _inputs)
@@ -148,6 +183,12 @@ public class WindowBinding : IDisposable
             {
                 // Leave the template text as-is if formatting fails
             }
+        }
+
+        if (refreshWatch.ElapsedMilliseconds > 5)
+        {
+            UnityEngine.Debug.Log(
+                $"[WindowBinding] RefreshAll: {_labelTemplates.Count} шаблонов на {_inputs.Count} входах за {refreshWatch.ElapsedMilliseconds} мс.");
         }
     }
 

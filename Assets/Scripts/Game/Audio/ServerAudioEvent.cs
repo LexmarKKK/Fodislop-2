@@ -16,6 +16,7 @@ public sealed class ServerAudioEvent : IDisposable, IServerWorldEffect
 {
     private readonly SFX? _audioEffectType;
     private readonly IAudioSystem _audioSystem;
+    private readonly IAssetLoader _assetLoader;
     private readonly ServerAudioVisualPlayback _visualPlayback;
 
     public ServerAudioEvent(
@@ -92,6 +93,7 @@ public sealed class ServerAudioEvent : IDisposable, IServerWorldEffect
     {
         _audioEffectType = audioEffectType;
         _audioSystem = audioSystem;
+        _assetLoader = assetLoader;
         ServerAudioParameters parsedParams = ServerAudioParameters.Parse(parameters);
         _visualPlayback = new ServerAudioVisualPlayback(
             visualEffectName,
@@ -123,8 +125,13 @@ public sealed class ServerAudioEvent : IDisposable, IServerWorldEffect
     {
         string eventName = SfxEventNames.Get(effectType);
         long audioStart = System.Diagnostics.Stopwatch.GetTimestamp();
-        _audioSystem.PlayAt(eventName, worldPosition);
+        IAudioPlaybackHandle? handle = _audioSystem.PlayAt(eventName, worldPosition);
         ServerAudioVisualPlayback.RecordIfSlow(eventName, audioStart);
+        if (handle == null)
+        {
+            // События нет в банках FMOD — подстраховываемся WAV'ом с сервера.
+            UnityWavFallback.Play(eventName, worldPosition, _assetLoader);
+        }
     }
 
 }

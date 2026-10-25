@@ -103,4 +103,27 @@ public sealed class InterfaceSettings
     [SettingUnbounded("Пиксели панели UI; разрешение проверяет PlayerHUDView при восстановлении.")]
     [SettingConsumer(SettingConsumerTarget.UserInterface, "PlayerHUDView.ApplySavedPanelPosition")]
     public float HudPanelY;
+
+    // Геометрия перетаскиваемого/растягиваемого окна глобального чата (left,
+    // top, width, height в пикселях панели) с прошлого запуска. Пока игрок не
+    // трогал окно, оно стоит по стилям Chat.uss.
+    [SettingUnbounded("Флаг сохранённой геометрии окна глобального чата; тумблера нет.")]
+    [SettingConsumer(SettingConsumerTarget.UserInterface, "ChatWindowInteractionController.ApplySavedLayout")]
+    public bool HasChatWindowLayout;
+
+    [SettingUnbounded("Пиксели панели UI; разрешение проверяет ChatWindowInteractionController при восстановлении.")]
+    [SettingConsumer(SettingConsumerTarget.UserInterface, "ChatWindowInteractionController.ApplySavedLayout")]
+    public float ChatWindowX;
+
+    [SettingUnbounded("Пиксели панели UI; разрешение проверяет ChatWindowInteractionController при восстановлении.")]
+    [SettingConsumer(SettingConsumerTarget.UserInterface, "ChatWindowInteractionController.ApplySavedLayout")]
+    public float ChatWindowY;
+
+    [SettingUnbounded("Пиксели панели UI; минимум и границы экрана проверяет ChatWindowInteractionController.")]
+    [SettingConsumer(SettingConsumerTarget.UserInterface, "ChatWindowInteractionController.ApplySavedLayout")]
+    public float ChatWindowWidth;
+
+    [SettingUnbounded("Пиксели панели UI; минимум и границы экрана проверяет ChatWindowInteractionController.")]
+    [SettingConsumer(SettingConsumerTarget.UserInterface, "ChatWindowInteractionController.ApplySavedLayout")]
+    public float ChatWindowHeight;
 }

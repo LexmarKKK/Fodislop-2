@@ -9,7 +9,11 @@ namespace Kern.UI;
 
 public class Tooltip
 {
-    private VisualElement? _tooltipElement;
+    // Два уровня: обёртка (TemplateContainer) держит позицию в корне документа
+    // и порядок отрисовки, внутренняя панель — видимость (класс is-hidden в
+    // UXML висит именно на ней) и координаты у курсора.
+    private VisualElement? _tooltipLayer;
+    private VisualElement? _tooltipPanel;
     private Label? _tooltipLabel;
     private bool _isVisible;
 
@@ -22,49 +26,56 @@ public class Tooltip
             throw new InvalidOperationException(
                 "[Tooltip] Resources/UI/Overlays/Tooltip.uxml is required.");
         TemplateContainer tree = template.Instantiate();
-        _tooltipElement = tree;
+        _tooltipLayer = tree;
 
+        _tooltipPanel = tree.Q<VisualElement>("Tooltip") ??
+            throw new InvalidOperationException(
+                "[Tooltip] Tooltip panel is missing from Tooltip.uxml.");
         _tooltipLabel = tree.Q<Label>("TooltipLabel") ??
             throw new InvalidOperationException(
                 "[Tooltip] TooltipLabel is missing from Tooltip.uxml.");
 
-        doc.rootVisualElement.Add(_tooltipElement);
+        doc.rootVisualElement.Add(tree);
     }
 
     public void Show(string text, Vector2 screenPos)
     {
-        if (_tooltipElement == null || _tooltipLabel == null)
+        if (_tooltipLayer == null || _tooltipPanel == null || _tooltipLabel == null)
         {
             return;
         }
 
         _tooltipLabel.text = text;
-        UIState.Show(_tooltipElement);
-        _tooltipElement.style.left = screenPos.x + 12;
-        _tooltipElement.style.top = screenPos.y + 12;
+        UIState.Show(_tooltipPanel);
+        // Тултипы создаются в разном порядке относительно окон (тултип
+        // палитры программатора — раньше её дерева), поэтому без подъёма
+        // элемент рисуется под панелью и невидим.
+        _tooltipLayer.BringToFront();
+        _tooltipPanel.style.left = screenPos.x + 12;
+        _tooltipPanel.style.top = screenPos.y + 12;
         _isVisible = true;
     }
 
     public void Hide()
     {
-        if (_tooltipElement == null || !_isVisible)
+        if (_tooltipPanel == null || !_isVisible)
         {
             return;
         }
 
-        UIState.Hide(_tooltipElement);
+        UIState.Hide(_tooltipPanel);
         _isVisible = false;
     }
 
     public void UpdatePosition(Vector2 screenPos)
     {
-        if (!_isVisible || _tooltipElement == null)
+        if (!_isVisible || _tooltipPanel == null)
         {
             return;
         }
 
-        _tooltipElement.style.left = screenPos.x + 12;
-        _tooltipElement.style.top = screenPos.y + 12;
+        _tooltipPanel.style.left = screenPos.x + 12;
+        _tooltipPanel.style.top = screenPos.y + 12;
     }
 
     public static void AttachTo(VisualElement element, Func<string> textProvider, Tooltip? tooltip)

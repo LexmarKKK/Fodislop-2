@@ -146,7 +146,7 @@ internal sealed class ProgrammatorProgramFile
         int length = item.Codes.Count;
         bool valid = !string.IsNullOrWhiteSpace(item.Name) &&
             length > 0 &&
-            length <= ProgrammatorData.CELLS_PER_PAGE * 100 &&
+            length <= ProgrammatorData.CELLS_PER_PAGE * ProgrammatorData.MaxPages &&
             length % ProgrammatorData.CELLS_PER_PAGE == 0 &&
             item.Labels.Count == length &&
             item.Values.Count == length;

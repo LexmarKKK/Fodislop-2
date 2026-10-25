@@ -26,6 +26,8 @@ public sealed class InputBlockState : IInputBlocker
 
     public bool IsKeyCaptureInProgress => _uiInput.IsKeyCaptureInProgress;
 
+    public bool IsMouseWheelClaimedByUI => _uiInput.IsWheelClaimedByUI;
+
     public bool IsInputBlockedExcludingMapMode =>
         _uiInput.IsInputBlocked ||
         _windows.HasOpenWindows ||

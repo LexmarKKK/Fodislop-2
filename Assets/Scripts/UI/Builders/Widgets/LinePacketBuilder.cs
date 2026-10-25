@@ -2,6 +2,7 @@
 
 using MinesServer.Data;
 using MinesServer.Networking.Server.Packets.GUI.Components.Visual;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Kern.UI.Builders;
@@ -9,18 +10,26 @@ public class LinePacketBuilder : PacketUIBuilderBase<LinePacket>
 {
     protected override VisualElement BuildTyped(LinePacket packet, PacketUIBuilder builder)
     {
+        // Цвет линии приходит стилем — заливкой фона (GUIStylePacket.Background),
+        // как и толщина (BorderWidth): цвет задаёт сервер, клиент только
+        // рендерит. Без стиля или с прозрачной заливкой остаётся белый -
+        // так линии рисовались до появления цвета в протоколе.
         var line = new UILine
         {
             Direction = packet.Direction,
+            LineColor = Color.white,
         };
-        line.AddToClassList("packet-line-themed");
-        line.RegisterCallback<GeometryChangedEvent>(_ => line.LineColor = line.resolvedStyle.color);
 
-        if (packet.Style.HasValue)
+        if (packet.Style is { } style)
         {
-            if (packet.Style.Value.BorderWidth > 0)
+            if (style.BorderWidth > 0)
             {
-                line.Thickness = packet.Style.Value.BorderWidth;
+                line.Thickness = style.BorderWidth;
+            }
+
+            if (style.Background.A > 0)
+            {
+                line.LineColor = new Color32(style.Background.R, style.Background.G, style.Background.B, style.Background.A);
             }
         }
 

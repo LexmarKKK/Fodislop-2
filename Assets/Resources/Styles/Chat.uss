@@ -41,19 +41,52 @@
     /* Широкая полоса лога сразу справа от мини-карты (левая колонка HUD),
        прижата к низу экрана: от 198px (16 отступ + 174 карта + 8 зазор) до
        160px от правого края - чтобы не заходить в правый нижний угол, где
-       живёт меню умений. */
+       живёт меню умений. Рамка и скругление — общий рецепт окон меню.
+       Окно перетаскивается и растягивается (ChatWindowInteractionController):
+       после первого вмешательства геометрию ведёт C# из client_config.json. */
     left: 198px;
     right: 160px;
     bottom: var(--space-8);
     height: 180px;
     background-color: var(--surface-slate-dense);
-    border-width: var(--space-1);
-    border-color: var(--accent-cyan-deep);
+    border-width: 1px;
+    border-color: var(--border-cyan);
+    border-radius: var(--radius-md);
     padding: var(--space-4);
     flex-direction: column;
 }
 
+/* Захват окна: прозрачная полоса во всю ширину поверх верхнего края.
+   Сообщения и кнопки она не перекрывает (ниже неё), при наведении чуть
+   подсвечивается бирюзовым, как интерактив в меню. */
+.gchat-drag-strip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* высоту (22px) задаёт ChatWindowInteractionController */
+    border-top-left-radius: var(--radius-md);
+    border-top-right-radius: var(--radius-md);
+}
+
+.gchat-drag-strip:hover {
+    background-color: var(--accent-cyan-tint);
+}
+
+/* Грани и углы ресайза: прозрачные зоны по краям рамки; курсор и логику
+   задаёт контроллер. hover — та же бирюзовая подсказка.
+   position: absolute обязателен: без него инлайновые top/left/right/bottom
+   из контроллера не работают, и зоны встают в поток колонки под вводом. */
+.gchat-resize-zone {
+    position: absolute;
+}
+
+.gchat-resize-zone:hover {
+    background-color: var(--accent-cyan-tint);
+}
+
 .gchat-header {
+    -unity-font-definition: var(--face-display);
     font-size: var(--size-base);
     -unity-font-style: bold;
     color: var(--accent-gold);
@@ -94,6 +127,65 @@
     background-color: var(--surface-void-haze);
     border-width: 1px;
     border-color: var(--border-line);
+}
+
+/* Скроллбар лога — минималистичный: вместо дефолтной жирной полосы со
+   стрелками тонкая дорожка с ручкой-капсулой. У ВСЕХ частей скроллера
+   гасятся минимальные размеры и состояния: дефолтная тема держит свои
+   части на min-width/min-height и подсвечивает их при наведении — width
+   эти минимумы не перебивает, из-за чего поверх тонкой дорожки проявлялась
+   широкая дефолтная полоса. Ручка чуть заметнее рамки, на наведении и
+   перетаскивании подсвечивается цианью. */
+.gchat-scroll .unity-scroller--vertical {
+    width: 6px;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: transparent;
+}
+
+.gchat-scroll .unity-scroller__low-button,
+.gchat-scroll .unity-scroller__high-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.gchat-scroll .unity-scroller__slider,
+.gchat-scroll .unity-scroller__slider:hover {
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    background-color: transparent;
+}
+
+.gchat-scroll .unity-base-slider__tracker,
+.gchat-scroll .unity-base-slider__tracker:hover,
+.gchat-scroll .unity-base-slider__dragger-border {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    border-width: 0;
+    border-radius: 0;
+    background-color: transparent;
+}
+
+.gchat-scroll .unity-base-slider__dragger {
+    width: 6px;
+    min-width: 0;
+    border-width: 0;
+    border-radius: 3px;
+    background-color: var(--border-line);
+}
+
+.gchat-scroll .unity-base-slider__dragger:hover {
+    background-color: var(--accent-cyan-glow);
+}
+
+.gchat-scroll .unity-base-slider__dragger:active {
+    background-color: var(--accent-cyan-fill);
 }
 
 .gchat-message {
@@ -148,19 +240,65 @@
     border-color: var(--border-line);
 }
 
+/* Пикер цвета: плавающий попап над строкой ввода (40px = 8 паддинг панели +
+   28 ряд + 4 зазор), налезает на ленту сообщений. Рецепт меню: сланец,
+   циановая рамка, скругление. */
 .gchat-color-grid {
+    position: absolute;
+    bottom: 40px;
+    right: var(--space-4);
     flex-direction: row;
     flex-wrap: wrap;
     width: 170px;
     flex-shrink: 0;
     justify-content: center;
-    background-color: var(--surface-shelf-dense);
+    background-color: var(--surface-slate-dense);
     border-width: 1px;
-    border-color: var(--border-line);
+    border-color: var(--border-cyan);
+    border-radius: var(--radius-md);
     padding: var(--space-2);
 }
 
 .gchat-swatch {
+    width: var(--space-9);
+    height: var(--space-9);
+    margin: 1px;
+    padding: 0;
+    border-width: 1px;
+    border-color: var(--text-disabled);
+}
+
+/* Кнопка-пикер смайлов: квадрат в ряду ввода, как кнопка цвета; глиф
+   кнопке ставит ChatEmojiController (emoji-шрифтом). */
+.gchat-emoji-button {
+    width: var(--space-11);
+    height: var(--space-11);
+    flex-shrink: 0;
+    padding: 0;
+    border-width: 1px;
+    border-left-width: 0;
+    border-color: var(--border-line);
+}
+
+/* Пикер смайлов: тот же плавающий попап над строкой ввода, 4 в ряд.
+   Открытие одного пикера закрывает второй (GlobalChatUI). */
+.gchat-emoji-grid {
+    position: absolute;
+    bottom: 40px;
+    right: var(--space-4);
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 170px;
+    flex-shrink: 0;
+    justify-content: center;
+    background-color: var(--surface-slate-dense);
+    border-width: 1px;
+    border-color: var(--border-cyan);
+    border-radius: var(--radius-md);
+    padding: var(--space-2);
+}
+
+.gchat-emoji-item {
     width: var(--space-9);
     height: var(--space-9);
     margin: 1px;
@@ -263,7 +401,8 @@
     align-items: center;
     background-color: var(--surface-slate-dense);
     border-width: 1px;
-    border-color: var(--accent-cyan-deep);
+    border-color: var(--border-cyan);
+    border-radius: var(--radius-sm);
     padding: var(--space-1) var(--space-2);
 }
 
@@ -285,4 +424,22 @@
     margin: 0;
     font-size: var(--size-base);
     color: var(--light-solid);
+}
+
+/* ─── Кнопка чата в HUD (низ слева) ───
+   Чат открывается и закрывается кликом, не только по TAB. Иконка — белый
+   контурный бабл (ChatIcon.png, уже белый — тинт не меняется), без подложки
+   и рамок. Сдвиг вправо (182px): самый угол занят серверным окном робота,
+   кнопка сидит вплотную к его правому краю (у окна ~164px ширины). */
+.chat-toggle-btn {
+    position: absolute;
+    left: 182px;
+    bottom: 12px;
+    width: 40px;
+    height: 40px;
+    background-color: transparent;
+    border-width: 0;
+    background-size: contain;
+    background-position: center center;
+    -unity-background-image-tint-color: var(--light-solid);
 }

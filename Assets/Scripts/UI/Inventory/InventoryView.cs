@@ -288,6 +288,14 @@ namespace Kern.UI.Inventory
             cell.name = "Cell_" + type;
             cell.userData = type;
             cell.AddToClassList("inv-cell");
+            // Размер клетки продублирован инлайном (62px): иконка 38px по
+            // центру оставляет по 12px полей, и цифра количества в правом
+            // нижнем углу ложится на тёмный фон клетки, не на спрайт
+            // (репорт: «расширить квадратик рамки инвентарной»).
+            cell.style.width = 62f;
+            cell.style.height = 62f;
+            cell.style.minWidth = 62f;
+            cell.style.minHeight = 62f;
             // InventoryRoot стоит в picking-mode="Ignore"; ячейка обязана явно
             // вернуть Position, иначе Ignore наследуется на поддерево и слот
             // не получает мышь вообще.
@@ -297,8 +305,33 @@ namespace Kern.UI.Inventory
             icon.name = "Icon";
             icon.AddToClassList("inv-icon");
             icon.style.display = DisplayStyle.None;
+            // Размер иконки продублирован инлайном: если правило .inv-icon
+            // из Inventory.uss не применится, VisualElement по умолчанию
+            // растягивается на всю клетку — и цифра количества в любом углу
+            // оказывалась бы поверх спрайта (репорт: «налезает на спрайт»).
+            icon.style.width = 38f;
+            icon.style.height = 38f;
             icon.pickingMode = PickingMode.Ignore;
             cell.Add(icon);
+
+            // Количество — цифра в правом нижнем углу слота. Растянутый на
+            // всю клетку абсолютный контейнер (инлайн, все отступы —
+            // литеральные нули) прижимает содержимое флексом в угол — это
+            // работает при любых таблицах стилей, в отличие от якорения
+            // right/bottom. Сама цифра — чистый текст с тенью, без плашки:
+            // угол под неё освобождает увеличенная клетка (62px).
+            var qtyWrap = new VisualElement();
+            qtyWrap.name = "QuantityWrap";
+            qtyWrap.AddToClassList("inv-qty-wrap");
+            qtyWrap.style.position = Position.Absolute;
+            qtyWrap.style.left = 0f;
+            qtyWrap.style.right = 0f;
+            qtyWrap.style.top = 0f;
+            qtyWrap.style.bottom = 0f;
+            qtyWrap.style.justifyContent = Justify.FlexEnd;
+            qtyWrap.style.alignItems = Align.FlexEnd;
+            qtyWrap.pickingMode = PickingMode.Ignore;
+            cell.Add(qtyWrap);
 
             var qtyLabel = new Label();
             qtyLabel.name = "Quantity";
@@ -308,8 +341,17 @@ namespace Kern.UI.Inventory
                 color = Color.black,
                 offset = new Vector2(1, -1),
             };
+            // Инлайн перебивает абсолютную раскладку прежних правил
+            // .inv-qty из Inventory.uss: цифра — обычный (относительный)
+            // элемент размером по содержимому, без плашки — угол под неё
+            // освобождает увеличенная клетка.
+            qtyLabel.style.position = Position.Relative;
+            qtyLabel.style.marginRight = 1f;
+            qtyLabel.style.marginBottom = 1f;
+            qtyLabel.style.fontSize = 10f;
+            qtyLabel.style.color = Color.white;
             qtyLabel.pickingMode = PickingMode.Ignore;
-            cell.Add(qtyLabel);
+            qtyWrap.Add(qtyLabel);
 
             cell.RegisterCallback<MouseEnterEvent>(_ => cell.AddToClassList("inv-cell--highlight"));
             cell.RegisterCallback<MouseLeaveEvent>(_ => cell.RemoveFromClassList("inv-cell--highlight"));

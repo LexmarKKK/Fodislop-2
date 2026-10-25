@@ -88,19 +88,6 @@
             </ui:VisualElement>
             <ui:Label class="mm-subtitle" text="mainmenu.tagline" />
 
-            <!-- Баннер обязательного обновления.
-                 MainMenu.cs:265 запрашивает #UpdateAlertBanner и вешает на него
-                 открытие окна обновления, но самого элемента в разметке не было —
-                 биндинг молча получал null. Разметка соответствует
-                 .update-alert-banner из visual/kern-ui-lab. -->
-            <ui:Button name="UpdateAlertBanner" class="mm-update-banner">
-                <ui:VisualElement class="mm-update-banner-text">
-                    <ui:Label class="mm-update-banner-title" text="mainmenu.update_banner_title" />
-                    <ui:Label class="mm-update-banner-sub" text="mainmenu.update_banner_sub" />
-                </ui:VisualElement>
-                <ui:Label class="mm-update-banner-cta" text="mainmenu.update_banner_cta" />
-            </ui:Button>
-
             <!-- Основные кнопки -->
             <ui:VisualElement class="mm-button-group">
                 <ui:Button name="PlayButton" class="mm-btn-primary">
@@ -112,7 +99,7 @@
 
                 <ui:Button name="ServerSelectButton" class="mm-btn-secondary">
                     <ui:Label text="mainmenu.server_select" />
-                    <ui:Label class="mm-server-badge" text="mainmenu.online_count" />
+                    <ui:Label name="MainMenuOnlineBadge" class="mm-server-badge mm-server-badge--offline" text="mainmenu.offline" />
                 </ui:Button>
             </ui:VisualElement>
 
@@ -137,11 +124,6 @@
             <ui:Button name="SideRepairButton" class="mm-side-btn" tooltip="mainmenu.tooltip.repair">
                 <ui:VisualElement name="SideRepairIcon" class="mm-side-icon" />
             </ui:Button>
-            <ui:Button name="SideUpdateButton" class="mm-side-btn mm-side-btn--gold" tooltip="mainmenu.tooltip.update">
-                <ui:VisualElement name="SideUpdateIcon" class="mm-side-icon" />
-                <ui:VisualElement class="mm-side-badge" />
-            </ui:Button>
-
             <ui:VisualElement class="mm-sidebar-sep" />
 
             <ui:Button name="SideDiscordButton" class="mm-side-btn" tooltip="mainmenu.tooltip.discord">
@@ -236,7 +218,7 @@
 
                         <!-- Правая колонка: Карточка деталей -->
                         <ui:VisualElement class="mm-card-box mm-server-detail-card">
-                            <ui:Label name="ServerDetailTitle" class="mm-item-title mm-detail-title" text="HADES-ALPHA" />
+                            <ui:Label name="ServerDetailTitle" class="mm-item-title mm-detail-title" text="CHRONOS" />
                             <ui:Label name="ServerDetailDesc" class="mm-card-tag mm-detail-desc" text="mainmenu.server_eu_north_desc" />
                             <ui:VisualElement class="mm-row-item">
                                 <ui:Label class="mm-item-title" text="mainmenu.server_depth_label" />
@@ -248,7 +230,7 @@
                             </ui:VisualElement>
                             <ui:VisualElement class="mm-row-item">
                                 <ui:Label class="mm-item-title" text="mainmenu.server_ping_label" />
-                                <ui:Label name="ServerDetailPing" class="mm-item-val" text="32 ms" />
+                                <ui:Label name="ServerDetailPing" class="mm-item-val" text="—" />
                             </ui:VisualElement>
                             <ui:VisualElement class="mm-row-item">
                                 <ui:Label class="mm-item-title" text="mainmenu.server_hazard_label" />
@@ -431,13 +413,17 @@
                 </ui:VisualElement>
                 <ui:VisualElement class="mm-modal-body">
                     <ui:Label class="mm-modal-desc" text="mainmenu.repair_modal_desc" />
-                    <ui:VisualElement class="mm-repair-log">
-                        <ui:Label class="mm-log-line" text="mainmenu.repair_log1" />
-                        <ui:Label class="mm-log-line" text="mainmenu.repair_log2" />
-                        <ui:Label class="mm-log-line" text="mainmenu.repair_log3" />
-                        <ui:Label class="mm-log-line" text="mainmenu.repair_log4" />
-                        <ui:Label class="mm-log-line mm-log-line--success" text="mainmenu.repair_all_ok" />
+                    <ui:VisualElement name="RepairProgressBlock" class="is-hidden mm-card-box mm-card-box--gap-top">
+                        <ui:VisualElement class="mm-loader-progress-track">
+                            <ui:VisualElement name="RepairProgressFill" class="mm-loader-progress-fill mm-progress-fill--init" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="mm-row-item mm-row-item--meta">
+                            <ui:Label class="mm-card-tag" text="mainmenu.repair_progress_label" />
+                            <ui:Label name="RepairProgressPercent" class="mm-item-val mm-text--gold" text="0%" />
+                        </ui:VisualElement>
                     </ui:VisualElement>
+                    <!-- Строки проверок создаются кодом из IMenuFileDiagnosticsService.CheckLabelKeys. -->
+                    <ui:VisualElement name="RepairLogLines" class="mm-repair-log" />
                 </ui:VisualElement>
                 <ui:VisualElement class="mm-modal-footer">
                     <ui:Button name="RunFullRepairButton" class="mm-btn-outline fit-wrap" text="mainmenu.repair_rerun" />
@@ -496,51 +482,6 @@
                 </ui:VisualElement>
             </ui:VisualElement>
 
-            <!-- 6. Патч / Обновление -->
-            <ui:VisualElement name="UpdateModal" class="is-hidden mm-modal-card">
-                <ui:VisualElement class="mm-modal-header">
-                    <ui:Label class="mm-modal-title" text="mainmenu.update_modal_title" />
-                    <ui:Button name="CloseUpdateModalButton" class="mm-modal-close" text="✕" />
-                </ui:VisualElement>
-                <ui:VisualElement class="mm-modal-body">
-                    <ui:Label class="mm-modal-desc" text="mainmenu.update_modal_desc" />
-                    <ui:VisualElement class="mm-card-box mm-update-hero-box">
-                        <ui:Label class="mm-item-title mm-text--gold mm-update-title" text="v0.9.0 — DEEP SUBSURFACE EXPANSION" />
-                        <ui:Label class="mm-card-tag" text="mainmenu.update_protocol_version" />
-                    </ui:VisualElement>
-
-                    <ui:VisualElement class="mm-card-box">
-                        <ui:Label class="mm-card-tag" text="mainmenu.update_changelog" />
-                        <ui:VisualElement class="mm-row-item">
-                            <ui:Label class="mm-item-title" text="mainmenu.update_changelog_1" />
-                        </ui:VisualElement>
-                        <ui:VisualElement class="mm-row-item">
-                            <ui:Label class="mm-item-title" text="mainmenu.update_changelog_2" />
-                        </ui:VisualElement>
-                        <ui:VisualElement class="mm-row-item">
-                            <ui:Label class="mm-item-title" text="mainmenu.update_changelog_3" />
-                        </ui:VisualElement>
-                        <ui:VisualElement class="mm-row-item">
-                            <ui:Label class="mm-item-title" text="mainmenu.update_changelog_4" />
-                        </ui:VisualElement>
-                    </ui:VisualElement>
-
-                    <!-- Блок симуляции скачивания -->
-                    <ui:VisualElement name="UpdateProgressBlock" class="is-hidden mm-card-box mm-card-box--gap-top">
-                        <ui:VisualElement class="mm-loader-progress-track">
-                            <ui:VisualElement name="UpdateProgressFill" class="mm-loader-progress-fill mm-progress-fill--init" />
-                        </ui:VisualElement>
-                        <ui:VisualElement class="mm-row-item mm-row-item--meta">
-                            <ui:Label name="UpdateProgressStatus" class="mm-card-tag" text="mainmenu.update_downloading" />
-                            <ui:Label name="UpdateProgressPercent" class="mm-item-val mm-text--gold" text="0%" />
-                        </ui:VisualElement>
-                    </ui:VisualElement>
-                </ui:VisualElement>
-                <ui:VisualElement class="mm-modal-footer mm-footer--between">
-                    <ui:Button name="DeferUpdateOfflineButton" class="mm-btn-outline fit-atomic" text="mainmenu.update_offline" />
-                    <ui:Button name="ConfirmUpdateButton" class="mm-btn-gold fit-wrap" text="mainmenu.update_confirm" />
-                </ui:VisualElement>
-            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

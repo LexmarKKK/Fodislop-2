@@ -9,6 +9,7 @@ namespace Kern.Networking.Buildings
     {
         public override BuildingType Type => BuildingType.Science;
 
+
         public override IEnumerable<((int X, int Y) Pos, CellType Cell)> CellsToPlace()
         {
             // Зеркало сервера (MinesServer: Game/Buildings/NC.cs). Пирамида

@@ -159,32 +159,44 @@
         "com.unity.modules.jsonserialize": "1.0.0"
       }
     },
+    "com.unity.ugui": {
+      "version": "2.6.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.modules.ui": "1.0.0",
+        "com.unity.modules.imgui": "1.0.0",
+        "com.unity.modules.audio": "1.0.0",
+        "com.unity.modules.physics2d": "1.0.0",
+        "com.unity.modules.physics": "1.0.0"
+      }
+    },
     "darkar25.kern.data": {
-      "version": "file:MinesServerNetworking/MinesServer.Data",
+      "version": "file:../../MinesServer/MinesServerNetworking/MinesServer.Data",
       "depth": 0,
       "source": "local",
       "dependencies": {}
     },
     "darkar25.kern.networking": {
-      "version": "file:MinesServerNetworking/MinesServer.Networking",
+      "version": "file:../../MinesServer/MinesServerNetworking/MinesServer.Networking",
       "depth": 0,
       "source": "local",
       "dependencies": {}
     },
     "darkar25.kern.networking.client": {
-      "version": "file:MinesServerNetworking/MinesServer.Networking.Connection.Client",
+      "version": "file:../../MinesServer/MinesServerNetworking/MinesServer.Networking.Connection.Client",
       "depth": 0,
       "source": "local",
       "dependencies": {}
     },
     "darkar25.kern.networking.connection": {
-      "version": "file:MinesServerNetworking/MinesServer.Networking.Connection",
+      "version": "file:../../MinesServer/MinesServerNetworking/MinesServer.Networking.Connection",
       "depth": 0,
       "source": "local",
       "dependencies": {}
     },
     "darkar25.kern.utils": {
-      "version": "file:MinesServerNetworking/MinesServer.Utils",
+      "version": "file:../../MinesServer/MinesServerNetworking/MinesServer.Utils",
       "depth": 0,
       "source": "local",
       "dependencies": {}

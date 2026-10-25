@@ -60,6 +60,10 @@ internal sealed class PauseMenuDebugSectionBuilder
         {
             SendElementClick("test_modal");
         }));
+        debugSection.Add(PauseMenuUIFactory.CreateButton(_loc.Get("settings.debug.ui2demo"), () =>
+        {
+            SendElementClick("ui2demo");
+        }));
         debugSection.Add(PauseMenuUIFactory.CreateButton(_loc.Get("settings.debug.join_clan"), () =>
         {
             SendElementClick("join_clan");

@@ -24,6 +24,9 @@ public interface IAudioSystem
 
     bool IsDegraded { get; }
 
+    /// <summary>Мастер-вывод заглушён из-за свёрнутого приложения (MuteInBackground).</summary>
+    bool IsBackgroundMuted { get; }
+
     IAudioPlaybackHandle? Play(string eventName, Vector3? worldPosition = null, AudioLayer? overrideLayer = null, float? overrideVolume = null);
     IAudioPlaybackHandle? PlayAttached(string eventName, GameObject targetGameObject, AudioLayer? overrideLayer = null, float? overrideVolume = null);
     IAudioPlaybackHandle? PlayAt(string eventName, Vector3 worldPosition, AudioLayer? layer = null, float? volume = null);

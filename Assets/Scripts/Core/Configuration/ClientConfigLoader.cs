@@ -30,6 +30,8 @@ internal sealed class ClientConfigLoader
     private const int HdrSwitchPendingSchemaVersion = 38;
     private const int PeakBrightnessFromDisplaySchemaVersion = 39;
     private const int TerrainNamesSchemaVersion = 40;
+    private const int ApiPortSchemaVersion = 41;
+    private const int ChatWindowLayoutSchemaVersion = 42;
 
     private readonly ClientConfigRepository _repository;
     private readonly ClientConfigValidator _validator;
@@ -264,6 +266,23 @@ internal sealed class ClientConfigLoader
             }
 
             schema = TerrainNamesSchemaVersion;
+        }
+
+        // 40 -> 41: ConnectionSettings.ApiPort. Поле аддитивное:
+        // FromJsonOverwrite оставляет дефолт 5460 из инициализатора модели,
+        // поэтому миграция только фиксирует новую версию схемы.
+        if (schema == TerrainNamesSchemaVersion)
+        {
+            schema = ApiPortSchemaVersion;
+        }
+
+        // 41 -> 42: InterfaceSettings.HasChatWindowLayout + ChatWindowX/Y/
+        // Width/Height. Поля аддитивные: FromJsonOverwrite оставляет дефолты
+        // из инициализаторов (флаг false — окно стоит по стилям), поэтому
+        // миграция только фиксирует новую версию схемы.
+        if (schema == ApiPortSchemaVersion)
+        {
+            schema = ChatWindowLayoutSchemaVersion;
         }
 
         config.SchemaVersion = schema;

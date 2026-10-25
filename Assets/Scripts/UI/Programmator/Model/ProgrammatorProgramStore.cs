@@ -61,6 +61,10 @@ internal sealed class ProgrammatorProgramStore
 
     public bool IsRunning => _isRunning;
 
+    /// <summary>Открыта ли программа из списка (иначе активный слот не выбран,
+    /// _activeIndex = -1, и пускать нечего).</summary>
+    public bool HasActiveProgram => _activeIndex >= 0;
+
     public int ProgramCount => _programItems.Count;
 
     /// <summary>Активная (открытая в редакторе) программа сменилась или сбросилась.</summary>
@@ -118,18 +122,28 @@ internal sealed class ProgrammatorProgramStore
 
     public void NextPage()
     {
-        if (_data.CurrentPage < _data.PageCount - 1)
+        if (_data.CurrentPage >= _data.PageCount - 1)
         {
-            _selection.ClearSelection();
-            _radial.HideMenus();
-            _data.CurrentPage++;
-            RefreshAllCells();
+            // За последней страницей стрелка «>» открывает новую (до
+            // MaxPages): пейджер сразу показывает «Стр. 2/2», не требуя
+            // предварительного «+».
+            if (_data.PageCount >= ProgrammatorData.MaxPages)
+            {
+                return;
+            }
+
+            _data.AddPage();
         }
+
+        _selection.ClearSelection();
+        _radial.HideMenus();
+        _data.CurrentPage++;
+        RefreshAllCells();
     }
 
     public void AddPageClick()
     {
-        if (_data.PageCount >= 100)
+        if (_data.PageCount >= ProgrammatorData.MaxPages)
         {
             return;
         }
@@ -253,28 +267,28 @@ internal sealed class ProgrammatorProgramStore
             row.AddToClassList("prog-list-row");
             row.style.flexDirection = FlexDirection.Row;
             row.style.alignItems = Align.Center;
-            row.style.paddingTop = 6;
-            row.style.paddingBottom = 6;
-            row.style.paddingLeft = 8;
-            row.style.paddingRight = 8;
+            row.style.paddingTop = 8;
+            row.style.paddingBottom = 8;
+            row.style.paddingLeft = 10;
+            row.style.paddingRight = 10;
             row.style.borderBottomWidth = 1;
             row.style.borderBottomColor = new Color(0.2f, 0.2f, 0.2f, 1f);
             var nameLabel = new Label(item.Name);
             nameLabel.AddToClassList("prog-list-name");
             nameLabel.style.flexGrow = 1;
             nameLabel.style.color = new Color(0.8f, 0.8f, 0.8f, 1f);
-            nameLabel.style.fontSize = 14;
+            nameLabel.style.fontSize = 18;
             nameLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
             row.Add(nameLabel);
 
             var delBtn = new Button(() => DeleteProgram(idx));
             delBtn.text = "\u00d7";
             delBtn.AddToClassList("prog-del-btn");
-            delBtn.style.width = 22;
-            delBtn.style.height = 22;
+            delBtn.style.width = 28;
+            delBtn.style.height = 28;
             delBtn.style.backgroundColor = new Color(0.3f, 0f, 0f, 0.3f);
             delBtn.style.color = new Color(0.9f, 0.3f, 0.3f, 1f);
-            delBtn.style.fontSize = 14;
+            delBtn.style.fontSize = 18;
             delBtn.style.unityTextAlign = TextAnchor.MiddleCenter;
             delBtn.style.borderTopWidth = 0;
             delBtn.style.borderBottomWidth = 0;
@@ -284,15 +298,15 @@ internal sealed class ProgrammatorProgramStore
             delBtn.style.paddingBottom = 0;
             delBtn.style.paddingLeft = 0;
             delBtn.style.paddingRight = 0;
-            delBtn.style.marginLeft = 8;
+            delBtn.style.marginLeft = 10;
             row.Add(delBtn);
 
             var renameBtn = new Button(_protocol.RenameProgram);
             renameBtn.text = "✎";
             renameBtn.AddToClassList("prog-rename-btn");
-            renameBtn.style.width = 22;
-            renameBtn.style.height = 22;
-            renameBtn.style.marginLeft = 4;
+            renameBtn.style.width = 28;
+            renameBtn.style.height = 28;
+            renameBtn.style.marginLeft = 5;
             renameBtn.style.paddingTop = 0;
             renameBtn.style.paddingBottom = 0;
             renameBtn.style.paddingLeft = 0;

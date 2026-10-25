@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="ProgrammatorPalette">
+        <ui:VisualElement class="prog-palette-header">
+            <ui:Button name="PaletteCloseButton" class="prog-palette-close" text="×" />
+        </ui:VisualElement>
+        <ui:ScrollView name="PaletteScroll" class="prog-palette-scroll">
+            <ui:VisualElement name="PaletteContent" class="prog-palette-content" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

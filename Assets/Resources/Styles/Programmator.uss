@@ -50,85 +50,162 @@
     margin-top: var(--space-4);
 }
 
-/* ─── Радиальное меню ─── */
+/* ─── Палитра символов ─── */
 
-.prog-radial-root {
+.prog-palette {
     position: absolute;
-    width: 260px;
-    height: 260px;
+    /* Точно по содержимому: 9 пунктов × 48px (42 + 2×3 margin) = 432px
+       + скроллбар 6px + паддинг 2×10px + рамка 2px = 460px. Шире — справа
+       остаётся пустой карман, уже — режется ряд. */
+    width: 460px;
+    max-height: 600px;
+    background-color: var(--surface-panel);
+    border-color: var(--border-subtle);
+    border-width: 1px;
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
 }
 
-.prog-radial-fill {
+.tier--compact .prog-palette {
+    /* Ряд фиксирован (9 пунктов = 432px), ужиматься нельзя — компактный
+       тир отличается только меньшей высотой. */
+    width: 460px;
+    max-height: 525px;
+}
+
+.prog-palette-header {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-bottom: var(--space-2);
+}
+
+.prog-palette-close {
+    width: var(--space-8);
+    height: var(--space-8);
+    background-color: var(--surface-shelf-dense);
+    border-color: var(--border-line);
+    border-width: 1px;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: var(--size-sm);
+    -unity-text-align: middle-center;
+    transition-duration: var(--dur-fast);
+}
+
+.prog-palette-close:hover {
+    border-color: var(--border-gold);
+    color: var(--text-primary);
+}
+
+.prog-palette-scroll {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.prog-palette-content {
+    flex-direction: column;
+}
+
+.prog-palette-section {
+    flex-direction: column;
+    margin-top: var(--space-5);
+}
+
+.prog-palette-section--first {
+    margin-top: 0;
+}
+
+.prog-palette-section-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-2);
+    padding-bottom: var(--space-1);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--border-hairline);
+}
+
+.prog-palette-section-dot {
+    width: var(--space-3);
+    height: var(--space-3);
+    border-radius: var(--radius-sharp);
+    margin-right: var(--space-2);
+}
+
+.prog-palette-section-title {
+    color: var(--text-secondary);
+    font-size: var(--size-2xs);
+    -unity-font-style: bold;
+}
+
+.prog-palette-joy-btn {
+    margin-left: auto;
+    padding: 0 var(--space-2);
+    height: var(--space-6);
+    background-color: var(--surface-shelf-dense);
+    border-color: var(--border-line);
+    border-width: 1px;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: var(--size-sm);
+    -unity-text-align: middle-center;
+    transition-duration: var(--dur-fast);
+}
+
+.prog-palette-joy-btn:hover {
+    border-color: var(--border-gold);
+    color: var(--text-primary);
+}
+
+/* Сетка секции — вертикальный стек рядов фиксированной длины (10).
+   Переноса нет: сколько операторов в строке — решает код, не ширина. */
+.prog-palette-grid {
+    flex-direction: column;
+}
+
+.prog-palette-row {
+    flex-direction: row;
+}
+
+.prog-palette-item {
+    /* border-box 42 = контент 40 + рамка 1px: тот же шаг, что у ячеек
+       сетки (32px старого клиента × 1.25), иконки палитры и сетки одного
+       размера. Рамка нужна палитре как граница кликабельного пункта; в
+       сетке программы рамок нет (как в старом клиенте). */
+    width: 42px;
+    height: 42px;
+    margin: var(--space-1);
+    background-color: var(--surface-shelf-solid);
+    border-color: var(--light-edge);
+    border-width: 1px;
+    border-radius: var(--radius-sm);
+    transition-duration: var(--dur-fast);
+}
+
+.prog-palette-item:hover {
+    background-color: var(--accent-gold-tint);
+    border-color: var(--accent-gold);
+}
+
+.prog-palette-item:active {
+    background-color: var(--accent-gold-wash);
+}
+
+.prog-palette-item-label {
     position: absolute;
     left: 0;
-    top: 0;
     right: 0;
+    top: 0;
     bottom: 0;
-}
-
-.prog-radial-item {
-    position: absolute;
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-md);
-    background-color: var(--surface-shelf-solid);
-    border-width: var(--space-1);
-    border-color: var(--light-edge);
-}
-
-.prog-radial-item-label {
-    color: var(--light-solid);
+    color: var(--text-primary);
     font-size: var(--size-micro);
     -unity-text-align: middle-center;
     white-space: normal;
 }
 
-/* Кольца радиального меню. Геометрия: центр 130, радиусы 100/55, толщина 36. */
-.prog-radial-ring {
+.prog-palette-item-glyph {
+    /* Иконка оператора родного размера (SetNativeSize старого клиента);
+       ширину, высоту и позицию выставляет код по размеру текстуры. */
     position: absolute;
-    border-width: 36px;
-}
-
-.prog-radial-ring--outer {
-    width: 236px;
-    height: 236px;
-    left: var(--space-6);
-    top: var(--space-6);
-    border-radius: var(--radius-pill);
-    border-color: var(--border-hairline);
-    display: none;
-}
-
-.prog-radial-ring--inner {
-    width: 146px;
-    height: 146px;
-    left: 57px;
-    top: 57px;
-    border-radius: var(--radius-pill);
-    border-color: var(--surface-raised);
-}
-
-.prog-radial-back {
-    position: absolute;
-    left: 112px;
-    top: 112px;
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-md);
-    background-color: var(--surface-shelf-dense);
-    border-width: var(--space-1);
-    border-color: var(--light-edge);
-    display: none;
-}
-
-.prog-radial-back:hover {
-    border-color: var(--accent-gold);
-}
-
-.prog-radial-back-label {
-    color: var(--light-solid);
-    font-size: var(--size-lg);
-    -unity-text-align: middle-center;
 }
 
 /* ─── Окно программатора и панели ─── */
@@ -152,13 +229,41 @@
     background-color: var(--surface-inset);
 }
 
+/* Токены типографики и отступов ×1.25 — на уровне попапа: наследуются
+   главной панелью, списком программ и диалогом создания. Палитра живёт в
+   корне документа (вне попапа), поэтому указана отдельным селектором.
+   Масштабируется только семейство окон программатора, остальной UI не
+   затронут. */
+.prog-popup,
+.prog-palette {
+    --size-micro: 11px;
+    --size-xs: 14px;
+    --size-sm: 15px;
+    --size-base: 16px;
+    --size-md: 19px;
+    --size-lg: 22px;
+    --space-1: 3px;
+    --space-2: 5px;
+    --space-3: 8px;
+    --space-4: 10px;
+    --space-5: 12px;
+    --space-6: 15px;
+    --space-7: 18px;
+    --space-8: 20px;
+    --space-9: 25px;
+    --space-10: 30px;
+}
+
 .prog-panel {
     background-color: var(--surface-slate-dense);
     border-width: var(--space-1);
     border-color: var(--accent-cyan-deep);
     padding: var(--space-5);
     flex-direction: column;
-    width: 618px;
+    /* Окно программатора по умолчанию в 1.25 раза больше исходного
+       (536 → 670px): 640px сетки + 2×12px паддинг + 2×3px рамка. Меньше —
+       и overflow:hidden панели срезает правый край последнего столбца. */
+    width: 670px;
     max-width: 96%;
     max-height: 94%;
     flex-shrink: 1;
@@ -217,8 +322,8 @@
 /* ─── Кнопки управления ─── */
 
 .prog-ctrl-btn {
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     background-color: transparent;
     color: var(--text-secondary);
     font-size: var(--size-base);
@@ -258,8 +363,8 @@
 }
 
 .prog-run-btn {
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     background-color: var(--state-ok-tint);
     color: var(--state-ok);
     font-size: var(--size-sm);
@@ -270,8 +375,8 @@
 }
 
 .prog-stop-btn {
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     background-color: var(--surface-crisis-dense);
     color: var(--state-danger);
     font-size: var(--size-sm);
@@ -281,8 +386,8 @@
 }
 
 .prog-del-btn {
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     background-color: var(--surface-crisis-dense);
     color: var(--state-danger);
     font-size: var(--size-base);
@@ -298,49 +403,158 @@
 .prog-pager-label {
     font-size: var(--size-sm);
     color: var(--accent-gold);
-    min-width: 60px;
+    min-width: 75px;
     -unity-text-align: middle-center;
     margin-left: var(--space-2);
     margin-right: var(--space-2);
 }
 
 .prog-page-input {
-    width: 52px;
-    height: 22px;
+    width: 65px;
+    height: 28px;
+    margin: 0 var(--space-2);
+}
+
+/* PageInput — IntegerField: внутренний элемент несёт класс
+   unity-base-field__input (unity-text-input бывает только у TextField,
+   поэтому прежний селектор мимо и сквозь него светил белый фон темы).
+   Стиль — каноничные поля ввода игры (Input.uss, .text-field). */
+.prog-page-input .unity-base-field__input {
+    height: 100%;
+    width: 100%;
     background-color: var(--surface-shelf-solid);
-    color: var(--accent-gold);
+    border-color: var(--border-subtle);
+    border-width: 1px;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
     font-size: var(--size-sm);
     -unity-text-align: middle-center;
-    border-width: 0;
-    margin: 0 var(--space-2);
+    margin: 0;
     padding: 0;
 }
 
-.prog-page-input .unity-text-input {
-    background-color: var(--surface-shelf-solid);
-    color: var(--accent-gold);
-    font-size: var(--size-sm);
-    -unity-text-align: middle-center;
-    border-width: 0;
-    padding: 0;
-    margin: 0;
+.prog-page-input .unity-base-field__input:focus {
+    border-color: var(--accent-gold);
 }
 
 /* ─── Сетка ─── */
 
-/* Ширина контейнера: 16 колонок × 38 px = 608 px (38 = 32 ячейка + 2×2 отступ + 2 border). */
+/* Ширина контейнера: 16 колонок × 40 px = 640 px (шаг 32px старого клиента
+   × 1.25). flex-shrink: 0 — на узких экранах контейнер не сжимает ячейки
+   (дробные размеры рвут иконки), вместо этого горизонтально скроллит
+   .prog-grid-scroll. */
 .prog-grid-container {
     flex-direction: row;
     flex-wrap: wrap;
-    width: 608px;
+    flex-shrink: 0;
+    width: 640px;
 }
 
-/* Высота сетки: 12 рядов × 38 px = 456 px (все ряды фиксированного размера). */
+/* Высота сетки: 12 рядов × 40 px = 480 px (все ряды фиксированного размера). */
 .prog-grid-scroll {
     flex-grow: 1;
     flex-shrink: 1;
     min-height: 0;
     overflow: scroll;
+}
+
+/* Скроллбары программатора (палитра, сетка, список программ) — стиль
+   глобального чата (Chat.uss, .gchat-scroll): тонкая 6px дорожка без
+   кнопок со стрелками, ручка-капсула на наведении и перетаскивании
+   подсвечивается цианью. У всех частей гасятся минимальные размеры и
+   состояния: дефолтная тема держит части на min-width/min-height и
+   подсвечивает при наведении — width эти минимумы не перебивает, и
+   поверх тонкой дорожки проявлялась широкая дефолтная полоса. */
+.prog-palette-scroll .unity-scroller--vertical,
+.prog-grid-scroll .unity-scroller--vertical,
+.prog-list-scroll .unity-scroller--vertical {
+    width: 6px;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: transparent;
+}
+
+.prog-grid-scroll .unity-scroller--horizontal {
+    height: 6px;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: transparent;
+}
+
+.prog-palette-scroll .unity-scroller__low-button,
+.prog-palette-scroll .unity-scroller__high-button,
+.prog-grid-scroll .unity-scroller__low-button,
+.prog-grid-scroll .unity-scroller__high-button,
+.prog-list-scroll .unity-scroller__low-button,
+.prog-list-scroll .unity-scroller__high-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.prog-palette-scroll .unity-scroller__slider,
+.prog-palette-scroll .unity-scroller__slider:hover,
+.prog-grid-scroll .unity-scroller__slider,
+.prog-grid-scroll .unity-scroller__slider:hover,
+.prog-list-scroll .unity-scroller__slider,
+.prog-list-scroll .unity-scroller__slider:hover {
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border-width: 0;
+    background-color: transparent;
+}
+
+.prog-palette-scroll .unity-base-slider__tracker,
+.prog-palette-scroll .unity-base-slider__tracker:hover,
+.prog-palette-scroll .unity-base-slider__dragger-border,
+.prog-grid-scroll .unity-base-slider__tracker,
+.prog-grid-scroll .unity-base-slider__tracker:hover,
+.prog-grid-scroll .unity-base-slider__dragger-border,
+.prog-list-scroll .unity-base-slider__tracker,
+.prog-list-scroll .unity-base-slider__tracker:hover,
+.prog-list-scroll .unity-base-slider__dragger-border {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    border-width: 0;
+    border-radius: 0;
+    background-color: transparent;
+}
+
+.prog-palette-scroll .unity-base-slider__dragger,
+.prog-grid-scroll .unity-base-slider__dragger,
+.prog-list-scroll .unity-base-slider__dragger {
+    min-width: 0;
+    min-height: 0;
+    border-width: 0;
+    border-radius: 3px;
+    background-color: var(--border-line);
+}
+
+.prog-palette-scroll .unity-scroller--vertical .unity-base-slider__dragger,
+.prog-grid-scroll .unity-scroller--vertical .unity-base-slider__dragger,
+.prog-list-scroll .unity-scroller--vertical .unity-base-slider__dragger {
+    width: 6px;
+}
+
+.prog-grid-scroll .unity-scroller--horizontal .unity-base-slider__dragger {
+    height: 6px;
+}
+
+.prog-palette-scroll .unity-base-slider__dragger:hover,
+.prog-grid-scroll .unity-base-slider__dragger:hover,
+.prog-list-scroll .unity-base-slider__dragger:hover {
+    background-color: var(--accent-cyan-glow);
+}
+
+.prog-palette-scroll .unity-base-slider__dragger:active,
+.prog-grid-scroll .unity-base-slider__dragger:active,
+.prog-list-scroll .unity-base-slider__dragger:active {
+    background-color: var(--accent-cyan-fill);
 }
 
 .tier--compact .prog-panel {
@@ -350,36 +564,35 @@
     padding: var(--space-3);
 }
 
-.tier--compact .prog-grid-container {
-    width: auto;
-    max-width: 100%;
-}
-
-.tier--compact .prog-cell {
-    width: var(--space-10);
-    height: var(--space-10);
-    margin: 1px;
-}
-
-.tier--compact .prog-cell-label {
-    font-size: 8px;
-}
-
 .prog-cell {
-    width: var(--space-12);
-    height: var(--space-12);
-    background-color: var(--surface-shelf-solid);
-    border-width: 1px;
-    border-color: var(--border-line);
-    margin: var(--space-1);
+    /* Слот сетки — шаг 40px (32px старого клиента × 1.25, ProgrammatorView:
+       слоты каждые 32px, иконка по центру слота). Рамок и подложек
+       у занятых ячеек нет: иконка плавает над фоном окна. */
+    width: 40px;
+    height: 40px;
+    background-color: transparent;
+    border-width: 0;
+    margin: 0;
+}
+
+.prog-cell--empty {
+    /* Пустой слот: едва заметная заливка, чтобы сетка читалась. */
+    background-color: rgb(38, 38, 38);
+}
+
+.prog-cell--unknown {
+    /* Код без текстуры/имени — сигнал ошибки, как раньше красная заливка. */
+    background-color: rgb(77, 26, 26);
 }
 
 .prog-cell--hover {
-    border-color: var(--accent-gold);
+    /* Наведение — циан: цветом отличается от выделения (золото ниже),
+       чтобы было видно, выделена ячейка или просто под курсором. */
+    background-color: var(--accent-cyan-wash);
 }
 
 .prog-cell--selected {
-    border-color: var(--light-edge);
+    background-color: var(--accent-gold-wash);
 }
 
 .prog-cell-label {
@@ -394,6 +607,105 @@
     padding: 0;
 }
 
+.prog-cell-glyph {
+    /* Иконка оператора родного размера (SetNativeSize старого клиента);
+       ширину, высоту и позицию по центру слота выставляет код. */
+    position: absolute;
+}
+
+/* ─── Поля значений в ячейках (операторы с вводом) ───
+   Геометрия — перенос ProgAction.updateInput старого клиента: маленькие
+   поля со смещением от центра иконки (иконка остаётся видна). Пересчёт
+   Unity UI (Y вверх) → UITK (Y вниз) при ячейке 40px и полях 25×14/22×14
+   (база 32px-ячейки × 1.25): left = 20 + dx − w/2, top = 20 − dy − h/2. */
+
+.prog-cell-input {
+    position: absolute;
+    width: 25px;
+    height: 14px;
+    background-color: transparent;
+    border-width: 0;
+    border-radius: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--light-solid);
+    font-size: var(--size-micro);
+    -unity-text-align: middle-center;
+}
+
+/* LABEL(40): dx=-5, dy=0 */
+.prog-cell-input--pos-label {
+    left: 1.25px;
+    top: 12.5px;
+}
+
+/* GOTO(24): dx=6, dy=0 */
+.prog-cell-input--pos-goto {
+    left: 15px;
+    top: 12.5px;
+}
+
+/* GOSUB/GOSUB1/GOSUBF (25/26/137): dx=1, dy=0 */
+.prog-cell-input--pos-call {
+    left: 8.75px;
+    top: 12.5px;
+}
+
+/* IF-переходы (140/139/166): dx=-1, dy=-9 */
+.prog-cell-input--pos-branch {
+    left: 6.25px;
+    top: 23.75px;
+}
+
+/* DEBUG (181/182): dx=0, dy=-2 */
+.prog-cell-input--pos-debug {
+    left: 7.5px;
+    top: 15px;
+}
+
+/* VAR-сравнения (123/119/120), текст: dx=-3, dy=4 */
+.prog-cell-input--pos-compare {
+    left: 3.75px;
+    top: 7.5px;
+}
+
+.prog-cell-input--num {
+    width: 22px;
+    height: 14px;
+    color: var(--accent-cyan);
+}
+
+/* VAR-сравнения, число: dx=-1, dy=-10 */
+.prog-cell-input--num.prog-cell-input--pos-compare-num {
+    left: 7.5px;
+    top: 25px;
+}
+
+/* Внутренний элемент ввода: в Unity 6 его класс — unity-base-text-field__input
+   (unity-text-input — это name, а не класс; селектор оставлен для
+   совместимости). Тема даёт ему белый фон — перебиваем с прозрачностью и
+   большей специфичностью (два класса против одного у темы). */
+.prog-cell-input .unity-text-input,
+.prog-cell-input .unity-base-text-field__input {
+    background-color: transparent;
+    border-width: 0;
+    border-radius: 0;
+    margin: 0;
+    padding: 0;
+    color: var(--light-solid);
+    caret-color: var(--light-solid);
+    font-size: var(--size-micro);
+    -unity-text-align: middle-center;
+}
+
+/* Фокус не должен возвращать белую подложку из темы. */
+.prog-cell-input:focus,
+.prog-cell-input .unity-text-input:focus,
+.prog-cell-input .unity-base-text-field__input:focus {
+    background-color: transparent;
+    border-width: 0;
+}
+
 /* ─── Список программ ─── */
 
 .prog-list-panel {
@@ -402,8 +714,8 @@
     border-color: var(--accent-cyan-deep);
     padding: var(--space-5) var(--space-9);
     flex-direction: column;
-    width: 400px;
-    min-height: 300px;
+    width: 500px;
+    min-height: 375px;
 }
 
 .prog-list-header-row {
@@ -420,7 +732,7 @@
 
 .prog-list-scroll {
     flex-grow: 1;
-    min-height: 200px;
+    min-height: 250px;
 }
 
 .prog-list-row {
@@ -449,7 +761,7 @@
 
 .prog-create-btn {
     width: 100%;
-    height: 30px;
+    height: 38px;
     background-color: var(--surface-shelf-solid);
     color: var(--accent-gold);
     font-size: var(--size-base);
@@ -481,7 +793,7 @@
     padding: var(--space-8) var(--space-9);
     flex-direction: column;
     align-items: stretch;
-    width: 350px;
+    width: 438px;
 }
 
 .prog-dialog-title {
@@ -553,6 +865,15 @@
     border-width: var(--space-1);
     border-color: var(--light-edge);
     border-radius: var(--radius-md);
+}
+
+/* Картинка оператора, растянутая на кнопку джойстика. */
+.prog-joy-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
 }
 
 .prog-joy-item:hover {

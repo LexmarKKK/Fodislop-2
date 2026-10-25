@@ -2,13 +2,21 @@
 
 using System;
 using MinesServer.Networking.Client.Packets.Actions;
+using MinesServer.Networking.Client.Packets.Chat;
 using MinesServer.Networking.Client.Packets.GUI;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Kern.UI.HUD.Player.View;
 
 public sealed class PlayerHUDPopups
 {
+    // Серверного GUI-пакета «открыть консоль» в протоколе нет: сервер
+    // (Session.LocalChatHandler) перехватывает локальное сообщение "console",
+    // не рассылая его другим игрокам, и открывает MConsole.OpenWindow -
+    // серверное окно с табами ОБЩИЕ/МОДЕРАТОР/АДМИН по правам игрока.
+    private const string MConsoleLocalChatCommand = "console";
+
     private readonly Action<SuicidePacket> _sendSuicide;
     private readonly Action<OpenHelpClickPacket> _sendHelpRequest;
     private readonly Action<OpenBuildingsClickPacket> _sendBuildingsRequest;
@@ -53,5 +61,16 @@ public sealed class PlayerHUDPopups
         Button faqButton = root.Q<Button>("FaqButton") ??
             throw new InvalidOperationException("[PlayerHUD] FaqButton is missing from PlayerHUD.uxml.");
         faqButton.clicked += () => _sendHelpRequest(new OpenHelpClickPacket());
+
+        // MConsole — серверная консоль: открытие через локальный чат "console"
+        // (см. MConsoleLocalChatCommand). Окно рендерится существующим
+        // ServerWindowPresenter, вкладки собирает сервер по правам игрока.
+        Button mconsoleButton = root.Q<Button>("MConsoleButton") ??
+            throw new InvalidOperationException("[PlayerHUD] MConsoleButton is missing from PlayerHUD.uxml.");
+        mconsoleButton.clicked += () =>
+        {
+            Debug.Log("[MConsole] Клик: отправляю SendLocalChatMessagePacket(\"console\")");
+            _sendLocalChat(new SendLocalChatMessagePacket(MConsoleLocalChatCommand));
+        };
     }
 }

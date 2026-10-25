@@ -177,6 +177,15 @@
     background-color: var(--surface-abyss-dense);
 }
 
+/* Внутренний input — отдельный элемент со СВОИМ фоном из базовой темы Unity
+   (светлый rgb(240,240,240)): класс на корне поля его не перекрывает, и
+   любое серверное текстовое поле рисовалось белой плашкой во всю ширину.
+   Фон гасим в ноль (остаётся подложка корня), текст — цветом темы. */
+.sci-fi-input .unity-base-text-field__input {
+    background-color: transparent;
+    color: var(--text-primary);
+}
+
 .sci-fi-btn-red {
     flex-direction: row;
     align-items: center;
@@ -187,7 +196,7 @@
     border-width: 1px;
     border-color: var(--border-danger);
     border-radius: var(--radius-sm);
-    color: #ff7675;
+    color: var(--state-danger-hover);
     -unity-font-definition: var(--face-display);
     font-size: var(--size-sm);
     -unity-font-style: bold;
@@ -195,8 +204,8 @@
 
 .sci-fi-btn-red:hover {
     background-color: var(--state-danger-wash);
-    border-color: #ff7675;
-    color: #ffffff;
+    border-color: var(--state-danger);
+    color: var(--light-solid);
 }
 
 .sci-fi-text-title {
@@ -263,9 +272,36 @@
    только на то, что построено из пакета, и не задевать одноимённые
    контролы Unity в остальной игре. */
 
-/* Слайдер приходит со своим ползунком-картинкой из пакета (SliderPacket.Knob),
-   поэтому стандартная отрисовка Unity под ним гасится: иначе сквозь неё
-   видно вторую, чужую ручку и дорожку. */
+/* Слайдер может прийти со своим ползунком-картинкой из пакета (SliderPacket.Knob),
+   а может — без него, поэтому стандартная отрисовка Unity под ним гасится: иначе
+   сквозь неё видно вторую, чужую ручку и дорожку. Сам слайдер — во всю ширину окна
+   и с фиксированной высотой: от неё считается центр дорожки. */
+.packet-slider {
+    width: 100%;
+    height: 16px;
+    margin: var(--space-1) 0;
+}
+
+/* Дорожка — единственный вид слайдера: ручки-кругляша у пакета больше нет,
+   поэтому линия обязана читаться сама, без ручки. Утопленная 4px полоса с
+   бирюзовым контуром, при наведении контур ярче. Центр линии: (16px высоты −
+   4px полосы) / 2 = 6px. */
+.packet-slider__track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 6px;
+    height: 4px;
+    background-color: var(--border-strong);
+    border-width: 1px;
+    border-color: var(--border-cyan);
+    border-radius: var(--radius-sharp);
+}
+
+.packet-slider:hover .packet-slider__track {
+    border-color: var(--accent-cyan);
+}
+
 .packet-slider .unity-base-slider__tracker {
     background-image: none;
     border-color: transparent;
@@ -276,11 +312,40 @@
 }
 
 .packet-slider .unity-base-slider__dragger {
-    background-image: none;
+    /* По умолчанию ручка невидима: слайдер без диапазона (выбирать нечего) —
+       голая линия. Прозрачный бокс остаётся зоной захвата драга. */
+    width: 14px;
+    height: 14px;
     background-color: transparent;
-    border-color: transparent;
+    background-image: none;
+    border-width: 0;
     align-items: center;
     justify-content: center;
+}
+
+/* Живой слайдер (MaxValue > MinValue, класс ставит SliderPacketBuilder):
+   золотой кругляш — ручка в приёме главного меню. Арт Knob из пакета,
+   когда он появился на сервере, ляжет поверх этой подложки. */
+.packet-slider--filled .unity-base-slider__dragger {
+    background-color: var(--accent-gold);
+    border-radius: var(--radius-sm);
+}
+
+.packet-slider--filled .unity-base-slider__dragger:hover {
+    background-color: var(--accent-gold-hover);
+}
+
+/* Картинка Knob из пакета вписывается в зону ручки: инлайн-размер из пакета
+   зажимается максимумом, чтобы арт не вылезал за зону захвата драга. */
+.packet-slider__knob {
+    max-width: 12px;
+    max-height: 12px;
+}
+
+/* Выключенный слайдер (полоска заполнения) — приглушаем ручку и линию. */
+.packet-slider:disabled .unity-base-slider__dragger,
+.packet-slider:disabled .packet-slider__track {
+    opacity: 0.55;
 }
 
 /* Линия тянется во всю длину контейнера; толщина приходит из пакета и

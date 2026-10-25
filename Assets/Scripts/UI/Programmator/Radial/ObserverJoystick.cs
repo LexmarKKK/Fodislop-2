@@ -99,13 +99,13 @@ public class ObserverJoystick
         // Pre-load all textures
         for (int i = 0; i < 8; i++)
         {
-            _dirClickTex[i] = textures.GetTexture(s_dirClickOps[i]);
-            _dirDragTex[i] = textures.GetTexture(s_dirDragOps[i]);
-            _centerDragCellTex[i] = textures.GetTexture(s_centerDragOps[i].cell);
-            _centerDragShiftTex[i] = textures.GetTexture(s_centerDragOps[i].shift);
+            _dirClickTex[i] = textures.GetGlyph(s_dirClickOps[i])?.Texture;
+            _dirDragTex[i] = textures.GetGlyph(s_dirDragOps[i])?.Texture;
+            _centerDragCellTex[i] = textures.GetGlyph(s_centerDragOps[i].cell)?.Texture;
+            _centerDragShiftTex[i] = textures.GetGlyph(s_centerDragOps[i].shift)?.Texture;
         }
 
-        _centerTex = textures.GetTexture(s_centerClickOp);
+        _centerTex = textures.GetGlyph(s_centerClickOp)?.Texture;
 
         // Статический скелет (рут, 8 кнопок направлений, центральная кнопка)
         // живёт в ObserverJoystick.uxml, геометрия — в .prog-joy-item--* / .prog-joy-center
@@ -329,7 +329,7 @@ public class ObserverJoystick
             var img = new Image();
             img.image = tex;
             img.scaleMode = ScaleMode.ScaleToFit;
-            img.AddToClassList("prog-radial-fill");
+            img.AddToClassList("prog-joy-fill");
             img.pickingMode = PickingMode.Ignore;
             item.Add(img);
             label.text = string.Empty;

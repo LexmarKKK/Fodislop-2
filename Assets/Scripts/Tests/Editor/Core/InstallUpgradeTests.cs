@@ -234,6 +234,41 @@ public sealed class InstallUpgradeTests
     }
 
     [Test]
+    public void Schema41WithoutChatWindowLayout_MigratesAndKeepsDefaults()
+    {
+        ClientConfig legacy = ClientConfigDefaults.Create(_profile);
+        legacy.SchemaVersion = 41;
+        legacy.Interface.HasHudPanelPosition = true;
+        legacy.Interface.HudPanelX = 123.5f;
+        legacy.Interface.HudPanelY = 45f;
+        string sourceJson = JsonUtility.ToJson(legacy, prettyPrint: true);
+        string legacyJson = Regex.Replace(
+            sourceJson,
+            @",?\r?\n[ \t]*""(?:HasChatWindowLayout|ChatWindow(?:X|Y|Width|Height))""[ \t]*:[ \t]*(?:true|false|[-0-9.]+)",
+            string.Empty);
+        Assert.That(legacyJson, Does.Not.Contain("ChatWindow"));
+        Assert.That(legacyJson, Does.Not.Contain("HasChatWindowLayout"));
+        Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
+        File.WriteAllText(ConfigPath, legacyJson);
+
+        ClientConfigLoader.Result result = LoadConfig();
+
+        Assert.That(result.Outcome, Is.EqualTo(ClientConfigLoader.Outcome.Migrated));
+        Assert.That(result.SourceSchemaVersion, Is.EqualTo(41));
+        Assert.That(result.Config.SchemaVersion, Is.EqualTo(ClientConfig.CurrentSchemaVersion));
+        Assert.That(result.Config.Interface.HasChatWindowLayout, Is.False);
+        Assert.That(result.Config.Interface.ChatWindowX, Is.EqualTo(0f));
+        Assert.That(result.Config.Interface.ChatWindowY, Is.EqualTo(0f));
+        Assert.That(result.Config.Interface.ChatWindowWidth, Is.EqualTo(0f));
+        Assert.That(result.Config.Interface.ChatWindowHeight, Is.EqualTo(0f));
+        // Настройки пользователя прежней схемы переживают миграцию.
+        Assert.That(result.Config.Interface.HasHudPanelPosition, Is.True);
+        Assert.That(result.Config.Interface.HudPanelX, Is.EqualTo(123.5f));
+        Assert.That(result.Config.Interface.HudPanelY, Is.EqualTo(45f));
+        Assert.That(File.ReadAllText(ConfigPath + ".backup"), Is.EqualTo(legacyJson));
+    }
+
+    [Test]
     public void OldMapVersion_DropsAndRegenerates()
     {
         WriteMap(formatVersion: 0);

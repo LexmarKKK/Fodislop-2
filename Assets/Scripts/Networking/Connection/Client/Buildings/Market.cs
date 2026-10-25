@@ -8,6 +8,7 @@ public sealed class Market : PackBuilding
 {
     public override BuildingType Type => BuildingType.Market;
 
+
     public override IEnumerable<((int X, int Y) Pos, CellType Cell)> CellsToPlace()
     {
         yield return ((0, 0), CellType.BuildingDoor);

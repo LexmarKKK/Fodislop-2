@@ -32,6 +32,7 @@ public sealed class PlayerHUDUxmlContractTests
         "RespawnButton",
         "BuildingsButton",
         "FaqButton",
+        "MConsoleButton",
         "SkillContainer",
         "MissionPanel",
     ];

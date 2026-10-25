@@ -144,6 +144,18 @@ namespace Kern.Rendering.PostProcessing
                 throw new InvalidOperationException("World bloom requires the world HDR color target.");
             }
 
+            // На входе в мир камера стартует раньше первой публикации
+            // LightingPresentation, и _WorldLightRect ещё нулевой. Это кадровый
+            // порядок систем, а не нарушение контракта: glow-поля ещё нет —
+            // кадр без блума, проход возобновится с первой публикацией
+            // (Publish/PublishDisabled всегда публикуют валидный прямоугольник).
+            // Проверка до аллокации пирамиды: пропуск не должен её строить.
+            Vector4 lightRect = Shader.GetGlobalVector(s_worldLightRectId);
+            if (lightRect.z <= 0 || lightRect.w <= 0)
+            {
+                return;
+            }
+
             var layout = grid.Layout;
             int minX = Mathf.RoundToInt(layout.WorldRect.x * WorldRenderGrid.PixelsPerCell);
             int minY = Mathf.RoundToInt(layout.WorldRect.y * WorldRenderGrid.PixelsPerCell);
@@ -192,11 +204,6 @@ namespace Kern.Rendering.PostProcessing
                 }
             }
 
-            Vector4 lightRect = Shader.GetGlobalVector(s_worldLightRectId);
-            if (lightRect.z <= 0 || lightRect.w <= 0)
-            {
-                throw new InvalidOperationException("World bloom requires a coherent glow world rectangle.");
-            }
             Vector4 glowUv = new(layout.WorldRect.z / lightRect.z, layout.WorldRect.w / lightRect.w,
                 (layout.WorldRect.x - lightRect.x) / lightRect.z, (layout.WorldRect.y - lightRect.y) / lightRect.w);
             if (LightingFieldOrientation.RowsTopDown)

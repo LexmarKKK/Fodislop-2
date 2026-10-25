@@ -138,10 +138,9 @@ public class ModalWindowHandler : IDisposable
     {
         if (_overlay != null)
         {
-            VisualElement element = _overlay.parent ?? _overlay;
-            if (_doc.rootVisualElement != null && !_doc.rootVisualElement.Contains(element))
+            if (_doc.rootVisualElement != null && !_doc.rootVisualElement.Contains(_overlay))
             {
-                _doc.rootVisualElement.Add(element);
+                _doc.rootVisualElement.Add(_overlay);
             }
 
             return;
@@ -180,6 +179,14 @@ public class ModalWindowHandler : IDisposable
         _okButton.clicked += Hide;
 
         overlay.SetEnabled(false);
-        _doc.rootVisualElement.Add(tree);
+
+        // Оверлей цепляется к корню панели напрямую, а не через TemplateContainer:
+        // Instantiate заворачивает UXML в обёртку без размеров, единственный её
+        // ребёнок — абсолютный (вне потока), обёртка схлопывается в ноль, и
+        // «top/bottom: 0» центруют окно по нулевой линии у верха экрана
+        // (репорт: MessageBox уезжает вверх за пределы экрана). Прямой ребёнок
+        // корня растягивается на весь экран, и окно встаёт по центру.
+        overlay.RemoveFromHierarchy();
+        _doc.rootVisualElement.Add(overlay);
     }
 }

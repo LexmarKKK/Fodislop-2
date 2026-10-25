@@ -25,11 +25,19 @@ namespace Kern.UI
         [Inject] private UIInputManager _uiInput = null!;
         [Inject] private ILocalizationService _loc = null!;
         [Inject] private IAsyncOperationSupervisor _operations = null!;
+        [Inject] private IClientConfigManager _clientConfig = null!;
 
         private ChatEventGateway _chatEvents = null!;
         private ChatViewElements? _view;
         private ChatColorController? _colorController;
         private ChatBlinkController? _blink;
+        private ChatWindowInteractionController? _interaction;
+        private ChatEmojiController? _emojiController;
+        private Button? _chatToggle;
+
+        // Белая пиксельная иконка чата (цвет задаёт USS-тинт кнопки).
+        private const string ChatIconResource = "UI/Sprites/ChatIcon";
+
         private bool _isOpen;
         private bool _initialized;
         private readonly GlobalChatMessagePresenter _messages = new();
@@ -82,11 +90,16 @@ namespace Kern.UI
             // моменту вызова; null здесь — дефект проводки, а не гонка.
             // Молчаливый пропуск оставил бы чат вечно нерабочим без ошибки.
             if (_doc == null || _doc.rootVisualElement == null || _networkService == null ||
-                _inputBlocker == null || _operations == null)
+                _inputBlocker == null || _operations == null || _clientConfig == null)
             {
                 throw new InvalidOperationException(
                     "[GlobalChatUI] Required injection missing: " +
-                    $"{(_doc == null ? "UIDocument" : _networkService == null ? "INetworkService" : _inputBlocker == null ? "IInputBlocker" : "UIDocument root")}. " +
+                    $"{(_doc == null ? "UIDocument"
+                        : _doc.rootVisualElement == null ? "UIDocument root"
+                        : _networkService == null ? "INetworkService"
+                        : _inputBlocker == null ? "IInputBlocker"
+                        : _clientConfig == null ? "IClientConfigManager"
+                        : "IAsyncOperationSupervisor")}. " +
                     "GlobalChatUI must be registered in the Game scope before Start.");
             }
 
@@ -153,6 +166,14 @@ namespace Kern.UI
 
             _blink?.Dispose();
             _blink = null;
+            _interaction?.Dispose();
+            _interaction = null;
+            if (_chatToggle != null)
+            {
+                _chatToggle.RemoveFromHierarchy();
+                _chatToggle = null;
+            }
+
             _view?.Tree.RemoveFromHierarchy();
             _messages.Detach();
             _view = null;
@@ -189,12 +210,10 @@ namespace Kern.UI
             // TAB - кнопки чата в HUD больше нет.
             if (Keyboard.current.tabKey.wasPressedThisFrame)
             {
-                // При заблокированном вводе (поверх открыты окна/инвентарь) чат
-                // не открываем, но закрыть уже открытый TAB-ом можно всегда.
-                if (!_isOpen || !inputBlocked)
-                {
-                    Toggle();
-                }
+                // TAB — единственный владелец этого окна и работает всегда,
+                // независимо от блокировки ввода: открытые поверх окна,
+                // инвентарь или пауза не мешают ни открыть, ни закрыть чат.
+                Toggle();
 
                 return;
             }
@@ -240,6 +259,18 @@ namespace Kern.UI
             if (_doc != null && _view.Panel != null)
             {
                 _doc.rootVisualElement.Add(tree);
+                CreateChatToggle();
+                _interaction = new ChatWindowInteractionController(
+                    tree,
+                    _view.Panel,
+                    _clientConfig);
+
+                // Колесо над окном чата прокручивает лог, а не зумит камеру:
+                // клеймим кадр в UIInputManager. TrickleDown — раньше нативного
+                // обработчика ScrollView, который гасит событие до bubbling.
+                _view.Panel.RegisterCallback<WheelEvent>(
+                    _ => _uiInput.NotifyWheelClaimedByUI(),
+                    TrickleDown.TrickleDown);
             }
 
             if (_view.InputField != null)
@@ -265,10 +296,21 @@ namespace Kern.UI
                 CloseChatListPopup);
 
             _colorController = new ChatColorController(_networkService, _view.ColorButton, _view.ColorGrid);
+
+            // Фолбэк-шрифт смайлов ставится до создания пикера: сообщения и
+            // поле ввода получают глифы через фолбэк-таблицы лиц.
+            ChatEmojiCatalog.EnsureInstalled();
+            _emojiController = new ChatEmojiController(_view.InputField, _view.EmojiButton, _view.EmojiGrid);
+
+            // Оба пикера — попапы в одном месте: открытие одного закрывает
+            // второй, чтобы они не висели друг на друге.
+            _colorController.Opened += () => _emojiController?.CloseGrid();
+            _emojiController.Opened += () => _colorController?.CloseColorGrid();
             _messages.Attach(
                 _view.ScrollView,
                 OnMessageClicked);
             UpdateChannelHeader();
+            SelectGlobalChannel();
         }
 
         private void OnSendClicked()
@@ -310,6 +352,43 @@ namespace Kern.UI
             _view.InputField.Focus();
         }
 
+        // Кнопка чата в левом нижнем углу HUD: чат открывается и закрывается
+        // не только по TAB — иконка живёт в корне документа (вне окна чата),
+        // поэтому видна и при закрытом окне.
+        private void CreateChatToggle()
+        {
+            if (_doc == null || _chatToggle != null)
+            {
+                return;
+            }
+
+            var button = new Button(Toggle);
+            button.AddToClassList("chat-toggle-btn");
+            button.tooltip = _loc.Get("chat.toggle_tooltip");
+
+            Texture2D? icon = Resources.Load<Texture2D>(ChatIconResource);
+            if (icon != null)
+            {
+                RuntimeTextureFactory.ApplySampling(
+                    icon,
+                    FilterMode.Point,
+                    TextureWrapMode.Clamp);
+                button.style.backgroundImage = new StyleBackground(icon);
+            }
+
+            _doc.rootVisualElement.Add(button);
+            _chatToggle = button;
+            RefreshToggleState();
+        }
+
+        private void RefreshToggleState()
+        {
+            if (_chatToggle != null)
+            {
+                _chatToggle.EnableInClassList("chat-toggle-btn--active", _isOpen);
+            }
+        }
+
         public void Toggle()
         {
             if (_isOpen)
@@ -325,21 +404,30 @@ namespace Kern.UI
         public void Show()
         {
             _isOpen = true;
+            RefreshToggleState();
             if (_view?.Panel != null)
             {
                 _view.Panel.style.display = DisplayStyle.Flex;
             }
 
+            // История и сообщения могли прийти в скрытое окно (при заходе на
+            // сервер чат закрыт): при показе доскролливаем к последнему
+            // сообщению - отложенная прокрутка дождётся раскладки.
+            _messages.ScrollToBottom();
             _view?.InputField?.Focus();
         }
 
         public void Hide()
         {
             _isOpen = false;
+            RefreshToggleState();
             if (_view?.Panel != null)
             {
                 _view.Panel.style.display = DisplayStyle.None;
             }
+
+            // Курсор мог висеть над зоной ресайза в момент скрытия.
+            _interaction?.OnPanelHidden();
 
             if (_view?.InputField != null)
             {
@@ -379,6 +467,10 @@ namespace Kern.UI
             {
                 AppendMessage(ChatMessageFormatter.FormatGlobal(message, DateTime.Now), message.Id);
             }
+
+            // Свежая загрузка истории - показываем последние сообщения,
+            // независимо от того, где был скролл до этого.
+            _messages.ScrollToBottom();
         }
 
         private void UpdateChannelHeader()
@@ -590,6 +682,7 @@ namespace Kern.UI
             _view.InputField?.SetEnabled(!muted);
             _view.SendButton?.SetEnabled(!muted && activeAvailable);
             _view.ColorButton?.SetEnabled(!muted && activeAvailable);
+            _view.EmojiButton?.SetEnabled(!muted && activeAvailable);
             _view.GlobalChannelButton?.SetEnabled(true);
         }
 

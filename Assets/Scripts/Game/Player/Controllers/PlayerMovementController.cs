@@ -57,6 +57,11 @@ namespace Kern.Player.Logic
 
         public bool TryStartPath(Vector2Int target)
         {
+            if (_movementLockedByProgram)
+            {
+                return false;
+            }
+
             if (!HasServerPosition ||
                 _storage == null || !_storage.IsReady ||
                 _mapDataProvider == null)
@@ -67,7 +72,10 @@ namespace Kern.Player.Logic
             List<Vector2Int>? path;
             try
             {
-                path = ClickPathfinder.FindPath(_storage, _mapDataProvider, Position, target);
+                // Автокопание учитывается при прокладке: включено - маршрут
+                // может вскрывать ломаемые породы (DigCost + Bz по дороге),
+                // выключено - лишь проходные (isEmpty) клетки, породы обходятся.
+                path = ClickPathfinder.FindPath(_storage, _mapDataProvider, Position, target, AutoDig);
             }
             catch (Exception)
             {
@@ -114,6 +122,7 @@ namespace Kern.Player.Logic
         private bool _aggression = false;
         private bool _ignoreCollision = false;
         private float _lastMoveTime;
+        private float _lastRotateTime;
         private Direction? _lastSentDirection;
         private bool _movementValidationFailed;
         private bool _awaitingMoveConfirmation;
@@ -140,6 +149,14 @@ namespace Kern.Player.Logic
 
         [Inject]
         private Kern.Core.Lifecycle.ISceneObjectFactory _sceneObjects = null!;
+
+        [Inject]
+        private Kern.Networking.Processors.ProgrammatorProcessor _programmator = null!;
+
+        // Пока выполняется программа (и не HandMode), ручное движение
+        // закрыто: ни WASD, ни клик-путь — сервер их всё равно отвергнет,
+        // а клиент без гейта рисовал путь и делал предсказанный шаг.
+        private bool _movementLockedByProgram;
 
         public void InitializeEditorPreview(IWorldDataStorage storage, IMapDataProvider mapDataProvider)
         {
@@ -192,6 +209,11 @@ namespace Kern.Player.Logic
 
         protected void OnDestroy()
         {
+            if (_programmator != null)
+            {
+                _programmator.StateChanged -= OnProgramStateChanged;
+            }
+
             if (_localPlayerState != null)
             {
                 _localPlayerState.Clear(this);
@@ -209,6 +231,23 @@ namespace Kern.Player.Logic
             if (_input != null)
             {
                 _actionDispatcher = new PlayerActionDispatcher(_input, _networkService);
+            }
+            _programmator.StateChanged += OnProgramStateChanged;
+        }
+
+        private void OnProgramStateChanged(
+            MinesServer.Networking.Server.Packets.Programmator.ProgramStatePacket packet)
+        {
+            bool locked = packet.State != ProgramState.Stopped && !packet.IsMovementAllowed;
+            if (_movementLockedByProgram == locked)
+            {
+                return;
+            }
+
+            _movementLockedByProgram = locked;
+            if (locked)
+            {
+                CancelPath();
             }
         }
 
@@ -277,6 +316,7 @@ namespace Kern.Player.Logic
             _awaitingMoveConfirmation = false;
             _lastSentDirection = null;
             _lastMoveTime = 0f;
+            _lastRotateTime = 0f;
             CancelClickPath();
             _actionDispatcher?.ResetDigCooldown();
             foreach (SpriteRenderer renderer in _playerRenderers)
@@ -438,6 +478,11 @@ namespace Kern.Player.Logic
 
         private void ApplyMovement()
         {
+            if (_movementLockedByProgram)
+            {
+                return;
+            }
+
             if (_robot is null || _input is null)
             {
                 return;
@@ -454,6 +499,23 @@ namespace Kern.Player.Logic
                 CancelClickPath();
             }
 
+            Vector2Int direction = PlayerMovementMath.InputToDirection(moveInput);
+
+            // Отдельный RotatePacket по смене ввода не отправляется: сервер
+            // доворачивает робота при исполнении любого действия (шаг - Rotate
+            // внутри TryMove, бур - ClickCellHandler), а поворот по факту ввода
+            // опережал кулдаун шага: миллисекундный тап боковой клавиши на ходу
+            // поворачивал робота без шага, обратный доворот гасился
+            // MinRotateInterval, и робот шёл наверх, глядя вбок, до следующего
+            // шага. Направление коммитится локально ровно в момент отправки
+            // шага/бура (см. _lastSentDirection ниже). Исключение - явный
+            // поворот на месте: Shift гасит отправку шага, повернуться иначе
+            // нельзя.
+            if (direction != Vector2Int.zero && _input.IsShiftPressed && !_awaitingMoveConfirmation)
+            {
+                TryRotate(direction);
+            }
+
             if (_awaitingMoveConfirmation)
             {
                 return;
@@ -467,12 +529,6 @@ namespace Kern.Player.Logic
                     StepClickPath();
                 }
 
-                return;
-            }
-
-            Vector2Int direction = PlayerMovementMath.InputToDirection(moveInput);
-            if (direction == Vector2Int.zero)
-            {
                 return;
             }
 
@@ -525,13 +581,6 @@ namespace Kern.Player.Logic
                 return;
             }
 
-            if (_lastSentDirection != packetDirection)
-            {
-                _networkService?.SendAction(new RotatePacket(packetDirection));
-                _lastSentDirection = packetDirection;
-                _lastMoveTime = Time.time;
-            }
-
             if (_input.IsShiftPressed)
             {
                 return;
@@ -561,6 +610,8 @@ namespace Kern.Player.Logic
                         residentTargetCellType is CellType.Unloaded or CellType.Pregener))
                 {
                     _lastMoveTime = Time.time;
+                    _lastSentDirection = packetDirection;
+                    _robot.TargetAngle = PlayerMovementMath.DirectionToAngle(direction);
                     _awaitingMoveConfirmation = true;
                     _networkService?.SendAction(new MovePacket((ushort)targetPosition.x, (ushort)targetPosition.y));
                 }
@@ -583,15 +634,64 @@ namespace Kern.Player.Logic
                 Position = targetPosition;
                 OnPlayerMoved?.Invoke(oldPos, Position);
                 _lastMoveTime = Time.time;
+                _lastSentDirection = packetDirection;
                 _awaitingMoveConfirmation = true;
                 _networkService?.SendAction(new MovePacket(targetServerX, targetServerY));
             }
             else if (_autoDig)
             {
+                // Сервер доворачивает к буримой клетке сам (ClickCellHandler);
+                // локальный коммит нужен визуалу и HandleDig, чтобы направление
+                // соответствовало отправленному действию.
+                _lastSentDirection = packetDirection;
+                _robot.TargetAngle = PlayerMovementMath.DirectionToAngle(direction);
                 _actionDispatcher?.NotifyDug(targetPosition, packetDirection);
                 _networkService?.Send(new ActionClientPacket(targetServerX, targetServerY, new BzPacket()));
                 _lastMoveTime = Time.time;
             }
+            else
+            {
+                // Сплошная клетка по направлению при выключенном автокопании:
+                // ни шага, ни бура не будет, но повернуться к породе нужно -
+                // иначе робот упорно смотрит мимо неё, если изначально был
+                // развёрнут в другую сторону, и ручной бур (HandleDig идёт по
+                // направлению взгляда) уходит в старую клетку. Поворот на
+                // месте - тот же троттлённый путь, что Shift+направление.
+                TryRotate(direction);
+            }
+        }
+
+        // Поворот на месте (Shift + направление): пакет уходит сразу, не
+        // ожидая кулдауна клетки, и не трогает _lastMoveTime, так что шаг в
+        // новую сторону происходит в обычном ритме клетки. _lastRotateTime
+        // гасит дрожь аналогового ввода у диагонали квантования (|x| == |y|),
+        // чтобы смены направления туда-обратно не флудили сервером.
+        private void TryRotate(Vector2Int direction)
+        {
+            if (_movementLockedByProgram)
+            {
+                return;
+            }
+
+            if (_robot is null)
+            {
+                return;
+            }
+
+            Direction packetDirection = PlayerMovementMath.ToPacketDirection(direction);
+            if (_lastSentDirection == packetDirection ||
+                Time.time - _lastRotateTime < ProjectRuntimeContracts.Movement.MinRotateInterval)
+            {
+                return;
+            }
+
+            _lastRotateTime = Time.time;
+            _lastSentDirection = packetDirection;
+            // Предсказание угла, как при шаге движения: сервер подтвердит
+            // поворот ответным снимком позиции, но визуал не должен ждать
+            // его до следующего шага.
+            _robot.TargetAngle = PlayerMovementMath.DirectionToAngle(direction);
+            _networkService?.SendAction(new RotatePacket(packetDirection));
         }
 
         // Один тик клик-маршрута: та же механика, что у ручного движения -
@@ -704,13 +804,19 @@ namespace Kern.Player.Logic
                 _lastMoveTime = Time.time;
                 _networkService?.SendAction(new MovePacket(targetServerX, targetServerY));
             }
-            else
+            else if (_autoDig)
             {
-                // Сплошная клетка на маршруте: клик-путь бурит сам, независимо
-                // от тумблера автокопания.
+                // Сплошная клетка на маршруте: бурим, как WASD при включённом
+                // автокопании.
                 _networkService?.Send(new ActionClientPacket(targetServerX, targetServerY, new BzPacket()));
                 _lastMoveTime = Time.time;
                 _actionDispatcher?.NotifyDug(targetPosition, packetDirection);
+            }
+            else
+            {
+                // Автокопание выключили посреди маршрута: вскрывать породу
+                // нельзя - остаток маршрута недействителен, робот останавливается.
+                CancelClickPath();
             }
         }
 

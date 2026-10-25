@@ -14,14 +14,13 @@ public class CanvasPacketBuilder : PacketUIBuilderBase<CanvasPacket>
         var element = new VisualElement();
         element.AddToClassList("rel");
         const string heightKey = "PacketUI.CanvasHeight";
-        if (AttachedProperties.Has(packet, heightKey))
+        // В legacy css «canv-h=0» — легальное «высота по содержимому»: страница
+        // рынка несёт ровно это значение. Раньше неположительная высота считалась
+        // ошибкой пакета и роняла открытие всего окна вместе с сессией (репорт:
+        // выкидывало в главное меню при заходе в маркет). Высоту по содержимому
+        // канвас держит сам — minHeight по самому нижнему ребёнку (см. ниже).
+        if (AttachedProperties.TryGetFloat(packet, heightKey, out float parsed) && parsed > 0f)
         {
-            if (!AttachedProperties.TryGetFloat(packet, heightKey, out float parsed) || parsed <= 0f)
-            {
-                string raw = AttachedProperties.Find(packet, heightKey) ?? string.Empty;
-                throw new InvalidOperationException($"[PacketUI] Invalid canvas height '{raw}'.");
-            }
-
             element.style.height = parsed;
         }
 

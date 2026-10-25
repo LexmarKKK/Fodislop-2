@@ -1,0 +1,171 @@
+/* PacketWindowV2 — тема v2-окон (UIWindowPacket).
+ *
+ * Хром рисует V2WindowPresenter: .v2-window-overlay / -frame / -title-bar /
+ * -close / -resize. Контент — обычные packet-элементы; их семантические
+ * классы (tab-active, packet-button--*) дополняют базовую тему.
+ *
+ * Палитра — та же, что у окон меню (mm-modal-card / world-map-window /
+ * sci-fi-window): поверхность void/slate, бирюзовая рамка окна, золотая
+ * главная кнопка. Прежняя собственная «синяя» гамма (rgba(96,178,255))
+ * из темы убрана целиком.
+ */
+
+.v2-window-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.v2-window-frame {
+    position: absolute;
+    background-color: var(--surface-panel);
+    border-radius: var(--radius-md);
+    border-width: 1px;
+    border-color: var(--border-cyan);
+    overflow: hidden;
+}
+
+/* Заголовочная полоса — приём mm-modal-header: тёмный сланец,
+   тонкая разделительная линия, заголовок Unbounded. */
+.v2-window-title-bar {
+    height: 34px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-3) 0 var(--space-7);
+    background-color: var(--surface-slate-solid);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--border-subtle);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.v2-window-title {
+    -unity-font-definition: var(--face-display);
+    color: var(--text-primary);
+    -unity-font-style: bold;
+    font-size: var(--size-sm);
+    -unity-text-align: middle-left;
+    flex-grow: 1;
+    white-space: normal;
+    min-width: 0;
+}
+
+/* Закрытие — приём mm-modal-close: прозрачная кнопка с постоянной
+   прозрачной рамкой; опасный цвет приходит только при наведении. */
+.v2-window-close {
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+    border-width: 1px;
+    border-color: transparent;
+    border-radius: var(--radius-sm);
+    background-color: transparent;
+    color: var(--text-secondary);
+    font-size: var(--size-md);
+}
+
+.v2-window-close:hover {
+    border-color: var(--state-danger);
+    background-color: var(--state-danger-wash);
+    color: var(--state-danger);
+}
+
+.v2-window-content {
+    flex-grow: 1;
+    padding: var(--space-3) var(--space-7) var(--space-7);
+}
+
+.v2-window-page {
+    flex-grow: 1;
+}
+
+.v2-window-resize {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 18px;
+    height: 18px;
+    background-color: var(--accent-cyan-glow);
+    border-top-left-radius: var(--radius-md);
+    border-color: var(--border-cyan);
+    border-left-width: 1px;
+    border-top-width: 1px;
+}
+
+.v2-window-resize:hover {
+    background-color: var(--accent-cyan-fill);
+}
+
+/* v2-кнопка и стилевые подсказки сервера. Базовый вид — sci-fi-btn-dark,
+   семантические модификаторы — mm-btn-gold / sci-fi-btn-red и состояние
+   «норма». */
+.packet-button {
+    margin: var(--space-1) var(--space-3);
+    padding: var(--space-3) var(--space-7);
+    border-radius: var(--radius-sm);
+    border-width: 1px;
+    border-color: var(--border-subtle);
+    background-color: var(--surface-slate-dense);
+    color: var(--text-primary);
+    -unity-font-style: bold;
+}
+
+.packet-button:hover {
+    background-color: var(--surface-shelf-dense);
+    border-color: var(--border-cyan);
+}
+
+.packet-button--primary {
+    border-color: var(--accent-gold);
+    background-color: var(--accent-gold);
+    color: var(--surface-on-accent);
+    border-radius: var(--radius-sharp);
+}
+
+.packet-button--primary:hover {
+    background-color: var(--accent-gold-hover);
+    border-color: var(--accent-gold-hover);
+}
+
+.packet-button--danger {
+    border-color: var(--border-danger);
+    background-color: var(--state-danger-glow);
+    color: var(--state-danger-hover);
+}
+
+.packet-button--danger:hover {
+    background-color: var(--state-danger-wash);
+    border-color: var(--state-danger);
+    color: var(--light-solid);
+}
+
+.packet-button--success {
+    border-color: var(--state-ok);
+    background-color: var(--state-ok);
+    color: var(--surface-on-accent);
+}
+
+.packet-button--ghost {
+    border-color: var(--border-strong);
+    background-color: var(--surface-raised);
+    color: var(--text-secondary);
+}
+
+/* Вкладки-«язычки» той же строки, что и табы настроек меню: активная
+   подчёркнута бирюзовой полосой и подсвечена тоном. */
+.packet-button--tab {
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    border-bottom-width: 2px;
+    border-bottom-color: var(--border-line);
+    background-color: var(--surface-slate-dense);
+    color: var(--text-secondary);
+}
+
+.packet-button--tab.tab-active {
+    border-bottom-color: var(--accent-cyan);
+    background-color: var(--surface-shelf-dense);
+    color: var(--accent-cyan);
+}

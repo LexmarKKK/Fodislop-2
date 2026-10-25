@@ -16,4 +16,8 @@ public interface IInputBlocker
     // игровые действия по клавишам (IPlayerInput) на это время молчат,
     // нажатие означает выбор бинда, а не запуск действия.
     bool IsKeyCaptureInProgress { get; }
+
+    // Колесо мыши в этом кадре прокручивает UI (лог глобального чата), а не
+    // мир: зум камеры на такой жест не отвечает.
+    bool IsMouseWheelClaimedByUI { get; }
 }

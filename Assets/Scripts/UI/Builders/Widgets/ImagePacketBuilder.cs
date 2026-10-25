@@ -17,12 +17,30 @@ public class ImagePacketBuilder : PacketUIBuilderBase<ImagePacket>
         VisualElement element = BuildUriImage(imagePacket.URI, builder);
         element.style.width = imagePacket.Width;
         element.style.height = imagePacket.Height;
+
+        // Кликабельность картинки определяет OnClickContext (слоты апгрейда —
+        // иконка и есть кнопка). Картинка без действия не должна ловить клики:
+        // замок и кольцо выбора лежат поверх иконки слота и иначе съедали бы
+        // клик у самой ячейки.
+        if (string.IsNullOrEmpty(imagePacket.OnClickContext))
+        {
+            element.pickingMode = PickingMode.Ignore;
+        }
+
         return element;
     }
 
     internal static VisualElement BuildUriImage(string uri, PacketUIBuilder builder)
     {
         var element = new VisualElement();
+
+        // Пустой URI — договорённость «картинки нет» (так уходит SliderPacket.Knob
+        // без арта ручки): запрос по пустому имени сервер отвечает пустыми байтами,
+        // и каждая отрисовка окна сыплет лог ошибками. Загрузку не планируем вовсе.
+        if (string.IsNullOrWhiteSpace(uri))
+        {
+            return element;
+        }
 
         var cts = new CancellationTokenSource();
         element.RegisterCallback<DetachFromPanelEvent>(_ =>

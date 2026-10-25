@@ -144,6 +144,16 @@ namespace Kern.Game
             _movement.SnapTo(position, angle ?? transform.eulerAngles.z);
         }
 
+        /// <summary>
+        /// Последняя серверная (логическая) позиция робота в мировых координатах:
+        /// приходит пакетами позиции и не зависит от интерполяции визуала.
+        /// Нужна эффектам, привязанным к серверным событиям (луч C-190 и т.п.).
+        /// </summary>
+        public Vector3 ServerPosition => _movement.ServerPosition;
+
+        /// <summary>Приходила ли хотя бы одна серверная позиция (иначе ServerPosition не осмысленна).</summary>
+        public bool HasServerPosition => _movement.HasReceivedInitialPosition;
+
         public float MoveSpeed
         {
             get => _moveSpeed;

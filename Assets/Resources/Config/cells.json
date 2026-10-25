@@ -130,7 +130,7 @@
     "mapColor": "#328798"
   },
   "BuildingDoor": {
-    "drawLayer": "Background",
+    "drawLayer": "Foreground",
     "outline": "Door",
     "textureAnchor": "Cell",
     "animationType": "None",

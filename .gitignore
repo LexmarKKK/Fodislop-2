@@ -15,31 +15,35 @@ opencode.json
 *.sln.docstates
 *.userprefs
 mono_crash.*
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-bld/
-[Bb]in/
-[Oo]bj/
-[Oo]ut/
-[Ll]og/
-[Ll]ogs/
+# VS build-output dirs anchored to repo root: unanchored [Dd]ebug/ also
+# swallowed Packages/com.unity.render-pipelines.universal/Shaders/Debug and
+# ShaderLibrary/Debug (URP broke on fresh clones -> Blitter init crash loop);
+# x86/ and [Aa][Rr][Mm]64/ ate FMOD native libs under Packages/.
+/[Dd]ebug/
+/[Dd]ebugPublic/
+/[Rr]elease/
+/[Rr]eleases/
+/x64/
+/x86/
+/[Ww][Ii][Nn]32/
+/[Aa][Rr][Mm]/
+/[Aa][Rr][Mm]64/
+/bld/
+/[Bb]in/
+/[Oo]bj/
+/[Oo]ut/
+/[Ll]og/
+/[Ll]ogs/
 .vs/
 Generated\ Files/
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
+/[Tt]est[Rr]esult*/
+/[Bb]uild[Ll]og.*
 *.VisualState.xml
 TestResult.xml
 test-results*.xml
 nunit-*.xml
-[Dd]ebugPS/
-[Rr]eleasePS/
+/[Dd]ebugPS/
+/[Rr]eleasePS/
 dlldata.c
 BenchmarkDotNet.Artifacts/
 project.lock.json
@@ -311,3 +315,9 @@ Thumbs.db
 ArtCaptures/
 /[Aa]ssets/InitTestScene*.unity
 /[Aa]ssets/InitTestScene*.unity.meta
+
+# Временный риг компиляции Programmator вне Unity (не часть проекта)
+.compile_check/
+
+# Локальное состояние агента ZCode (планы, сессии)
+.zcode/

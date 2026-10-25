@@ -112,6 +112,37 @@ public sealed class ServerVFXEvent : IServerWorldEffect
     private float _flightElapsed;
     private Vector3 _flightOrigin;
 
+    // --- Луч GunShot: порт легаси GunShotScript старого клиента ---
+    // Лента из 7 сегментов от стреляющего бота к точке попадания, случайное
+    // блуждание узлов (0.9/0.1 к прямой), полураскрытие sin(7t), UV-окно
+    // 0.1 родной текстуры, цвет cyan. Рисуется ТОЛЬКО лучом: статичная
+    // картинка-фолбэк для GunShot запрещена (ложилась на стрелка).
+    private const int BeamSectorCount = 7;
+
+    // Жизнь луча: по фидбеку 0.7 c «слишком долгий по ощущениям» — укоротили вдвое.
+    private const float BeamLifetimeSeconds = 0.35f;
+
+    // Отступ «от дула»: начало ленты сдвигается вперёд по ходу луча, чтобы
+    // лента не ложилась поверх спрайта стреляющего робота (клетка = 1 юнит).
+    private const float BeamMuzzleInset = 0.55f;
+
+    // Полуширина ленты: легаси-0.5 было «слишком жирно» — 0.15 по фидбеку.
+    private const float BeamHalfWidth = 0.15f;
+
+    private const float BeamUvWindow = 0.1f;
+    private const int BeamSortingOrder = -600;
+    private const string BeamShaderName = "Kern/UnlitGunShot";
+
+    private bool _beamMode;
+    private GameObject? _beamObject;
+    private Mesh? _beamMesh;
+    private Material? _beamMaterial;
+    private readonly Vector2[] _beamTail = new Vector2[BeamSectorCount + 1];
+    private Vector3[] _beamVertices = new Vector3[4 * BeamSectorCount];
+    private Vector2[] _beamUvs = new Vector2[4 * BeamSectorCount];
+    private Color[] _beamColors = new Color[4 * BeamSectorCount];
+    private int[] _beamTriangles = new int[6 * BeamSectorCount];
+
     // Спрайтовые цифры количества: отдельные объекты в мировом бач-рендерере,
     // летят справа от кристаллика и гаснут после прилёта.
     private WorldEntityBatchRenderer _batchRenderer = null!;
@@ -220,6 +251,11 @@ public sealed class ServerVFXEvent : IServerWorldEffect
             {
                 _visualCompleted = true;
             }
+        }
+
+        if (_beamMode)
+        {
+            UpdateBeam();
         }
 
         if (_flightMode)
@@ -389,6 +425,25 @@ public sealed class ServerVFXEvent : IServerWorldEffect
 
         if (texture != null)
         {
+            // VFX.GunShot — легаси-луч старого клиента: процедурная лента из
+            // родной текстуры 'VFX/gunshot', а не статичная картинка на клетке.
+            if (_effectType == VFX.GunShot)
+            {
+                // Луч рисуется только когда робот-стрелок резолвится. Иначе
+                // НЕ рисуем ничего: фолбэк «полная текстура статичным
+                // спрайтом» ложился прямо на игрока-стрелка.
+                if (_targetBot != null)
+                {
+                    StartBeam(texture);
+                }
+                else
+                {
+                    MarkVisualCompleted();
+                }
+
+                return true;
+            }
+
             _ownedStaticSprite = Sprite.Create(
                 texture,
                 new Rect(0, 0, texture.width, texture.height),
@@ -425,6 +480,7 @@ public sealed class ServerVFXEvent : IServerWorldEffect
             return await TryLoadEffekseerAsync(filename, bytes, token);
         }
 
+        Debug.Log($"[ServerVfxEvent] '{filename}': ассет не получен от сервера (ни анимации, ни текстуры, ни efk).");
         return false;
     }
 
@@ -654,6 +710,175 @@ public sealed class ServerVFXEvent : IServerWorldEffect
         return texture;
     }
 
+    // ------------------------------------------------------------------
+    // Луч GunShot (легаси): геометрия пересобирается каждый кадр — начало
+    // следует за стреляющим ботом, узлы дрожат случайным блужданием.
+    // ------------------------------------------------------------------
+    private void StartBeam(Texture2D texture)
+    {
+        Shader beamShader = Shader.Find(BeamShaderName);
+        if (beamShader == null)
+        {
+            Debug.LogWarning($"[ServerVfxEvent] Шейдер '{BeamShaderName}' не найден — луч GunShot не построен.");
+            MarkVisualCompleted();
+            return;
+        }
+
+        // Направление луча считается геометрией, разворот «по взгляду бота»
+        // из SetupSlotPosition мешать не должен.
+        _gameObject!.transform.rotation = Quaternion.identity;
+
+        _beamTriangles = new int[6 * BeamSectorCount];
+        _beamUvs = new Vector2[4 * BeamSectorCount];
+        _beamColors = new Color[4 * BeamSectorCount];
+        _beamVertices = new Vector3[4 * BeamSectorCount];
+        for (int i = 0; i < BeamSectorCount; i++)
+        {
+            _beamTriangles[6 * i] = 4 * i;
+            _beamTriangles[6 * i + 1] = 4 * i + 1;
+            _beamTriangles[6 * i + 2] = 4 * i + 2;
+            _beamTriangles[6 * i + 3] = 4 * i + 1;
+            _beamTriangles[6 * i + 4] = 4 * i + 3;
+            _beamTriangles[6 * i + 5] = 4 * i + 2;
+        }
+
+        for (int i = 0; i < _beamColors.Length; i++)
+        {
+            _beamColors[i] = new Color(0f, 1f, 1f, 1f);
+        }
+
+        _beamMesh = new Mesh
+        {
+            name = "GunShotBeam",
+        };
+        _beamMesh.MarkDynamic();
+        _beamMesh.vertices = _beamVertices;
+        _beamMesh.uv = _beamUvs;
+        _beamMesh.colors = _beamColors;
+        _beamMesh.triangles = _beamTriangles;
+        _beamMesh.bounds = new Bounds(Vector3.zero, new Vector3(44f, 44f, 44f));
+
+        _beamMaterial = new Material(beamShader)
+        {
+            name = "GunShotBeamMaterial",
+            hideFlags = HideFlags.HideAndDontSave,
+            mainTexture = texture,
+        };
+
+        _beamObject = new GameObject("GunShotBeam");
+        _beamObject.transform.SetParent(_gameObject.transform, false);
+        _beamObject.AddComponent<MeshFilter>().sharedMesh = _beamMesh;
+        MeshRenderer beamRenderer = _beamObject.AddComponent<MeshRenderer>();
+        beamRenderer.sharedMaterial = _beamMaterial;
+        beamRenderer.sortingOrder = BeamSortingOrder;
+
+        ResetBeamTail();
+
+        _beamMode = true;
+        _isAnimated = false;
+        _maxLifetime = BeamLifetimeSeconds;
+        UpdateBeam();
+        Debug.Log("[ServerVfxEvent] GunShot: легаси-луч запущен (текстура 'VFX/gunshot').");
+    }
+
+    private void ResetBeamTail()
+    {
+        Vector2 startLocal = BeamStartLocal();
+        _beamTail[0] = startLocal;
+        _beamTail[BeamSectorCount] = Vector2.zero;
+        for (int i = 1; i < BeamSectorCount; i++)
+        {
+            float d = (float)i / BeamSectorCount;
+            _beamTail[i] = d * startLocal;
+        }
+    }
+
+    // Начало луча в локальных координатах относительно точки попадания
+    // (луч привязан к _gameObject, стоящему в точке попадания).
+    private Vector2 BeamStartLocal()
+    {
+        // Старт луча привязан к стреляющему роботу. Для чужих роботов берём
+        // серверную позицию: живой transform тянется интерполяцией, а после
+        // PruneStaleRobots GetOrCreateRobot может материализовать «призрака»
+        // в произвольной точке — из-за этого луч «через раз» стартовал в
+        // нескольких клетках от робота. Свой робот всегда рендерится по
+        // предсказанию, поэтому для него берём живой transform.
+        Vector3 start;
+        if (_targetBot is Robot shooter && !shooter.IsLocalPlayer && shooter.HasServerPosition)
+        {
+            start = shooter.ServerPosition;
+        }
+        else
+        {
+            start = _targetBot != null
+                ? _targetBot.transform.position
+                : _intendedWorldPosition;
+        }
+
+        Vector3 delta = start - _intendedWorldPosition;
+        float distance = delta.magnitude;
+        if (distance > 1e-3f)
+        {
+            // Отступ «от дула»: сдвигаем начало ленты вперёд по ходу луча,
+            // чтобы она не ложилась поверх спрайта стреляющего робота.
+            delta -= (delta / distance) * BeamMuzzleInset;
+        }
+
+        return new Vector2(delta.x, delta.y);
+    }
+
+    private void UpdateBeam()
+    {
+        if (_beamObject == null || _beamMesh == null)
+        {
+            return;
+        }
+
+        // Случайное блуждание узлов с подтягиванием к прямой (0.9/0.1), как в легаси.
+        _beamTail[0] = BeamStartLocal();
+        _beamTail[BeamSectorCount] = Vector2.zero;
+        for (int i = 1; i < BeamSectorCount; i++)
+        {
+            float d = (float)i / BeamSectorCount;
+            Vector2 wobble = _beamTail[i]
+                + new Vector2(UnityEngine.Random.value - 0.5f, UnityEngine.Random.value - 0.5f);
+            _beamTail[i] = (0.9f * wobble) + (0.1f * (d * _beamTail[0]));
+        }
+
+        // Полураскрытие ленты, как в легаси: sin(7 * t), полуширина ужата вдвое.
+        float half = BeamHalfWidth * Mathf.Sin(7f * _lifeTimer);
+
+        for (int j = 0; j < BeamSectorCount; j++)
+        {
+            Vector2 toNext = (_beamTail[j + 1] - _beamTail[j]).normalized;
+            Vector2 prevDir = j > 0
+                ? (_beamTail[j + 1] - _beamTail[j - 1]).normalized
+                : toNext;
+            Vector2 nextDir = j < BeamSectorCount - 1
+                ? (_beamTail[j + 2] - _beamTail[j]).normalized
+                : toNext;
+            Vector2 prevOffset = half * new Vector2(prevDir.y, -prevDir.x);
+            Vector2 nextOffset = half * new Vector2(nextDir.y, -nextDir.x);
+
+            _beamVertices[4 * j] = _beamTail[j] + prevOffset;
+            _beamVertices[4 * j + 1] = _beamTail[j] - prevOffset;
+            _beamVertices[4 * j + 2] = _beamTail[j + 1] + nextOffset;
+            _beamVertices[4 * j + 3] = _beamTail[j + 1] - nextOffset;
+
+            // Случайное окно 0.1 по ширине текстуры, во всю её высоту.
+            float u = UnityEngine.Random.value * (1f - BeamUvWindow);
+            _beamUvs[4 * j] = new Vector2(u, 0f);
+            _beamUvs[4 * j + 1] = new Vector2(u, 1f);
+            _beamUvs[4 * j + 2] = new Vector2(u + BeamUvWindow, 0f);
+            _beamUvs[4 * j + 3] = new Vector2(u + BeamUvWindow, 1f);
+        }
+
+        _beamMesh.vertices = _beamVertices;
+        _beamMesh.uv = _beamUvs;
+        _beamMesh.colors = _beamColors;
+        _beamMesh.bounds = new Bounds(Vector3.zero, new Vector3(44f, 44f, 44f));
+    }
+
     private Texture2D CreateProceduralCrystalTexture()
     {
         Texture2D texture = RuntimeTextureFactory.CreateRGBA32NoMip(
@@ -822,6 +1047,7 @@ public sealed class ServerVFXEvent : IServerWorldEffect
 
             _effekseerHandle = EffekseerSystem.PlayEffect(effectAsset, _intendedWorldPosition);
             _effekseerAsset = effectAsset;
+            Debug.Log($"[ServerVfxEvent] Effekseer '{filename}' запущен ({bytes.Length} B).");
 
             if (_parsedParams.EffekseerDynamicInputs != null)
             {
@@ -976,6 +1202,25 @@ public sealed class ServerVFXEvent : IServerWorldEffect
         _digitObjects.Clear();
         _digitHandles.Clear();
         _digitSprites.Clear();
+
+        _beamMode = false;
+        if (_beamObject != null)
+        {
+            UnityEngine.Object.Destroy(_beamObject);
+            _beamObject = null;
+        }
+
+        if (_beamMaterial != null)
+        {
+            UnityEngine.Object.Destroy(_beamMaterial);
+            _beamMaterial = null;
+        }
+
+        if (_beamMesh != null)
+        {
+            UnityEngine.Object.Destroy(_beamMesh);
+            _beamMesh = null;
+        }
 
         if (_ownedStaticSprite != null && !_ownedStaticSpriteShared)
         {

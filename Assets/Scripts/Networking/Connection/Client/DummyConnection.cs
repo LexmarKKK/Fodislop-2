@@ -241,7 +241,11 @@ public class DummyConnection : IServerConnection, IOfflineConnection, IWorldRegi
     // двойной вход) больше не запускает второй конкурентный init, который
     // рвал мир и гонял распаковку карты одновременно с чтением.
 
-    public string PrebakedWorldCodeName = "pallada";
+    // Мир, предзапечённый в StreamingAssets: окно диагностики файлов проверяет
+    // его дисковый кэш по тому же имени, поэтому источник один — эта константа.
+    public const string DefaultWorldCodeName = "pallada";
+
+    public string PrebakedWorldCodeName = DefaultWorldCodeName;
 
     public void Connect()
     {
@@ -413,6 +417,8 @@ public class DummyConnection : IServerConnection, IOfflineConnection, IWorldRegi
                         SendPacket));
                 break;
             case OpenHelpClickPacket:
+                break;
+            case OpenBuildingsClickPacket:
                 break;
             case OpenSettingsClickPacket:
                 break;

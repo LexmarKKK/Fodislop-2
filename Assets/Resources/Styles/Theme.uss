@@ -678,6 +678,14 @@ Button#ServerSelectButton Label {
     -unity-font-style: bold;
 }
 
+/* Сервер недоступен: тот же бейдж в мягком красном — офлайн не должен
+   выглядеть как рабочее соединение. */
+.mm-server-badge--offline {
+    background-color: var(--state-danger-wash);
+    color: var(--state-danger);
+    border-color: var(--state-danger-glow);
+}
+
 /* ── Подсказки клавиш с kbd ── */
 .mm-hotkey-row {
     flex-direction: row;
@@ -1198,4 +1206,466 @@ Button.mm-btn-outline:hover {
 
 .mm-tab-pane {
     display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ВНУТРЕННОСТИ МОДАЛОК МЕНЮ
+
+   Классы использовались в MainMenu.uxml, но стилей не имели: карточки,
+   строки «параметр — значение», таймлайн хроники, профиль и баннер
+   обновления рисовались дефолтной темой Unity. Здесь они собраны из
+   тех же токенов и приёмов, что и хром меню (mm-header/mm-footer/
+   mm-modal-*): rgba-прозрачности взяты только готовыми токенами,
+   геометрия — как у соседних mm-правил.
+   ═══════════════════════════════════════════════════════════ */
+
+.mm-tab-pane--active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Карточка-секция внутри модалки ── */
+.mm-card-box {
+    flex-direction: column;
+    background-color: var(--surface-raised);
+    border-width: 1px;
+    border-color: var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-7);
+    margin-bottom: var(--space-6);
+}
+
+.mm-card-box--gap-top {
+    margin-top: var(--space-6);
+}
+
+/* ── Строка «параметр — значение» ── */
+.mm-row-item {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+}
+
+.mm-row-item--gap {
+    margin-top: var(--space-3);
+}
+
+.mm-row-item--meta {
+    margin-bottom: var(--space-2);
+}
+
+.mm-item-title {
+    -unity-font-definition: var(--face-body);
+    color: var(--text-secondary);
+    font-size: var(--size-sm);
+    padding-right: var(--space-6);
+}
+
+.mm-item-val {
+    -unity-font-definition: var(--face-data);
+    color: var(--text-primary);
+    font-size: var(--size-sm);
+    -unity-font-style: bold;
+}
+
+/* Надзаголовок карточки — мелкая техническая подпись, как координаты
+   у метки станции: моноширинный, приглушённый, с трекингом. */
+.mm-card-tag {
+    -unity-font-definition: var(--face-data);
+    color: var(--text-tertiary);
+    font-size: var(--size-2xs);
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    margin-bottom: var(--space-4);
+}
+
+.mm-text--gold {
+    color: var(--accent-gold);
+}
+
+/* Кейкап в настройках — тот же приём, что и mm-kbd-box в подсказке
+   клавиш главного экрана. */
+.mm-key-badge {
+    -unity-font-definition: var(--face-data);
+    background-color: var(--light-film);
+    border-width: 1px;
+    border-color: var(--light-sheen);
+    border-radius: var(--radius-sharp);
+    padding: var(--space-1) var(--space-3);
+    color: var(--text-secondary);
+    font-size: var(--size-2xs);
+    -unity-font-style: bold;
+}
+
+.mm-flex-1 {
+    flex-grow: 1;
+}
+
+.mm-footer--between {
+    justify-content: space-between;
+}
+
+.mm-feedback-tag {
+    margin-top: var(--space-3);
+}
+
+/* Полоса загрузки обновления стартует с нуля: анимацию роста ширины
+   ведёт код, класс держит начальное состояние до первого тика. */
+.mm-progress-fill--init {
+    width: 0%;
+}
+
+/* Селект в строке настроек — тот же рецепт, что у onb-select
+   в Auth.uss: рамка на самом поле ввода дропдауна. */
+.mm-select--controls {
+    margin: 0;
+    flex-grow: 1;
+}
+
+.mm-select--controls > .unity-base-field__input {
+    background-color: var(--surface-inset);
+    border-width: 1px;
+    border-color: var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3) var(--space-5);
+    -unity-font-definition: var(--face-data);
+    font-size: var(--size-sm);
+    color: var(--text-primary);
+}
+
+/* ── Карточка деталей сервера ── */
+.mm-detail-title {
+    -unity-font-definition: var(--face-display);
+    color: var(--text-primary);
+    font-size: var(--size-md);
+    -unity-font-style: bold;
+    /* Имя сервера стартует от левого края карточки: без явного якоря
+       метка наследует центрирование темы и висит посередине (репорт). */
+    -unity-text-align: middle-left;
+    align-self: flex-start;
+    margin-bottom: var(--space-2);
+}
+
+.mm-detail-desc {
+    -unity-font-definition: var(--face-body);
+    color: var(--text-secondary);
+    font-size: var(--size-xs);
+    white-space: normal;
+    margin-bottom: var(--space-5);
+}
+
+.mm-server-detail-card {
+    border-color: var(--border-cyan);
+}
+
+.mm-settings-content--servers {
+    padding-top: var(--space-8);
+}
+
+/* ── Баннер обязательного обновления ── */
+.mm-update-banner {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--accent-gold-tint);
+    border-width: 1px;
+    border-color: var(--border-gold);
+    border-radius: var(--radius-md);
+    padding: var(--space-5) var(--space-6);
+    margin-bottom: var(--space-7);
+}
+
+.mm-update-banner-text {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.mm-update-banner-title {
+    -unity-font-definition: var(--face-display);
+    color: var(--accent-gold);
+    font-size: var(--size-sm);
+    -unity-font-style: bold;
+}
+
+.mm-update-banner-sub {
+    -unity-font-definition: var(--face-body);
+    color: var(--text-secondary);
+    font-size: var(--size-xs);
+    margin-top: var(--space-1);
+}
+
+.mm-update-banner-cta {
+    -unity-font-definition: var(--face-data);
+    color: var(--accent-gold);
+    font-size: var(--size-xs);
+    -unity-font-style: bold;
+    margin-left: var(--space-6);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Баннер без требуемого обновления: нейтральный, как карточка сервера, —
+   кнопки «ОБНОВИТЬ» нет, текст по центру, ничего не просит на себя клик. */
+.mm-update-banner--idle {
+    justify-content: center;
+    background-color: var(--surface-raised);
+    border-color: var(--border-subtle);
+}
+
+.mm-update-banner--idle .mm-update-banner-text {
+    align-items: center;
+}
+
+.mm-update-banner--idle .mm-update-banner-title,
+.mm-update-banner--idle .mm-update-banner-sub {
+    text-align: center;
+}
+
+.mm-update-banner--idle .mm-update-banner-title {
+    color: var(--text-secondary);
+}
+
+.mm-update-hero-box {
+    border-color: var(--border-gold);
+}
+
+.mm-update-title {
+    font-size: var(--size-md);
+}
+
+/* ── Журнал ремонта ── */
+.mm-repair-log {
+    flex-direction: column;
+    background-color: var(--surface-sunken);
+    border-width: 1px;
+    border-color: var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: var(--space-5);
+}
+
+.mm-log-line {
+    -unity-font-definition: var(--face-data);
+    color: var(--text-tertiary);
+    font-size: var(--size-2xs);
+    margin-bottom: var(--space-2);
+}
+
+.mm-log-line--success {
+    color: var(--state-ok);
+}
+
+/* Статусы строк диагностики файлов: вердикт проверки красится целиком,
+   текст строки собирает код — цвет остаётся единственным различием. */
+.mm-log-line--error {
+    color: var(--state-danger);
+}
+
+.mm-log-line--warning {
+    color: var(--accent-gold);
+}
+
+.mm-log-line--running,
+.mm-log-line--pending {
+    color: var(--text-secondary);
+}
+
+/* ── Досье шахтера ── */
+.mm-profile-hero {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: var(--space-7);
+}
+
+/* Увеличенная копия аватара из шапки (mm-user-avatar): тот же золотой
+   квадрат с острыми углами и тёмной буквой. */
+.mm-profile-avatar {
+    width: var(--space-14);
+    height: var(--space-14);
+    border-radius: var(--radius-sharp);
+    background-color: var(--accent-gold);
+    align-items: center;
+    justify-content: center;
+}
+
+.mm-profile-avatar Label {
+    -unity-font-definition: var(--face-display);
+    color: var(--text-on-gold);
+    font-size: var(--size-xl);
+    -unity-font-style: bold;
+}
+
+.mm-profile-info {
+    flex-direction: column;
+    margin-left: var(--space-6);
+}
+
+.mm-profile-name {
+    -unity-font-definition: var(--face-display);
+    color: var(--light-solid);
+    font-size: var(--size-lg);
+    -unity-font-style: bold;
+}
+
+.mm-profile-clan {
+    -unity-font-definition: var(--face-data);
+    color: var(--accent-cyan);
+    font-size: var(--size-xs);
+    margin-top: var(--space-1);
+}
+
+.mm-profile-uid {
+    -unity-font-definition: var(--face-data);
+    color: var(--text-tertiary);
+    font-size: var(--size-2xs);
+    margin-top: var(--space-1);
+}
+
+/* ── Таймлайн хроники ── */
+.mm-timeline {
+    position: relative;
+    flex-direction: column;
+    padding-left: var(--space-8);
+}
+
+/* Стержень слева, бусины карточек садятся на него. */
+.mm-timeline-spine {
+    position: absolute;
+    left: var(--space-3);
+    top: var(--space-2);
+    bottom: var(--space-2);
+    width: 2px;
+    background-color: var(--border-line);
+}
+
+.mm-timeline-section-title {
+    -unity-font-definition: var(--face-data);
+    color: var(--text-tertiary);
+    font-size: var(--size-2xs);
+    -unity-font-style: bold;
+    letter-spacing: 1px;
+    margin: var(--space-7) 0 var(--space-4);
+}
+
+.mm-timeline-section--gold {
+    color: var(--accent-gold);
+}
+
+.mm-timeline-section--purple {
+    color: var(--state-anomaly);
+}
+
+.mm-timeline-section--dim {
+    color: var(--text-tertiary);
+}
+
+.mm-timeline-card {
+    position: relative;
+    background-color: var(--surface-raised);
+    border-width: 1px;
+    border-color: var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-6);
+    margin-bottom: var(--space-5);
+}
+
+.mm-tc--gold {
+    border-color: var(--border-gold);
+}
+
+.mm-tc--purple {
+    border-color: var(--state-anomaly-glow);
+}
+
+.mm-tc--dim {
+    border-color: var(--border-subtle);
+}
+
+/* Бусина на стержне: пустая с точкой по центру, цвет — от модификатора.
+   Смещение -24px выводит её из карточки на стержень (16px паддинг
+   таймлайна + половина ширины бусины). */
+.mm-timeline-bead {
+    position: absolute;
+    left: -24px;
+    top: var(--space-5);
+    width: 12px;
+    height: 12px;
+    border-radius: var(--radius-pill);
+    border-width: 2px;
+    background-color: var(--surface-solid);
+    align-items: center;
+    justify-content: center;
+}
+
+.mm-tb--gold {
+    border-color: var(--accent-gold);
+}
+
+.mm-tb--purple {
+    border-color: var(--state-anomaly);
+}
+
+.mm-tb--dim {
+    border-color: var(--text-disabled);
+}
+
+.mm-bead-core {
+    width: 4px;
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background-color: var(--accent-cyan);
+}
+
+.mm-tc-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+/* Ярлык события — тот же приём, что mm-server-badge: моноширинный
+   бейдж с тонированной подложкой. Базовый тон — бирюзовый. */
+.mm-tc-tag {
+    -unity-font-definition: var(--face-data);
+    background-color: var(--accent-cyan-wash);
+    color: var(--accent-cyan);
+    border-width: 1px;
+    border-color: var(--border-cyan);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-sharp);
+    font-size: var(--size-micro);
+    -unity-font-style: bold;
+}
+
+.mm-tag--gold {
+    background-color: var(--accent-gold-wash);
+    color: var(--accent-gold);
+    border-color: var(--border-gold);
+}
+
+.mm-tag--purple {
+    background-color: var(--state-anomaly-wash);
+    color: var(--state-anomaly);
+    border-color: var(--state-anomaly-glow);
+}
+
+.mm-tc-date {
+    -unity-font-definition: var(--face-data);
+    color: var(--text-tertiary);
+    font-size: var(--size-micro);
+}
+
+.mm-tc-title {
+    -unity-font-definition: var(--face-display);
+    color: var(--text-primary);
+    font-size: var(--size-sm);
+    -unity-font-style: bold;
+    margin-bottom: var(--space-2);
+}
+
+.mm-tc-body {
+    -unity-font-definition: var(--face-body);
+    color: var(--text-secondary);
+    font-size: var(--size-xs);
+    white-space: normal;
 }

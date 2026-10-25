@@ -7,17 +7,18 @@ using UnityEngine.UIElements;
 
 namespace Kern.UI.HUD.Player.View;
 
-// Сетка умений PlayerHud (как в старом клиенте): иконка умения, вокруг неё -
-// круговой лаймовый прогресс-бар (SkillProgressRing), над иконкой - "up" при
-// готовности апгрейда (xp >= 100%), прыгающее вверх-вниз для привлечения
-// внимания. Вертикальной полосы больше нет.
+// Сетка умений PlayerHUD: иконка умения, под ней полоса опыта с процентами
+// (SkillProgressBar), над иконкой - "up" при готовности апгрейда
+// (xp >= 100%), прыгающее вверх-вниз для привлечения внимания. Место под
+// "up" резервируется отступом рамки, сама надпись растянута ровно по ширине
+// иконки, поэтому всегда отцентрирована по умению.
 public sealed class PlayerHUDSkillGrid
 {
     private const int SKILL_GRID_COLS = 4;
     private const string ReadyText = "up";
     private const long BounceIntervalMs = 40L;
 
-    private readonly Dictionary<SkillType, (Label arrow, SkillProgressRing ring)> _skillIcons = new();
+    private readonly Dictionary<SkillType, (Label arrow, SkillProgressBar bar)> _skillIcons = new();
     private readonly Dictionary<SkillType, IVisualElementScheduledItem> _bounceSchedules = new();
 
     private VisualElement? _skillContainer;
@@ -39,12 +40,15 @@ public sealed class PlayerHUDSkillGrid
             icon = CreateSkillIcon(skill);
         }
 
-        float progress = max > 0 ? Mathf.Clamp01(current / (float)max) : 0f;
+        // Сырой процент БЕЗ Clamp01: перелив сверх 100% (current > max)
+        // доезжает до полосы - заливка краснеет, проценты показывают
+        // сверхнорму ("120%"). Длину заливки клампит сам SkillProgressBar.
+        float progress = max > 0 ? current / (float)max : 0f;
         bool ready = progress >= 1f;
 
-        // Кольцо плавно догоняет целевое заполнение - линия движется, пока
-        // умение прокачивается.
-        icon.ring.SetTarget(progress);
+        // Полоса плавно догоняет целевое заполнение - заливка движется,
+        // пока умение прокачивается.
+        icon.bar.SetTarget(progress);
 
         icon.arrow.text = ready ? ReadyText : string.Empty;
         if (ready)
@@ -66,9 +70,9 @@ public sealed class PlayerHUDSkillGrid
 
         _bounceSchedules.Clear();
 
-        foreach (var (_, ring) in _skillIcons.Values)
+        foreach (var (_, bar) in _skillIcons.Values)
         {
-            ring.PauseAnimation();
+            bar.PauseAnimation();
         }
     }
 
@@ -114,14 +118,20 @@ public sealed class PlayerHUDSkillGrid
         _skillCountInRow = 0;
     }
 
-    private (Label arrow, SkillProgressRing ring) CreateSkillIcon(SkillType skill)
+    private (Label arrow, SkillProgressBar bar) CreateSkillIcon(SkillType skill)
     {
         EnsureSkillRow();
 
-        // Ячейка: иконка умения, поверх неё - круговой прогресс-бар
-        // (абсолютный слой вокруг иконки), над иконкой - "up".
+        // Ячейка - колонка без подложки: рамка с иконкой, под ней полоса
+        // опыта. Верхний отступ рамки резервирует место под "up"; надпись
+        // привязана к рамке и растянута по ширине иконки, поэтому
+        // центрирована ровно по умению.
         var cell = new VisualElement();
         cell.AddToClassList("hud-skill-icon");
+
+        // Рамка вокруг иконки - точка привязки "up".
+        var iconFrame = new VisualElement();
+        iconFrame.AddToClassList("hud-skill-icon-frame");
 
         var iconImage = new Image();
         iconImage.AddToClassList("hud-skill-icon-image");
@@ -136,19 +146,26 @@ public sealed class PlayerHUDSkillGrid
             iconImage.image = tex;
         }
 
-        cell.Add(iconImage);
+        iconFrame.Add(iconImage);
 
-        var ring = new SkillProgressRing();
-        cell.Add(ring);
-
+        // "up" при готовности апгрейда: абсолютный слой НАД иконкой, растянутый
+        // ровно на ширину рамки (left/right: 0), поэтому middle-center центрирует
+        // текст точно по умению - без зависимости от stretch и измерения шрифта.
+        // Прыжок вверх-вниз уводит надпись в зарезервированную зону над иконкой.
         var arrow = new Label(ReadyText);
         arrow.AddToClassList("hud-skill-arrow");
-        cell.Add(arrow);
+        iconFrame.Add(arrow);
+
+        cell.Add(iconFrame);
+
+        // Полоса опыта с процентами - ПОД иконкой, центрируется ячейкой.
+        var bar = new SkillProgressBar();
+        cell.Add(bar);
 
         _currentSkillRow?.Add(cell);
         _skillCountInRow++;
 
-        var result = (arrow, ring);
+        var result = (arrow, bar);
         _skillIcons[skill] = result;
         return result;
     }
