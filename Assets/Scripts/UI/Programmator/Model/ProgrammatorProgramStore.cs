@@ -197,6 +197,8 @@ internal sealed class ProgrammatorProgramStore
         RaiseActiveProgramChanged();
     }
 
+    // G7-C: закрытие редактора не рисует локальный список — список теперь
+    // только серверный; локальная работа сохраняется в файл-зеркало.
     public void CloseProgram()
     {
         if (_isRunning)
@@ -206,8 +208,7 @@ internal sealed class ProgrammatorProgramStore
 
         StoreActiveProgram();
         _file.Save(_programItems);
-
-        ShowProgramList();
+        RaiseActiveProgramChanged();
     }
 
     public void CreateNewProgram(string name)
@@ -374,11 +375,22 @@ internal sealed class ProgrammatorProgramStore
 
     private void OnProgramUpdated(UpdateProgramPacket packet)
     {
-        if (packet.ProgramId != _activeIndex || packet.Instructions.Count == 0)
+        if (packet.Instructions.Count == 0)
         {
             return;
         }
 
+        // G7-C: сервер — источник истины. Идентификатор программы сервера
+        // становится активным индексом локального зеркала (оно дополняется,
+        // если серверный список длиннее локального), контент заменяется
+        // серверным в любом случае — включая эхо после SaveProgram.
+        int programId = packet.ProgramId;
+        while (_programItems.Count <= programId)
+        {
+            _programItems.Add(new ProgrammatorProgramItem());
+        }
+
+        _activeIndex = programId;
         _data.Codes = new List<int>(packet.Instructions.Count);
         _data.Labels = new List<string?>(packet.Instructions.Count);
         _data.Values = new List<string?>(packet.Instructions.Count);
@@ -389,15 +401,18 @@ internal sealed class ProgrammatorProgramStore
             _data.Values.Add(value);
         }
 
-        ProgrammatorProgramItem item = _programItems[_activeIndex];
+        ProgrammatorProgramItem item = _programItems[programId];
         item.Name = packet.DisplayName;
         item.Codes = new List<int>(_data.Codes);
         item.Labels = new List<string?>(_data.Labels);
         item.Values = new List<string?>(_data.Values);
         _file.Save(_programItems);
+        _view.ProgramTitle.text = packet.DisplayName;
+        _view.ProgramListPanel.style.display = DisplayStyle.None;
+        _view.Panel.style.display = DisplayStyle.Flex;
         RefreshAllCells();
         RaiseActiveProgramChanged();
-        Debug.Log($"[Programmator] Server updated program '{packet.DisplayName}'.");
+        Debug.Log($"[Programmator] Server updated program '{packet.DisplayName}' (id {programId}).");
     }
 
     private void OnStateChanged(ProgramStatePacket packet)

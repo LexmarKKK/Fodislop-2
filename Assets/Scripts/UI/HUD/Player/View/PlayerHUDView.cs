@@ -408,7 +408,10 @@ namespace Kern.UI.HUD.Player.View
                 Tooltip.AttachTo(bonusButton, () => _loc.Get("hud.tooltip.bonus"), _tooltip!);
             }
 
-            _popups = new PlayerHUDPopups(packet => _networkService?.SendAction(packet), packet => _networkService?.Send(packet), packet => _networkService?.Send(packet), packet => _networkService?.Send(packet));
+            _popups = new PlayerHUDPopups(
+                packet => _networkService?.SendAction(packet),
+                packet => _networkService?.Send(packet),
+                packet => _networkService?.Send(packet));
             _popups.Initialize(tree);
 
             _statusPanel.Initialize(tree);
@@ -417,7 +420,10 @@ namespace Kern.UI.HUD.Player.View
 
             _programmatorButton = tree.Q<Button>("ProgrammatorButton") ??
                 throw new InvalidOperationException("[PlayerHUD] ProgrammatorButton is missing from PlayerHUD.uxml.");
-            _programmatorButton.clicked += () => _programmatorGrid?.Show();
+            // G7-C: список программ рисует сервер (окно списка), клик по строке
+            // ходит ElementClickPacket'ом; грид открывается сам по
+            // OpenProgrammatorPacket (ProgrammatorGrid подписан на OpenRequested).
+            _programmatorButton.clicked += () => _programmatorProtocol.RequestProgramList();
 
             _programRunButton = tree.Q<Button>("ProgramRunButton") ??
                 throw new InvalidOperationException("[PlayerHUD] ProgramRunButton is missing from PlayerHUD.uxml.");

@@ -46,8 +46,6 @@ public sealed class PlayerHUDUxmlContractTests
         "WorldMapFollowPlayerButton",
         "WorldMapStatus",
         "RespawnPopup",
-        "BuildingsPopup",
-        "FaqPopup",
     ];
 
     [Test]

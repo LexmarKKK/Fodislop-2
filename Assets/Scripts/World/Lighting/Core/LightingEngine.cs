@@ -35,7 +35,11 @@ namespace Kern.World.Lighting
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetForDomainReload()
         {
-            Shader.DisableKeyword(LightingPresentation.WorldLightingKeyword);
+            // Коherent-состояние глобалов освещения нужно до первого кадра:
+            // перерисовка Game-вью при входе в Play Mode случается раньше
+            // Start и раньше асинхронной DI-инициализации движка, а пустой
+            // _WorldLightRect роняет bloom-проход вместе с render graph.
+            LightingPresentation.PublishDisabledGlobals();
             LightingUpdateCoordinator.DiagnosticForceDenseReanchor = false;
             LightingComputeBinder.DiagnosticTransportCounters = false;
             LightingComputeBinder.DiagnosticTexelTraversalReference = false;

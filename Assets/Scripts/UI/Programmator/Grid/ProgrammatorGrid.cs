@@ -109,7 +109,7 @@ public sealed class ProgrammatorGrid : IDisposable
             var clipboard = new ProgrammatorClipboardController(selection, view.UpdateCell, _data);
             var keyboardInsert = new ProgrammatorKeyboardInsert(_data, view.UpdateCell, IsTextFieldFocused);
 
-            view.Build(selection, radial, programs, clipboard, Hide);
+            view.Build(selection, radial, programs, clipboard, Hide, CloseToProgramList);
 
             _view = view;
             _selection = selection;
@@ -203,7 +203,7 @@ public sealed class ProgrammatorGrid : IDisposable
 
                 if (_view!.Panel.style.display == DisplayStyle.Flex)
                 {
-                    _programs!.CloseProgram();
+                    CloseToProgramList();
                     return;
                 }
 
@@ -372,7 +372,8 @@ public sealed class ProgrammatorGrid : IDisposable
             _isOpen = true;
             _uiInput.IsProgrammatorOpen = true;
             _view.Popup.style.display = DisplayStyle.Flex;
-            _programs!.ShowProgramList();
+            // G7-C: локального списка программ больше нет — выбранный серверный
+            // контент приходит UpdateProgramPacket'ом (см. ProgrammatorProgramStore).
         }
 
         public void Hide()
@@ -382,15 +383,15 @@ public sealed class ProgrammatorGrid : IDisposable
             // здесь убивала программу сразу после первого шага робота
             // (репорт: «двигается лишь на 1 клетку»).
             _selection!.ClearSelection();
-        _radial!.HideAll();
-        _keyboardInsert!.Reset();
-        _isOpen = false;
-        _uiInput.IsProgrammatorOpen = false;
-        _programs.HideCreateInput();
-        _view!.ProgramListPanel.style.display = DisplayStyle.None;
-        _view.Panel.style.display = DisplayStyle.None;
-        _view.Popup.style.display = DisplayStyle.None;
-    }
+            _radial!.HideAll();
+            _keyboardInsert!.Reset();
+            _isOpen = false;
+            _uiInput.IsProgrammatorOpen = false;
+            _programs.HideCreateInput();
+            _view!.ProgramListPanel.style.display = DisplayStyle.None;
+            _view.Panel.style.display = DisplayStyle.None;
+            _view.Popup.style.display = DisplayStyle.None;
+        }
 
         // R: пуск/остановка активной программы — то же, что кнопки ▶/■
         // тулбара. Работает и при закрытом окне. Пока из списка не открыта

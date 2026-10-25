@@ -20,8 +20,6 @@ internal sealed class ChatViewElements
 
     public Label? ChatHeader { get; }
 
-    public Button? GlobalChannelButton { get; }
-
     public Button? SendButton { get; }
 
     public Button? ColorButton { get; }
@@ -31,6 +29,14 @@ internal sealed class ChatViewElements
     public Button? EmojiButton { get; }
 
     public VisualElement? EmojiGrid { get; }
+
+    public VisualElement? ChatListPopup { get; }
+
+    public ScrollView? ChatListScroll { get; }
+
+    public Button? ChatListCloseButton { get; }
+
+    public Button? GlobalChannelButton { get; }
 
     public Controls.ChatInputBlinker? Blinker { get; }
 
@@ -61,6 +67,9 @@ internal sealed class ChatViewElements
         ColorGrid = tree.Q<VisualElement>("ColorGrid");
         EmojiButton = tree.Q<Button>("EmojiButton");
         EmojiGrid = tree.Q<VisualElement>("EmojiGrid");
+        ChatListPopup = tree.Q<VisualElement>("ChatListPopup");
+        ChatListScroll = tree.Q<ScrollView>("ChatListScroll");
+        ChatListCloseButton = tree.Q<Button>("ChatListCloseButton");
 
         var internalInput = InputField != null
             ? InputField.Q<VisualElement>(className: "unity-text-field__input")
@@ -76,7 +85,7 @@ internal sealed class ChatViewElements
         }
     }
 
-    public void BindActions(Action onSend, Action selectGlobal)
+    public void BindActions(Action onSend, Action openChatList, Action closeChatList)
     {
         if (SendButton != null)
         {
@@ -85,9 +94,13 @@ internal sealed class ChatViewElements
 
         if (GlobalChannelButton != null)
         {
-            GlobalChannelButton.clicked += selectGlobal;
+            GlobalChannelButton.clicked += openChatList;
         }
 
+        if (ChatListCloseButton != null)
+        {
+            ChatListCloseButton.clicked += closeChatList;
+        }
     }
 
     public void SetMuteStatus(string message)

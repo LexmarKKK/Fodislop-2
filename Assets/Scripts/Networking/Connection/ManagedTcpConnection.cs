@@ -50,6 +50,15 @@ namespace Kern.Networking.Connection
         public event Action? OnDisconnecting;
         public event Action? OnConnecting;
 
+        // Мягкая ошибка декодирования: кадр потреблён, поток кадров цел —
+        // порешение о дисконнекте остаётся за хостом (ConnectionManager).
+        public event Action<Exception>? OnError;
+
+        // Счётчик для политики «N ошибок — дисконнект». Инкремент из потока
+        // чтения, чтение в основном потоке — Interlocked держит атомарность.
+        private int _decodeErrors;
+        public int DecodeErrorCount => _decodeErrors;
+
         public ManagedTcpConnection(IPAddress address, int port)
         {
             _address = address;
@@ -141,7 +150,11 @@ namespace Kern.Networking.Connection
                     catch (Exception ex)
                     {
                         // Порченый кадр: логируем полностью (включая внутреннее
-                        // исключение и hex-голову) и продолжаем.
+                        // исключение и hex-голову) и продолжаем. Кадр отброшен,
+                        // но соединение цело — событие OnError даёт хосту
+                        // основание решить «N ошибок — дисконнект».
+                        _ = Interlocked.Increment(ref _decodeErrors);
+                        OnError?.Invoke(ex);
                         int head = Math.Min(48, frame.Length);
                         var hex = new System.Text.StringBuilder(head * 3);
                         for (int i = 0; i < head; i++)
@@ -164,6 +177,13 @@ namespace Kern.Networking.Connection
             var stream = _stream;
             if (stream == null || ConnectionStatus != ConnectionStatus.Connected)
             {
+                // Раньше пакет отбрасывался молча, и отправитель не узнавал о
+                // потере (страдало прежде всего рукопожатие ClientHello). Диагностика:
+                // какой пакет, при каком статусе и с каким стримом.
+                Debug.LogWarning(
+                    $"[ManagedTcpConnection] Send dropped before write: " +
+                    $"status={ConnectionStatus}, stream={(stream != null ? "open" : "null")}, " +
+                    $"packet={packet.GetType().Name}.");
                 return;
             }
 

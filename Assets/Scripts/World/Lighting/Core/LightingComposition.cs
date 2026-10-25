@@ -48,6 +48,16 @@ internal sealed class LightingComposition
             telemetry);
         GPULifecycle = new LightingGPULifecycle(resources, FrameExecutor);
         Presentation = new LightingPresentation(resources);
+        // Глобалы освещения обязаны быть согласованы с первого отрисованного
+        // кадра: первый рендер может пройти раньше инициализации движка и
+        // первой настоящей публикации, а пустой _WorldLightRect роняет
+        // bloom-проход (`World bloom requires a coherent glow world
+        // rectangle`) и весь render graph этого кадра. PublishDisabled —
+        // штатное неопубликованное состояние: выключенный
+        // KERN_WORLD_LIGHTING, валидный прямоугольник, чёрный glow. Реальная
+        // публикация перезаписывает его, а переход обрабатывает
+        // LightingUpdateCoordinator.Update через IsDisabledStatePublished.
+        Presentation.PublishDisabled();
         UpdateCoordinator = new LightingUpdateCoordinator(
             resources,
             runtimeState,

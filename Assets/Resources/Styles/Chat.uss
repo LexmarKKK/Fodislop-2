@@ -316,6 +316,76 @@
     color: var(--light-solid);
 }
 
+/* ─── Список чатов («Чаты» → выбор канала/привата) ───
+   Попап над панелью лога; строки строятся кодом из ChatListPacket (48). */
+
+.gchat-chats-popup {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 360px;
+    max-height: 320px;
+    align-self: flex-end;
+    background-color: var(--surface-slate-dense);
+    border-width: var(--space-1);
+    border-color: var(--accent-cyan-deep);
+    padding: var(--space-3);
+    flex-direction: column;
+}
+
+.gchat-chats-header {
+    font-size: var(--size-base);
+    -unity-font-style: bold;
+    color: var(--accent-gold);
+    margin-bottom: var(--space-2);
+}
+
+.gchat-chats-scroll {
+    flex-grow: 1;
+    margin-bottom: var(--space-2);
+    background-color: var(--surface-void-haze);
+    border-width: 1px;
+    border-color: var(--border-line);
+}
+
+.gchat-chat-row {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-2);
+    margin-bottom: var(--space-1);
+    background-color: var(--surface-shelf-dense);
+    border-width: 1px;
+    border-color: var(--border-line);
+}
+
+.gchat-chat-row-name {
+    font-size: var(--size-sm);
+    -unity-font-style: bold;
+    color: var(--light-solid);
+}
+
+.gchat-chat-row-preview {
+    font-size: var(--size-sm);
+    color: var(--text-secondary);
+    white-space: normal;
+}
+
+.gchat-chats-close {
+    height: 26px;
+    flex-shrink: 0;
+    background-color: var(--surface-shelf-solid);
+    border-width: 1px;
+    border-color: var(--border-line);
+    color: var(--text-secondary);
+    -unity-text-align: middle-center;
+}
+
+/* Кликабельная строка сообщения (клик → серверное окно отправителя). */
+
+.gchat-message--clickable:hover {
+    background-color: var(--surface-shelf-dense);
+}
+
 /* ─── Локальный чат (LocalChatInput) ───
    Одна строка по центру низа: глобальное окно живёт справа по центру
    (.gchat-panel), дно по центру кадра HUD не занимает — джойстик прижат

@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Kern.Core;
 using Kern.Core.Interfaces;
 using Kern.Core.Localization;
@@ -43,8 +44,16 @@ namespace Kern.UI
         private readonly ChatMuteTracker _muteTracker = new();
         private bool _lastMutedState;
         private bool _hasCachedMuteState;
-        private bool _hasServerChatList;
-        private bool _hasGlobalChannel;
+        // Активный чат: тег маршрутизации (SendChatMessagePacket/история) и
+        // серверное имя для заголовка. Дефолт — глобальный канал (FED).
+        private string _activeTag = ProjectRuntimeContracts.Chat.GlobalChannelTag;
+        private string? _activeChatName;
+        // Список чатов: сервер объявляет каналы на входе (pSenders.SendChatList)
+        // и присылает сводный список по кнопке «Чаты». Если список не пришёл ни
+        // разу — доверяем контракту (FED). Попап перерисовывается только по
+        // явному запросу (_chatListRequested), входное объявление его не открывает.
+        private readonly HashSet<string> _knownChatTags = new(StringComparer.OrdinalIgnoreCase);
+        private bool _chatListRequested;
 
         protected void Start()
         {
@@ -113,7 +122,7 @@ namespace Kern.UI
             {
                 try
                 {
-                    _networkService.Send(new QueryChatHistoryPacket(ProjectRuntimeContracts.Chat.GlobalChannelTag, 0));
+                    _networkService.Send(new QueryChatHistoryPacket(_activeTag, 0));
                 }
                 catch (Exception ex)
                 {
@@ -132,10 +141,7 @@ namespace Kern.UI
 
             UILocalizer.Apply(_view.Tree, _loc);
             UILocalizer.AssertLocalized(_view.Tree, _loc);
-            ChatChannelPresenter.UpdatePresentation(
-                _view.ChatHeader,
-                _view.GlobalChannelButton,
-                _loc);
+            UpdateChannelHeader();
         }
 
         protected void OnDestroy()
@@ -286,7 +292,8 @@ namespace Kern.UI
 
             _view.BindActions(
                 OnSendClicked,
-                SelectGlobalChannel);
+                OpenChatList,
+                CloseChatListPopup);
 
             _colorController = new ChatColorController(_networkService, _view.ColorButton, _view.ColorGrid);
 
@@ -299,6 +306,10 @@ namespace Kern.UI
             // второй, чтобы они не висели друг на друге.
             _colorController.Opened += () => _emojiController?.CloseGrid();
             _emojiController.Opened += () => _colorController?.CloseColorGrid();
+            _messages.Attach(
+                _view.ScrollView,
+                OnMessageClicked);
+            UpdateChannelHeader();
             SelectGlobalChannel();
         }
 
@@ -309,7 +320,7 @@ namespace Kern.UI
                 return;
             }
 
-            if (!CanSendToGlobalChannel)
+            if (!CanSendToActiveChannel)
             {
                 return;
             }
@@ -329,7 +340,7 @@ namespace Kern.UI
             try
             {
                 _networkService.Send(new SendChatMessagePacket(
-                    ProjectRuntimeContracts.Chat.GlobalChannelTag,
+                    _activeTag,
                     text));
             }
             catch (Exception ex)
@@ -432,23 +443,29 @@ namespace Kern.UI
                 return;
             }
 
-            AppendMessage(ChatMessageFormatter.FormatGlobal(msg, DateTime.Now));
+            AppendMessage(ChatMessageFormatter.FormatGlobal(msg, DateTime.Now), msg.Id);
+        }
+
+        // Живые сообщения приходят только участникам текущего чата (роутинг по
+        // CurrentChat на сервере) — тег учитывать не требуется. История (E5-C)
+        // отдаётся по тегу: чужая лента отбрасывается.
+
+        private void AppendMessage(string formattedMessage, long messageId = 0)
+        {
+            _messages.Add(formattedMessage, messageId);
         }
 
         private void AddHistory(ChatMessageListPacket packet)
         {
-            if (!string.Equals(
-                    packet.Tag,
-                    ProjectRuntimeContracts.Chat.GlobalChannelTag,
-                    StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(packet.Tag, _activeTag, StringComparison.OrdinalIgnoreCase))
             {
-                Debug.LogWarning($"[GlobalChatUI] Ignoring history for unsupported channel '{packet.Tag}'.");
+                Debug.Log($"[GlobalChatUI] Ignoring history for inactive chat '{packet.Tag}'.");
                 return;
             }
 
             foreach (ChatMessagePacket message in packet.Messages)
             {
-                AppendMessage(ChatMessageFormatter.FormatGlobal(message, DateTime.Now));
+                AppendMessage(ChatMessageFormatter.FormatGlobal(message, DateTime.Now), message.Id);
             }
 
             // Свежая загрузка истории - показываем последние сообщения,
@@ -456,69 +473,159 @@ namespace Kern.UI
             _messages.ScrollToBottom();
         }
 
-        // Локальные сообщения выводит FloatingChatManager над роботом; это окно
-        // принимает только global-сообщения и global-историю.
-
-        private void AppendMessage(string formattedMessage)
+        private void UpdateChannelHeader()
         {
-            _messages.Add(formattedMessage);
-        }
-
-        private void SelectGlobalChannel()
-        {
-            if (_view?.InputField != null)
-            {
-                _view.InputField.maxLength = ProjectRuntimeContracts.Chat.MaximumGlobalChatLength;
-            }
-
             ChatChannelPresenter.UpdatePresentation(
                 _view?.ChatHeader,
                 _view?.GlobalChannelButton,
-                _loc);
-            RefreshChatControls(_muteTracker.IsMuted);
-            RenderActiveMessages();
+                _loc,
+                _activeChatName);
         }
 
-        // Сервер штатно не шлёт ChatListPacket: пакет зарегистрирован в кодовой
-        // таблице (code 48) и покрыт тестами на стороне сервера, но ни один
-        // production-путь его не конструирует. Прежний гейт
-        // (_hasServerChatList && _hasGlobalChannel) из-за этого был навсегда
-        // закрыт: у реального сервера _hasServerChatList не становится true, и
-        // кнопка отправки не разблокировалась ни разу за сессию.
-        //
-        // Теперь отсутствие списка означает «сервер каналы не объявлял», а не
-        // «канала нет»: доверяем тегу из ProjectRuntimeContracts. Если список
-        // придёт — уважаем его, это единственный способ узнать о серверном
-        // канале, которого клиент не знает.
-        private bool CanSendToGlobalChannel => !_hasServerChatList || _hasGlobalChannel;
+        // Кнопка «Чаты»: запрос сводного списка (легаси Cmen → ChatListPacket).
+        // Отказ сети не роняет UI — если список уже приходил, открываем его.
+
+        private void OpenChatList()
+        {
+            _chatListRequested = true;
+            ChatListPacket? cached = _chatEvents.LastChatList;
+            try
+            {
+                _networkService.Send(new OpenChatListPacket());
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[GlobalChatUI] Не удалось запросить список чатов: {ex}");
+                if (cached is ChatListPacket snapshot)
+                {
+                    RenderChatList(snapshot);
+                }
+            }
+        }
+
+        private void CloseChatListPopup()
+        {
+            _chatListRequested = false;
+            if (_view?.ChatListPopup != null)
+            {
+                _view.ChatListPopup.style.display = DisplayStyle.None;
+            }
+        }
+
+        // Отправка разрешена в объявленный сервером чат; если список не приходил
+        // ни разу — доверяем дефолтному тегу контракта (FED).
+
+        private bool CanSendToActiveChannel => _knownChatTags.Count == 0 ||
+            _knownChatTags.Contains(_activeTag);
+
+        // Сервер штатно объявляет каналы на входе (48 с описаниями) и пересылает
+        // сводный список по запросу «Чаты» (48 с последними сообщениями). Оба
+        // пути обновляют реестр тегов; попап перерисовывается только по запросу.
 
         private void ApplyChatList(ChatListPacket packet)
         {
-            _hasServerChatList = true;
-            _hasGlobalChannel = false;
+            _knownChatTags.Clear();
             foreach (var (tag, _, _) in packet.Chats)
             {
-                if (string.Equals(
-                        tag,
-                        ProjectRuntimeContracts.Chat.GlobalChannelTag,
-                        StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(tag))
                 {
-                    _hasGlobalChannel = true;
-                    break;
+                    _knownChatTags.Add(tag);
                 }
             }
 
             RefreshChatControls(_muteTracker.IsMuted);
+            if (_chatListRequested)
+            {
+                RenderChatList(packet);
+            }
         }
 
-        private void RenderActiveMessages()
+        private void RenderChatList(ChatListPacket packet)
         {
-            if (_view?.ScrollView == null)
+            if (_view?.ChatListScroll == null || _view.ChatListPopup == null)
             {
                 return;
             }
 
-            _messages.Render();
+            ScrollView scroll = _view.ChatListScroll;
+            scroll.Clear();
+            foreach (var (tag, name, lastMessage) in packet.Chats)
+            {
+                string chatName = string.IsNullOrEmpty(name) ? tag : name;
+                string preview = string.IsNullOrEmpty(lastMessage.Message)
+                    ? chatName
+                    : lastMessage.Message;
+                var row = new Button { text = string.Empty };
+                row.AddToClassList("gchat-chat-row");
+                var nameLabel = new Label(ChatMessageFormatter.PlainText(chatName));
+                nameLabel.AddToClassList("gchat-chat-row-name");
+                var previewLabel = new Label(ChatMessageFormatter.PlainText(preview));
+                previewLabel.AddToClassList("gchat-chat-row-preview");
+                row.Add(nameLabel);
+                row.Add(previewLabel);
+                string chosenTag = tag;
+                string chosenName = chatName;
+                row.clicked += () => ChooseChat(chosenTag, chosenName);
+                scroll.Add(row);
+            }
+
+            _view.ChatListPopup.style.display = DisplayStyle.Flex;
+        }
+
+        // Выбор из списка: тег становится активным, лента очищается, сервер
+        // переключает CurrentChat и присылает последнюю страницу (ProvideChatHistory).
+        // Сервер шлёт тегом выбранного чата — история чужого тега игнорируется.
+
+        private void ChooseChat(string tag, string chatName)
+        {
+            if (string.IsNullOrEmpty(tag))
+            {
+                return;
+            }
+
+            _activeTag = tag;
+            _activeChatName = chatName;
+            _chatListRequested = false;
+            if (_view?.ChatListPopup != null)
+            {
+                _view.ChatListPopup.style.display = DisplayStyle.None;
+            }
+            _messages.Clear();
+            UpdateChannelHeader();
+            RefreshChatControls(_muteTracker.IsMuted);
+            try
+            {
+                // По ревью PR (ChooseChatPacket удалён): выбор чата = запрос
+                // истории по тегу; сервер по нему же ставит CurrentChat
+                // (подписка на живой поток и маршрут исходящих).
+                _networkService.Send(new QueryChatHistoryPacket(tag, 0));
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[GlobalChatUI] Не удалось переключить чат: {ex}");
+            }
+        }
+
+        // Клик по строке сообщения (легаси Cpri): окно отправителя открывает
+        // сервер. По ревью PR передаётся MessageId — отправитель резолвится
+        // по идентификатору сообщения точно, а не по PlayerId.
+        // Системные строки (messageId == 0) не кликабельны.
+
+        private void OnMessageClicked(long messageId)
+        {
+            if (messageId <= 0)
+            {
+                return;
+            }
+
+            try
+            {
+                _networkService.Send(new ChatMessageClickPacket(_activeTag, messageId));
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[GlobalChatUI] Не удалось открыть окно отправителя: {ex}");
+            }
         }
 
         public void ApplyMute(ChatMutePacket packet)
@@ -571,13 +678,12 @@ namespace Kern.UI
                 return;
             }
 
-            bool globalAvailable = CanSendToGlobalChannel;
-            bool activeChannelAvailable = globalAvailable;
+            bool activeAvailable = CanSendToActiveChannel;
             _view.InputField?.SetEnabled(!muted);
-            _view.SendButton?.SetEnabled(!muted && activeChannelAvailable);
-            _view.ColorButton?.SetEnabled(!muted && globalAvailable);
-            _view.EmojiButton?.SetEnabled(!muted && globalAvailable);
-            _view.GlobalChannelButton?.SetEnabled(globalAvailable);
+            _view.SendButton?.SetEnabled(!muted && activeAvailable);
+            _view.ColorButton?.SetEnabled(!muted && activeAvailable);
+            _view.EmojiButton?.SetEnabled(!muted && activeAvailable);
+            _view.GlobalChannelButton?.SetEnabled(true);
         }
 
         private void AddSystemMessage(string message) => AppendMessage(message);

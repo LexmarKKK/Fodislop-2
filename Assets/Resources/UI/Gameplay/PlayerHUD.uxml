@@ -139,23 +139,8 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <!-- Мои здания -->
-        <ui:VisualElement name="BuildingsPopup" class="popup-overlay">
-            <ui:VisualElement class="popup-dimmer" picking-mode="Ignore" />
-            <ui:VisualElement class="popup-panel">
-                <ui:Label class="popup-title" text="hud.buildings" />
-                <ui:Button name="BuildingsCloseButton" class="popup-close-btn" text="hud.close" />
-            </ui:VisualElement>
-        </ui:VisualElement>
-
-        <!-- FAQ -->
-        <ui:VisualElement name="FaqPopup" class="popup-overlay">
-            <ui:VisualElement class="popup-dimmer" picking-mode="Ignore" />
-            <ui:VisualElement class="popup-panel">
-                <ui:Label class="popup-title" text="FAQ" />
-                <ui:Button name="FaqCloseButton" class="popup-close-btn" text="hud.close" />
-            </ui:VisualElement>
-        </ui:VisualElement>
+        <!-- «Мои здания» и FAQ — серверные окна (OpenBuildingsClickPacket/OpenHelpClickPacket),
+             локальных попапов у них больше нет. -->
 
     </ui:VisualElement>
 </ui:UXML>
