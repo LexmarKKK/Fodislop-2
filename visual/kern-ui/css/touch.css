@@ -263,7 +263,8 @@
 .frame.touch .rail-btn { width: var(--tt); height: var(--tt); flex: none; }
 .frame.touch .rail-btn img { width: 20px; height: 20px; }
 .frame.touch .rail-sep { margin: 0 8px; flex: none; }
-.frame.touch .menu-foot { right: calc(var(--sr) + 24px); bottom: calc(var(--sb) + 18px); }
+.frame.touch .menu-foot { left: var(--sl); right: var(--sr); bottom: var(--sb); height: 52px; padding: 0 24px; gap: 16px; font-size: 10px; }
+.frame.touch .menu-meta { gap: 6px; }
 /* Телефон: иконка навыка — в строку с названием, чтобы кнопки поместились без прокрутки */
 .frame.touch.phone .skill-info { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-content: start; column-gap: 8px; }
 .frame.touch.phone .skill-info > :not(.big, h3) { grid-column: 1 / -1; }

@@ -320,7 +320,7 @@
     [$('bonus'), prog, $('autodig'), $('miniSkills'), ...sysOrig.list, mapBtn].forEach(el => el.toggleAttribute('data-relocated', touch));
     $('keyHint').style.visibility = touch ? 'hidden' : '';
     const mm = $('minimap'), side = touch ? (d.form === 'tablet' ? 136 : 104) * 2 : 0;
-    mm.width = touch ? side : 264; mm.height = touch ? side : 168;
+    mm.width = touch ? side : 264; mm.height = touch ? side : 264;
     fit();
   }
   document.querySelectorAll('[data-device]').forEach(b => b.onclick = () => setDevice(b.dataset.device));

@@ -10,7 +10,11 @@
 
   function show(screen) {
     clearAll();
+    const screenName = screen === 'descent' ? 'menu' : screen;
+    const enteringScreen = document.querySelector(`.screen[data-screen="${screenName}"]`);
+    enteringScreen?.classList.add('is-entering');
     frame.dataset.screen = screen;
+    if (enteringScreen) requestAnimationFrame(() => enteringScreen.classList.remove('is-entering'));
     document.querySelectorAll('[data-screen]').forEach(b => { if (b.tagName === 'BUTTON') b.classList.toggle('is-on', b.dataset.screen === screen); });
     document.querySelectorAll('[data-for]').forEach(g => g.hidden = g.dataset.for !== (screen === 'descent' ? 'menu' : screen));
     $('menuMain').hidden = screen === 'descent';
@@ -20,6 +24,16 @@
     if (screen === 'game') { window.kernWorld?.draw(); window.kernAssets?.(); }
   }
   document.querySelectorAll('button[data-screen]').forEach(b => b.addEventListener('click', () => show(b.dataset.screen)));
+
+  // UI Toolkit-аналог: видимые состояния переключаются классами, свойства
+  // opacity/scale/translate плавно интерполируются самими стилями.
+  document.querySelectorAll('.dialog-layer').forEach(layer => {
+    new MutationObserver(() => {
+      if (layer.hidden) return;
+      layer.classList.add('is-entering');
+      requestAnimationFrame(() => layer.classList.remove('is-entering'));
+    }).observe(layer, { attributes: true, attributeFilter: ['hidden'] });
+  });
 
   // ── Bootstrap: фаза загрузки, затем вход ──
   function runBoot() {
@@ -77,8 +91,7 @@
     outdated = on;
     $('descendBtn').hidden = on;
     $('updateBlock').hidden = !on;
-    document.querySelector('.rail-badge').hidden = !on;
-    $('versionLabel').textContent = on ? '0.8.14 — требуется 0.9.0' : '0.8.14';
+    $('versionLabel').textContent = '0.8.14';
     document.querySelectorAll('[data-update]').forEach(b => b.classList.toggle('is-on', b.dataset.update === (on ? '1' : '0')));
   }
   document.querySelectorAll('[data-update]').forEach(b => b.onclick = () => setOutdated(b.dataset.update === '1'));
@@ -88,7 +101,6 @@
     $('updateDialog').hidden = false;
   }
   $('updateBtn').onclick = openUpdate;
-  $('railUpdate').onclick = openUpdate;
   $('updateDialog').querySelector('[data-close]').onclick = $('updDefer').onclick = () => { $('updateDialog').hidden = true; };
   $('updConfirm').onclick = () => {
     let p = 0;
@@ -102,6 +114,50 @@
       else later(() => { $('updateDialog').hidden = true; setOutdated(false); $('versionLabel').textContent = '0.9.0'; }, 300);
     };
     $('updFill').style.width = '0'; tick();
+  };
+
+  // Проверка доступности файлов, на которые ссылается клиентский интерфейс.
+  const healthDialog = $('healthDialog');
+  $('railHealth').onclick = () => { healthDialog.hidden = false; };
+  healthDialog.querySelectorAll('[data-close]').forEach(button => {
+    button.onclick = () => { healthDialog.hidden = true; };
+  });
+  $('healthCheck').onclick = async () => {
+    const urls = [...new Set([...document.images]
+      .map(image => image.currentSrc || image.src)
+      .filter(url => url && new URL(url, document.baseURI).origin === location.origin))];
+    const total = urls.length;
+    let checked = 0, missing = 0;
+    $('healthCheck').disabled = true;
+    $('healthProgress').hidden = false;
+    $('healthStatus').textContent = 'Проверка файлов…';
+    $('healthStatus').className = '';
+    $('healthCount').textContent = `0 / ${total}`;
+    $('healthFill').style.width = '0%';
+
+    for (let index = 0; index < urls.length; index += 8) {
+      const batch = urls.slice(index, index + 8);
+      const results = await Promise.all(batch.map(async url => {
+        try {
+          const response = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+          return response.ok;
+        } catch {
+          return false;
+        }
+      }));
+      checked += results.length;
+      missing += results.filter(ok => !ok).length;
+      $('healthCount').textContent = `${checked} / ${total}`;
+      $('healthFill').style.width = `${total === 0 ? 0 : checked / total * 100}%`;
+    }
+
+    const healthy = total > 0 && missing === 0;
+    $('healthStatus').textContent = healthy
+      ? 'Все ресурсы доступны'
+      : total === 0 ? 'Ресурсы для проверки не найдены' : `Не найдены ресурсы: ${missing}`;
+    $('healthStatus').classList.add(healthy ? 'is-healthy' : 'has-errors');
+    $('healthCheck').disabled = false;
+    $('healthCheck').textContent = 'Проверить ещё раз';
   };
   $('descendBtn').onclick = () => show('descent');
 
@@ -183,7 +239,7 @@
   window.openSkills = (slot = -1) => { selected = slot; renderSkills(); $('skillsDialog').hidden = false; };
   $('openSkills').onclick = () => { show('game'); window.openSkills(-1); };
   $('skillsDialog').querySelector('[data-close]').onclick = () => { $('skillsDialog').hidden = true; };
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('skillsDialog').hidden = true; $('updateDialog').hidden = true; } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('skillsDialog').hidden = true; $('updateDialog').hidden = true; healthDialog.hidden = true; } });
 
   // Адрес: ?screen=menu&update=1&updwin=1&skills=2&onbstep=1
   const q = new URLSearchParams(location.search);
@@ -193,4 +249,8 @@
   show(q.get('screen') || 'game');
   if (q.get('skills')) window.kernWorld.ready.then(() => window.openSkills(Number(q.get('skills'))));
   if (q.get('updwin')) openUpdate();
+  if (q.get('health')) {
+    healthDialog.hidden = false;
+    if (q.get('health') === 'run') $('healthCheck').click();
+  }
 })();

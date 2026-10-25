@@ -1,7 +1,8 @@
 /* Экраны потока меню и игровое окно навыков — тот же язык, что у HUD. */
 
 /* Кадр показывает один экран; экран игры по-прежнему рисует мир и HUD */
-.screen { position: absolute; inset: 0; display: none; }
+.screen { position: absolute; inset: 0; display: none; opacity: 1; transition: opacity .14s ease-out; }
+.screen.is-entering { opacity: 0; }
 .frame[data-screen="boot"] [data-screen="boot"], .frame[data-screen="auth"] [data-screen="auth"],
 .frame[data-screen="onboarding"] [data-screen="onboarding"], .frame[data-screen="menu"] [data-screen="menu"],
 .frame[data-screen="descent"] [data-screen="menu"], .frame[data-screen="game"] [data-screen="game"] { display: block; }
@@ -74,7 +75,7 @@
 .field select:hover { border-color: var(--ash); }
 .field select option { background: var(--graphite); color: var(--bone); }
 .switch { appearance: none; width: 44px; height: 24px; border-radius: 12px; background: var(--well); border: 1px solid var(--seam-strong); position: relative; cursor: pointer; flex: none; }
-.switch::after { content: ""; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--ash); transition: left .15s ease; }
+.switch::after { content: ""; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--ash); transition: left .15s ease-out; }
 .switch:checked { background: var(--signal-soft); border-color: var(--signal); }
 .switch:checked::after { left: 23px; background: var(--signal); }
 .range { flex: none; display: flex; align-items: center; gap: 12px; width: 320px; }
@@ -96,8 +97,14 @@
 .rail-btn { width: 52px; height: 52px; display: grid; place-items: center; border-radius: var(--radius); background: var(--graphite); border: 1px solid var(--seam); }
 .rail-btn:hover { border-color: var(--seam-strong); background: var(--plate); }
 .rail-btn img { width: 24px; height: 24px; opacity: .85; }
+.rail-btn .rail-icon { width: 24px; height: 24px; stroke-width: 2.5; }
 .rail-sep { height: 1px; background: var(--seam); margin: 4px 8px; }
-.menu-foot { position: absolute; right: 64px; bottom: 28px; color: var(--smoke); font-size: var(--t-small); }
+.frame[data-screen="descent"] .menu-rail { display: none; }
+.menu-foot { position: absolute; left: 0; right: 0; bottom: 0; height: 80px; padding: 0 64px; display: flex; align-items: center; justify-content: flex-end; gap: 32px; border-top: 1px solid rgba(44,53,61,.6); color: var(--ash); font-size: var(--t-small); }
+.menu-meta { display: flex; align-items: baseline; gap: 10px; }
+.menu-meta small { color: var(--ash); font-size: var(--t-small); letter-spacing: .08em; }
+.menu-meta b, .menu-meta code { color: var(--bone); font: inherit; font-weight: 600; }
+.menu-meta code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
 /* Спуск */
 .descent-progress { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; width: 440px; }
@@ -124,7 +131,10 @@
 .upd-meta b { color: var(--signal); }
 .dialog .btn:disabled { opacity: .5; cursor: default; }
 .rail-btn { position: relative; }
-.rail-badge { position: absolute; right: 6px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 0 2px var(--graphite); }
+.rail-btn { transition: background-color .15s ease-out, border-color .15s ease-out, translate .15s ease-out; }
+.rail-btn:hover { translate: 0 -1px; }
+.health #healthStatus.is-healthy { color: var(--ok); }
+.health #healthStatus.has-errors { color: var(--danger); }
 
 /* ── Окно навыков (UpPage) ─────────────────────────────────── */
 .skills { width: 960px; display: flex; flex-direction: column; }

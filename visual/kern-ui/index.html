@@ -138,7 +138,7 @@
             <button type="button" class="icon-btn prog-run" id="progRun" title="Запустить программу"><svg><use href="#i-play"/></svg></button>
           </div>
           <div class="panel minimap" title="Карта мира">
-            <canvas id="minimap" width="264" height="168"></canvas>
+            <canvas id="minimap" width="264" height="264"></canvas>
             <span class="coords" id="coords">1184:902</span>
           </div>
         </section>
@@ -278,7 +278,7 @@
    <section class="screen screen--space" data-screen="boot">
     <div class="boot">
       <img class="boot-logo" src="img/ui/mm_logo.png" alt="" width="72" height="72">
-      <h1 class="boot-title">Загрузка</h1>
+      <h1 class="boot-title">Подготовка клиента</h1>
       <p class="boot-phase" id="bootPhase">Компиляция шейдеров…</p>
       <div class="meter meter--wide"><i id="bootFill"></i></div>
     </div>
@@ -385,7 +385,9 @@
 
     <nav class="menu-rail" aria-label="Меню">
       <button type="button" class="rail-btn" title="Настройки"><img src="img/ui/mm_icon_settings.png" alt=""></button>
-      <button type="button" class="rail-btn rail-btn--update" id="railUpdate" title="Обновление v0.9.0"><img src="img/ui/mm_icon_update.png" alt=""><i class="rail-badge" hidden></i></button>
+      <button type="button" class="rail-btn" id="railHealth" title="Проверить ресурсы" aria-label="Проверить ресурсы">
+        <svg class="rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 20 7v5.2c0 4.4-3.2 7.5-8 9.3-4.8-1.8-8-4.9-8-9.3V7z"/><path d="m8.5 12.2 2.2 2.2 4.8-5"/></svg>
+      </button>
       <span class="rail-sep"></span>
       <button type="button" class="rail-btn" title="Discord"><img src="img/ui/mm_icon_discord.png" alt=""></button>
       <button type="button" class="rail-btn" title="Telegram"><img src="img/ui/mm_icon_telegram.png" alt=""></button>
@@ -393,7 +395,10 @@
       <span class="rail-sep"></span>
       <button type="button" class="rail-btn" title="Выход из игры"><img src="img/ui/mm_icon_exit.png" alt=""></button>
     </nav>
-    <footer class="menu-foot">Версия <span id="versionLabel">0.8.14</span></footer>
+    <footer class="menu-foot" aria-label="Информация о сборке">
+      <span class="menu-meta"><small>ВЕРСИЯ</small><b id="versionLabel">0.8.14</b></span>
+      <span class="menu-meta"><small>СБОРКА</small><code id="buildHash">fb8e0225</code></span>
+    </footer>
 
     <!-- Окно обновления клиента (MainMenu.uxml UpdateModal) -->
     <div class="dialog-layer" id="updateDialog" hidden>
@@ -412,6 +417,24 @@
         <div class="dialog-actions">
           <button type="button" class="btn" id="updDefer">Позже</button>
           <button type="button" class="btn btn--primary" id="updConfirm">Загрузить обновление</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="dialog-layer" id="healthDialog" hidden>
+      <section class="panel dialog health" role="dialog" aria-labelledby="healthTitle" aria-describedby="healthDescription">
+        <header class="upd-head">
+          <h2 id="healthTitle">Проверка ресурсов</h2>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <p id="healthDescription">Проверка доступности файлов клиента.</p>
+        <div class="upd-box" id="healthProgress" hidden>
+          <div class="meter meter--wide"><i id="healthFill"></i></div>
+          <div class="upd-meta"><small id="healthStatus" aria-live="polite">Проверка файлов…</small><b id="healthCount">0 / 0</b></div>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="btn" id="healthClose" data-close>Закрыть</button>
+          <button type="button" class="btn btn--primary" id="healthCheck">Проверить</button>
         </div>
       </section>
     </div>
