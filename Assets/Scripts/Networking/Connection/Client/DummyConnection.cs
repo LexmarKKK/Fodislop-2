@@ -203,6 +203,12 @@ public class DummyConnection : IServerConnection, IOfflineConnection, IWorldRegi
     public event Action? OnDisconnecting;
     public event Action? OnConnecting;
 
+    // Офлайн-симуляция не декодирует сетевые кадры: ошибок нет, счётчик всегда
+    // нулевой. Члены требуется интерфейсу IConnection (пакет 24cb80a).
+    public event Action<Exception>? OnError;
+
+    public int DecodeErrorCount => 0;
+
     // Всё, что клиент отправил офлайн-серверу; для тестов и отладочных инструментов.
     internal event Action<ClientPacket>? ClientPacketSent;
 
