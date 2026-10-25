@@ -93,7 +93,8 @@ internal sealed class ProgrammatorGridUIFactory : ILocalizableUI
         ProgrammatorRadialController radial,
         ProgrammatorProgramStore programs,
         ProgrammatorClipboardController clipboard,
-        Action onHide)
+        Action onHide,
+        Action onCloseToList)
     {
         VisualTreeAsset template = Resources.Load<VisualTreeAsset>(
             ProjectRuntimeContracts.ResourcePaths.ProgrammatorUxml) ??
@@ -182,7 +183,9 @@ internal sealed class ProgrammatorGridUIFactory : ILocalizableUI
 
         Button closeBtn = tree.Q<Button>("ProgrammatorCloseButton") ??
             throw new InvalidOperationException("[Programmator] ProgrammatorCloseButton is missing from Programmator.uxml.");
-        closeBtn.clicked += programs.CloseProgram;
+        // G7-C: «К списку» закрывает редактор и запрашивает серверный список
+        // заново (OpenProgramListClickPacket), а не рисует локальный.
+        closeBtn.clicked += onCloseToList;
 
         VisualElement gridContainer = tree.Q<VisualElement>("GridContainer") ??
             throw new InvalidOperationException("[Programmator] GridContainer is missing from Programmator.uxml.");
