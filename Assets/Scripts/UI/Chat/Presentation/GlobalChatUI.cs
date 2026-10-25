@@ -355,16 +355,16 @@ namespace Kern.UI
                 return;
             }
 
-            AppendMessage(ChatMessageFormatter.FormatGlobal(msg, DateTime.Now), msg.PlayerId);
+            AppendMessage(ChatMessageFormatter.FormatGlobal(msg, DateTime.Now), msg.Id);
         }
 
         // Живые сообщения приходят только участникам текущего чата (роутинг по
         // CurrentChat на сервере) — тег учитывать не требуется. История (E5-C)
         // отдаётся по тегу: чужая лента отбрасывается.
 
-        private void AppendMessage(string formattedMessage, int playerId = 0)
+        private void AppendMessage(string formattedMessage, long messageId = 0)
         {
-            _messages.Add(formattedMessage, playerId);
+            _messages.Add(formattedMessage, messageId);
         }
 
         private void AddHistory(ChatMessageListPacket packet)
@@ -377,7 +377,7 @@ namespace Kern.UI
 
             foreach (ChatMessagePacket message in packet.Messages)
             {
-                AppendMessage(ChatMessageFormatter.FormatGlobal(message, DateTime.Now), message.PlayerId);
+                AppendMessage(ChatMessageFormatter.FormatGlobal(message, DateTime.Now), message.Id);
             }
         }
 
@@ -503,7 +503,10 @@ namespace Kern.UI
             RefreshChatControls(_muteTracker.IsMuted);
             try
             {
-                _networkService.Send(new ChooseChatPacket(tag));
+                // По ревью PR (ChooseChatPacket удалён): выбор чата = запрос
+                // истории по тегу; сервер по нему же ставит CurrentChat
+                // (подписка на живой поток и маршрут исходящих).
+                _networkService.Send(new QueryChatHistoryPacket(tag, 0));
             }
             catch (Exception ex)
             {
@@ -512,18 +515,20 @@ namespace Kern.UI
         }
 
         // Клик по строке сообщения (легаси Cpri): окно отправителя открывает
-        // сервер. Системные строки (playerId == 0) не кликабельны.
+        // сервер. По ревью PR передаётся MessageId — отправитель резолвится
+        // по идентификатору сообщения точно, а не по PlayerId.
+        // Системные строки (messageId == 0) не кликабельны.
 
-        private void OnMessageClicked(int playerId)
+        private void OnMessageClicked(long messageId)
         {
-            if (playerId <= 0)
+            if (messageId <= 0)
             {
                 return;
             }
 
             try
             {
-                _networkService.Send(new ChatMessageClickPacket(_activeTag, playerId));
+                _networkService.Send(new ChatMessageClickPacket(_activeTag, messageId));
             }
             catch (Exception ex)
             {

@@ -8,11 +8,13 @@ internal sealed class ChatMessageHistory
 {
     public const int MaxMessages = 20;
 
-    private readonly List<(string Formatted, int PlayerId)> _messages = new();
+    private readonly List<(string Formatted, long MessageId)> _messages = new();
 
-    public void Add(string formattedMessage, int playerId = 0)
+    // MessageId — идентификатор сообщения (ChatMessagePacket.Id, 0 = системная
+    // строка без клика); из него сервер резолвит отправителя при клике (Cpri).
+    public void Add(string formattedMessage, long messageId = 0)
     {
-        _messages.Add((formattedMessage, playerId));
+        _messages.Add((formattedMessage, messageId));
         while (_messages.Count > MaxMessages)
         {
             _messages.RemoveAt(0);
@@ -24,5 +26,5 @@ internal sealed class ChatMessageHistory
         _messages.Clear();
     }
 
-    public IReadOnlyList<(string Formatted, int PlayerId)> GetMessages() => _messages;
+    public IReadOnlyList<(string Formatted, long MessageId)> GetMessages() => _messages;
 }

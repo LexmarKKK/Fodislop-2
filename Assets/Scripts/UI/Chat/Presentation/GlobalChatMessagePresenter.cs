@@ -10,13 +10,15 @@ internal sealed class GlobalChatMessagePresenter
 {
     private readonly ChatMessageHistory _history = new();
     private ScrollView? _scrollView;
-    private Action<int>? _messageClicked;
+    private Action<long>? _messageClicked;
 
     // Строку сообщения можно кликнуть (как в легаси-чате): клик по чужой строке
     // открывает серверное окно отправителя (кнопка «Личное сообщение»).
+    // По ревью PR передаётся MessageId — отправитель резолвится сервером
+    // по идентификатору сообщения, а не по PlayerId.
     public void Attach(
         ScrollView? scrollView,
-        Action<int>? messageClicked = null)
+        Action<long>? messageClicked = null)
     {
         _scrollView = scrollView;
         _messageClicked = messageClicked;
@@ -29,10 +31,10 @@ internal sealed class GlobalChatMessagePresenter
         _messageClicked = null;
     }
 
-    public void Add(string formattedMessage, int playerId = 0)
+    public void Add(string formattedMessage, long messageId = 0)
     {
-        _history.Add(formattedMessage, playerId);
-        AppendVisible(formattedMessage, playerId);
+        _history.Add(formattedMessage, messageId);
+        AppendVisible(formattedMessage, messageId);
     }
 
     public void Clear()
@@ -49,13 +51,13 @@ internal sealed class GlobalChatMessagePresenter
         }
 
         _scrollView.Clear();
-        foreach ((string formatted, int playerId) in _history.GetMessages())
+        foreach ((string formatted, long messageId) in _history.GetMessages())
         {
-            AppendVisible(formatted, playerId);
+            AppendVisible(formatted, messageId);
         }
     }
 
-    private void AppendVisible(string formattedMessage, int playerId)
+    private void AppendVisible(string formattedMessage, long messageId)
     {
         if (_scrollView == null)
         {
@@ -63,12 +65,12 @@ internal sealed class GlobalChatMessagePresenter
         }
 
         VisualElement line;
-        if (playerId > 0 && _messageClicked != null)
+        if (messageId > 0 && _messageClicked != null)
         {
-            Action<int> clicked = _messageClicked;
+            Action<long> clicked = _messageClicked;
             var wrapper = new VisualElement();
             wrapper.AddToClassList("gchat-message--clickable");
-            wrapper.RegisterCallback<ClickEvent>(_ => clicked(playerId));
+            wrapper.RegisterCallback<ClickEvent>(_ => clicked(messageId));
             _scrollView.Add(wrapper);
             line = wrapper;
         }
