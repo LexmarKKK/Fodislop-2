@@ -54,8 +54,8 @@ public sealed class GraphicsPresetSwitchPlayModeTests
         GraphicsPreset[] presets =
         new[] {
 
+            GraphicsPreset.Classic,
             GraphicsPreset.Standard,
-            GraphicsPreset.Overdrive,
 
         };
 
@@ -78,12 +78,12 @@ public sealed class GraphicsPresetSwitchPlayModeTests
         GraphicsPreset[] sequence =
         new[] {
 
-            GraphicsPreset.Overdrive,
             GraphicsPreset.Standard,
-            GraphicsPreset.Overdrive,
+            GraphicsPreset.Classic,
             GraphicsPreset.Standard,
-            GraphicsPreset.Overdrive,
+            GraphicsPreset.Classic,
             GraphicsPreset.Standard,
+            GraphicsPreset.Classic,
 
         };
 

@@ -470,59 +470,43 @@ function generateSeededCallsign() {
 }
 
 function submitAuthForm() {
-  let nick = '';
-  let pass = '';
-
-  if (currentAuthTab === 'login') {
-    nick = document.getElementById('inputMinerName')?.value.trim() || 'ШАХТЁР-774 [DVM]';
-    pass = document.getElementById('inputPassword')?.value || '';
-  } else {
-    nick = document.getElementById('inputRegMinerName')?.value.trim() || 'ШАХТЁР-774 [DVM]';
-    pass = document.getElementById('inputRegPassword')?.value || '';
-    const confirmPass = document.getElementById('inputRegConfirmPassword')?.value || '';
-    const acceptEula = document.getElementById('authAcceptEula')?.checked;
-
-    if (!acceptEula) {
-      showToast(t('gateway.toast.eula_required'), 'alert');
-      return;
-    }
-    if (pass !== confirmPass) {
-      showToast(t('gateway.toast.password_mismatch'), 'alert');
-      return;
-    }
+  const register = currentAuthTab === 'register';
+  const login = document.getElementById(register ? 'inputRegMinerName' : 'inputMinerName')?.value.trim();
+  const password = document.getElementById(register ? 'inputRegPassword' : 'inputPassword')?.value;
+  const status = document.getElementById('authAvailability');
+  if (status) status.removeAttribute('data-i18n');
+  if (!login || !password) {
+    if (status) status.textContent = t('mock.auth.required');
+    return;
   }
-
-  playerState.nickname = nick;
-  // Генерируем сессионный токен из логина и пароля
-  const credential = `${nick}\u0000${pass}`;
-  playerState.token = `fdn_tok_${Math.abs(credential.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0)).toString(16)}`;
-
-  // Обновляем плашку в шапке (User Pill)
-  const userPillNick = document.querySelector('.user-pill div div:first-child');
-  if (userPillNick) {
-    userPillNick.removeAttribute('data-i18n');
-    userPillNick.innerText = nick;
+  if (register && password !== document.getElementById('inputRegConfirmPassword')?.value) {
+    if (status) status.textContent = t('mock.auth.password_mismatch');
+    return;
   }
-  const userAvatar = document.querySelector('.user-avatar');
-  if (userAvatar) userAvatar.innerText = nick.trim().charAt(0).toUpperCase() || 'Ш';
-
-  // Обновляем профиль
-  const profileNick = document.querySelector('#profileModal h3');
-  if (profileNick) {
-    profileNick.removeAttribute('data-i18n');
-    profileNick.innerText = nick.split(' ')[0];
+  if (register && !document.getElementById('authAcceptEula')?.checked) {
+    if (status) status.textContent = t('mock.auth.eula');
+    return;
   }
-  const profileToken = document.getElementById('profileTokenInput');
-  if (profileToken) profileToken.value = playerState.token;
+  if (status) status.textContent = t(register ? 'mock.auth.register_pending' : 'mock.auth.login_pending');
+}
 
-  const hudNick = document.getElementById('hudMinerNick');
-  if (hudNick) {
-    hudNick.removeAttribute('data-i18n');
-    hudNick.innerText = nick.split(' ')[0];
+function startVKPreview() {
+  const status = document.getElementById('authAvailability');
+  if (status) {
+    status.removeAttribute('data-i18n');
+    status.textContent = t('mock.auth.vk_preview');
   }
+}
 
-  // Переходим на экран Онбординга (Калибровка оборудования)
-  switchViewState('onboarding');
+function toggleMockInventory() {
+  const inventory = document.getElementById('hotbarSlotsWrap');
+  const toggle = document.getElementById('hudHotbarToggle');
+  const expanded = inventory?.classList.toggle('is-expanded') || false;
+  if (toggle) {
+    toggle.setAttribute('aria-expanded', String(expanded));
+    toggle.textContent = expanded ? '›' : '‹';
+    toggle.title = expanded ? 'Свернуть предметы' : 'Развернуть предметы';
+  }
 }
 
 function switchAccountFromProfile() {
@@ -797,6 +781,11 @@ function mineTileBlock(tile) {
     playerState.basketCount++;
     updateBasketUI();
   }
+}
+
+function mockTouchDig() {
+  const tile = document.querySelector('.mine-tile:not(.mined-empty)');
+  if (tile) mineTileBlock(tile);
 }
 
 function updateBasketUI() {
@@ -1161,11 +1150,6 @@ function startReconnectCount() {
       playSound('hover');
     }
   }, 1000);
-}
-
-function startOfflineDummy() {
-  showToast(t('network.toast.dummy_transport'), 'info');
-  switchViewState('ingame');
 }
 
 let quitArmedUntil = 0;
@@ -1618,8 +1602,6 @@ document.addEventListener('DOMContentLoaded', () => {
     || 'ru';
   window.i18nProbe?.setLanguage(initialLanguage);
   initReduceMotion();
-  const callsignInput = document.getElementById('inputMinerName');
-  if (callsignInput && !callsignInput.value.trim()) generateSeededCallsign();
   initMineStrataGrid();
   initFullInventoryGrid();
   initProgrammatorGrid();

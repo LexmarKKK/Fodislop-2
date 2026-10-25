@@ -313,6 +313,10 @@ fmod_editor.log
 ehthumbs.db
 Thumbs.db
 .dotnet_tmp/
+.superdesign/
+.superdesign/tmp/
 ArtCaptures/
 /[Aa]ssets/InitTestScene*.unity
 /[Aa]ssets/InitTestScene*.unity.meta
+ref/
+/ref/

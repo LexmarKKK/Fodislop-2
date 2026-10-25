@@ -1,8 +1,7 @@
 /* ФАЙЛ МАШИННЫЙ. Правки будут затёрты.
    Источник истины: visual/kern-ui-lab/css/tokens.css
-   Генератор:       visual/kern-ui-lab/tools/emit-uss-tokens.py
-   Расхождение ловит CI (scripts/check-architecture.js). */
-
+   Генератор: tools/Kern.DesignSystem/Tools/EmitUssTokensTool.cs
+   Расхождение ловит CI. */
 :root {
     --space-1: 2px;
     --space-2: 4px;
@@ -18,9 +17,9 @@
     --space-12: 32px;
     --space-13: 40px;
     --space-14: 48px;
-    --radius-sharp: 2px;
-    --radius-sm: 3px;
-    --radius-md: 4px;
+    --radius-sharp: 3px;
+    --radius-sm: 5px;
+    --radius-md: 7px;
     --radius-pill: 50%;
     --modal-sm: 640px;
     --modal-md: 700px;
@@ -60,10 +59,10 @@
     --ease-standard: ease;
     --ease-linear: linear;
     --ease-decelerate: ease-out-cubic;
-    --ease-signature: ease-out-circ;  /* подбор fit-easing.py, max-отклонение 0.129 */
+    --ease-signature: ease-out-circ  /* подбор fit-easing.py, max-отклонение 0.129 */;
     --order-corona: 1;
     --order-orbit: 2;
-    --order-scenery: 3;
+    --order-planet: 3;
     --order-beacon: 10;
     --order-surface: 1;
     --order-magma: 2;
@@ -79,18 +78,18 @@
     --blur-lg: 16px;
     --blur-xl: 24px;
     --menu-column: 500px;
-    --scenery-disc: 860px;
+    --planet-disc: 860px;
     --menu-action-width: 380px;
-    --accent-cyan-dense: rgba(86, 221, 212, 0.85);
-    --accent-cyan-fill: rgba(86, 221, 212, 0.55);
-    --accent-cyan-glow: rgba(86, 221, 212, 0.3);
-    --accent-cyan-solid: rgb(86 221 212);
-    --accent-cyan-tint: rgba(86, 221, 212, 0.08);
-    --accent-cyan-wash: rgba(86, 221, 212, 0.12);
-    --accent-gold-fill: rgba(245, 197, 66, 0.55);
-    --accent-gold-glow: rgba(245, 197, 66, 0.3);
-    --accent-gold-tint: rgba(245, 197, 66, 0.08);
-    --accent-gold-wash: rgba(245, 197, 66, 0.12);
+    --accent-cyan-dense: rgba(100, 205, 221, 0.85);
+    --accent-cyan-fill: rgba(100, 205, 221, 0.55);
+    --accent-cyan-glow: rgba(100, 205, 221, 0.3);
+    --accent-cyan-solid: rgb(100, 205, 221);
+    --accent-cyan-tint: rgba(100, 205, 221, 0.08);
+    --accent-cyan-wash: rgba(100, 205, 221, 0.12);
+    --accent-gold-fill: rgba(236, 193, 99, 0.55);
+    --accent-gold-glow: rgba(236, 193, 99, 0.3);
+    --accent-gold-tint: rgba(236, 193, 99, 0.08);
+    --accent-gold-wash: rgba(236, 193, 99, 0.12);
     --state-anomaly-glow: rgba(168, 85, 247, 0.4);
     --state-anomaly-wash: rgba(168, 85, 247, 0.15);
     --state-danger-glow: rgba(255, 85, 85, 0.4);
@@ -98,53 +97,53 @@
     --state-magma-tint: rgba(255, 122, 54, 0.08);
     --state-magma-glow: rgba(255, 122, 54, 0.4);
     --state-ok-tint: rgba(74, 222, 128, 0.08);
-    --surface-abyss-dense: rgba(7, 13, 20, 0.9);
-    --surface-abyss-solid: rgb(7 13 20);
-    --surface-abyss-veil: rgba(7, 13, 20, 0.6);
+    --surface-abyss-dense: rgba(10, 19, 30, 0.9);
+    --surface-abyss-solid: rgb(10, 19, 30);
+    --surface-abyss-veil: rgba(10, 19, 30, 0.6);
     --surface-crisis-dense: rgba(16, 3, 3, 0.9);
-    --surface-crisis-solid: rgb(16 3 3);
-    --surface-ember-solid: rgb(26 18 6);
-    --surface-shelf-dense: rgba(17, 30, 46, 0.9);
-    --surface-shelf-solid: rgb(17 30 46);
-    --surface-slate-dense: rgba(11, 20, 30, 0.9);
-    --surface-slate-solid: rgb(11 20 30);
-    --surface-slate-veil: rgba(11, 20, 30, 0.6);
-    --surface-void-dense: rgba(3, 5, 9, 0.9);
-    --surface-void-haze: rgba(3, 5, 9, 0.2);
-    --surface-void-shade: rgba(3, 5, 9, 0.5);
-    --surface-void-solid: rgb(3 5 9);
-    --surface-void-veil: rgba(3, 5, 9, 0.6);
-    --border-hairline: rgba(140, 185, 205, 0.08);
-    --border-line: rgba(140, 185, 205, 0.15);
+    --surface-crisis-solid: rgb(16, 3, 3);
+    --surface-ember-solid: rgb(26, 18, 6);
+    --surface-shelf-dense: rgba(24, 42, 60, 0.9);
+    --surface-shelf-solid: rgb(24, 42, 60);
+    --surface-slate-dense: rgba(16, 29, 43, 0.9);
+    --surface-slate-solid: rgb(16, 29, 43);
+    --surface-slate-veil: rgba(16, 29, 43, 0.6);
+    --surface-void-dense: rgba(5, 10, 17, 0.9);
+    --surface-void-haze: rgba(5, 10, 17, 0.2);
+    --surface-void-shade: rgba(5, 10, 17, 0.5);
+    --surface-void-solid: rgb(5, 10, 17);
+    --surface-void-veil: rgba(5, 10, 17, 0.6);
+    --border-hairline: rgba(137, 184, 205, 0.08);
+    --border-line: rgba(137, 184, 205, 0.15);
     --light-edge: rgba(255, 255, 255, 0.45);
     --light-film: rgba(255, 255, 255, 0.06);
     --light-gleam: rgba(255, 255, 255, 0.7);
     --light-sheen: rgba(255, 255, 255, 0.12);
-    --light-solid: rgb(255 255 255);
-    --shadow-solid: rgb(0 0 0);
-    --surface-void: #030509;
-    --surface-solid: #081018;
-    --surface-panel: rgba(7, 13, 20, 0.9);
-    --surface-raised: rgba(11, 20, 30, 0.6);
-    --surface-sunken: rgba(3, 5, 9, 0.6);
-    --surface-inset: rgba(3, 5, 9, 0.5);
-    --surface-scrim: rgba(3, 5, 9, 0.9);
-    --border-subtle: rgba(140, 185, 205, 0.08);
-    --border-strong: rgba(140, 185, 205, 0.15);
-    --border-cyan: rgba(86, 221, 212, 0.55);
-    --border-gold: rgba(245, 197, 66, 0.55);
+    --light-solid: rgb(255, 255, 255);
+    --shadow-solid: rgb(0, 0, 0);
+    --surface-void: #050a11;
+    --surface-solid: #0d1925;
+    --surface-panel: rgba(10, 19, 30, 0.9);
+    --surface-raised: rgba(16, 29, 43, 0.6);
+    --surface-sunken: rgba(5, 10, 17, 0.6);
+    --surface-inset: rgba(5, 10, 17, 0.5);
+    --surface-scrim: rgba(5, 10, 17, 0.9);
+    --border-subtle: rgba(137, 184, 205, 0.08);
+    --border-strong: rgba(137, 184, 205, 0.15);
+    --border-cyan: rgba(100, 205, 221, 0.55);
+    --border-gold: rgba(236, 193, 99, 0.55);
     --border-danger: rgba(255, 85, 85, 0.4);
-    --text-primary: #f0f6f8;
-    --text-secondary: #8598a3;
-    --text-tertiary: #627b89;
-    --text-disabled: #4d6370;
-    --text-on-gold: #04080e;
-    --surface-on-accent: #04080e;
-    --accent-gold: #f5c542;
-    --accent-gold-hover: #ffcf4d;
-    --accent-cyan: #56ddd4;
-    --accent-cyan-hover: #86ede6;
-    --accent-cyan-deep: #1e706a;
+    --text-primary: #eef5f8;
+    --text-secondary: #a3b5bf;
+    --text-tertiary: #8298a5;
+    --text-disabled: #526979;
+    --text-on-gold: #07111a;
+    --surface-on-accent: #07111a;
+    --accent-gold: #ecc163;
+    --accent-gold-hover: #f6d28a;
+    --accent-cyan: #64cddd;
+    --accent-cyan-hover: #9be3ed;
+    --accent-cyan-deep: #2a7787;
     --state-ok: #4ade80;
     --state-warn: #ff7a36;
     --state-danger: #ff5555;
@@ -152,18 +151,17 @@
     --state-anomaly: #a855f7;
     --state-ok-wash: rgba(74, 222, 128, 0.08);
     --state-warn-wash: rgba(255, 122, 54, 0.08);
-    --rarity-common: #8598a3;
+    --rarity-common: #a3b5bf;
     --rarity-uncommon: #4ade80;
-    --rarity-rare: #56ddd4;
+    --rarity-rare: #64cddd;
     --rarity-epic: #a855f7;
-    --rarity-legendary: #f5c542;
-    --focus-ring-color: #86ede6;
+    --rarity-legendary: #ecc163;
+    --focus-ring-color: #9be3ed;
     --focus-ring-width: 2px;
     --focus-ring-offset: 2px;
 }
 
-/* Тир задаётся классом на корневом элементе: @media в USS нет.
-   Класс ставит UILayoutTier.cs. */
+/* Тир задаётся классом на корневом элементе. */
 .tier--compact {
     --size-md: 14px;
     --size-lg: 16px;
@@ -175,11 +173,10 @@
     --space-12: 24px;
     --space-13: 28px;
     --space-14: 32px;
-    --scenery-disc: 520px;
+    --planet-disc: 520px;
 }
 
-/* Тир задаётся классом на корневом элементе: @media в USS нет.
-   Класс ставит UILayoutTier.cs. */
+/* Тир задаётся классом на корневом элементе. */
 .tier--wide {
     --size-md: 16px;
     --size-lg: 20px;
@@ -190,7 +187,7 @@
     --space-13: 48px;
     --space-14: 60px;
     --menu-column: 600px;
-    --scenery-disc: 940px;
+    --planet-disc: 940px;
 }
 
-/* Не переносится в USS (67): fit-lines, font-body, font-data, font-label, font-title, hex-abyss, hex-anomaly, hex-cyan, hex-cyan-deep, hex-cyan-lift, hex-danger, hex-danger-lift, hex-gold, hex-gold-lift, hex-ink-100, hex-ink-30, hex-ink-50, hex-ink-70, hex-magma, hex-ok, hex-slate, hex-void, layer-backdrop, layer-chrome, layer-content, layer-devtools, layer-gate, layer-modal, layer-overlay, layer-rail, layer-scene, layer-shade, layer-toast, mat-basalt-hi, mat-basalt-lo, mat-mined, mat-scenery-hi, mat-scenery-lo, mat-scenery-mid, mat-scenery-shadow, mat-redrock-hi, mat-redrock-lo, mat-space-hi, mat-space-lo, mat-space-mid, mat-strata-0, mat-strata-1, mat-strata-2, mat-strata-3, rgb-abyss, rgb-anomaly, rgb-crisis, rgb-cyan, rgb-danger, rgb-ember, rgb-gold, rgb-light, rgb-magma, rgb-ok, rgb-shadow, rgb-shelf, rgb-slate, rgb-steel, rgb-void, tracking-base, tracking-wide, tracking-widest */
+/* Не переносится в USS (67): rgb-void, rgb-abyss, rgb-slate, rgb-shelf, rgb-steel, rgb-light, rgb-shadow, rgb-crisis, rgb-ember, rgb-gold, rgb-cyan, rgb-magma, rgb-anomaly, rgb-danger, rgb-ok, hex-void, hex-abyss, hex-slate, hex-gold, hex-gold-lift, hex-cyan, hex-cyan-lift, hex-cyan-deep, hex-magma, hex-anomaly, hex-danger, hex-danger-lift, hex-ok, mat-basalt-hi, mat-basalt-lo, mat-redrock-hi, mat-redrock-lo, mat-mined, mat-strata-0, mat-strata-1, mat-strata-2, mat-strata-3, mat-planet-hi, mat-planet-mid, mat-planet-lo, mat-planet-shadow, mat-space-hi, mat-space-mid, mat-space-lo, hex-ink-100, hex-ink-70, hex-ink-50, hex-ink-30, fit-lines, tracking-base, tracking-wide, tracking-widest, layer-backdrop, layer-scene, layer-shade, layer-content, layer-chrome, layer-rail, layer-gate, layer-overlay, layer-modal, layer-toast, layer-devtools, font-title, font-body, font-label, font-data */

@@ -68,9 +68,7 @@ internal sealed class ClientConfigLoader
     {
         if (!_repository.Exists)
         {
-            ClientConfig defaults = ClientConfigDefaults.Create(
-                _graphicsQualityProfile,
-                _isAndroidPlayer ? GraphicsPreset.Overdrive : GraphicsPreset.Standard);
+            ClientConfig defaults = ClientConfigDefaults.Create(_graphicsQualityProfile);
             _validator.Validate(defaults);
             _repository.Save(defaults, _repository.BackupPath);
             return new Result(defaults, Outcome.CreatedDefaults, ClientConfig.CurrentSchemaVersion);
@@ -93,16 +91,14 @@ internal sealed class ClientConfigLoader
 
         if (sourceSchemaVersion != ClientConfig.CurrentSchemaVersion)
         {
-            ClientConfig migrated = ClientConfigDefaults.Create(
-                _graphicsQualityProfile,
-                _isAndroidPlayer ? GraphicsPreset.Overdrive : GraphicsPreset.Standard);
+            ClientConfig migrated = ClientConfigDefaults.Create(_graphicsQualityProfile);
             JsonUtility.FromJsonOverwrite(loaded.Json, migrated);
             ApplyMigrations(migrated, loaded.Json, sourceSchemaVersion, _isAndroidPlayer);
             if (!Enum.IsDefined(typeof(GraphicsPreset), migrated.GraphicsPreset))
             {
                 // Older releases persisted the retired multi-step preset enum.
                 // Normalize values that no longer exist before rebuilding the profile.
-                migrated.GraphicsPreset = GraphicsPreset.Overdrive;
+                migrated.GraphicsPreset = GraphicsPreset.Standard;
             }
 
             ReconcileStandardPreset(migrated);
@@ -141,11 +137,11 @@ internal sealed class ClientConfigLoader
 
     private static void MigrateSchema33To34(ClientConfig config)
     {
-        // Шесть ступеней (VeryLow…Ultra) и Custom схлопнуты в две: «Стандарт» и
-        // «Overdrive». Старое число ступени не читается — маппить шесть значений
-        // в две пары нечего, и все они переводятся в «Overdrive». Снимок
+        // Шесть ступеней (VeryLow…Ultra) и Custom схлопнуты в две: «Классика» и
+        // «Стандарт». Старое число ступени не читается — маппить шесть значений
+        // в две пары нечего, и все они переводятся в «Стандарт». Снимок
         // настроек следом выравнивает ReconcileStandardPreset.
-        config.GraphicsPreset = GraphicsPreset.Overdrive;
+        config.GraphicsPreset = GraphicsPreset.Standard;
         config.SchemaVersion = PresetPairSchemaVersion;
     }
 
@@ -317,12 +313,12 @@ internal sealed class ClientConfigLoader
 
         if (schema == HandheldUIScaleCorrectionSchemaVersion)
         {
-            // Android's shipped default used Standard, whose contract disables
-            // radiance transport entirely. Upgrade only the untouched Standard
-            // selection; explicit Overdrive selections remain unchanged.
-            if (isAndroidPlayer && config.GraphicsPreset == GraphicsPreset.Standard)
+            // Android's shipped default used Classic, whose contract disables
+            // radiance transport entirely. Upgrade only the untouched Classic
+            // selection; explicit Standard selections remain unchanged.
+            if (isAndroidPlayer && config.GraphicsPreset == GraphicsPreset.Classic)
             {
-                config.GraphicsPreset = GraphicsPreset.Overdrive;
+                config.GraphicsPreset = GraphicsPreset.Standard;
             }
 
             schema = AndroidLightingPresetSchemaVersion;

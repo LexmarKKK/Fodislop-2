@@ -236,12 +236,12 @@ a replaced material resource invalidates the solve even at unchanged dimensions.
 - `_AmbientOcclusionField` (quality-independent contact falloff field for terrain AO);
 - bounce geometry caches.
 
-The Standard graphics preset records only `_AmbientOcclusionField` when terrain
+The Classic graphics preset records only `_AmbientOcclusionField` when terrain
 or contributor geometry or the stable world region changes. It allocates no
 radiance atlas, material field, or lightmap and publishes a neutral white light
-texture with the AO field. Overdrive records the same AO field in the full
+texture with the AO field. Standard records the same AO field in the full
 lighting frame. Both presets therefore use the same terrain AO pass and shader
-sample, while only Overdrive solves radiance transport.
+sample, while only Standard solves radiance transport.
 
 Terrain mesh lighting metadata has one encoder,
 `TerrainLightingData.cs`, and one shader decoder,
@@ -372,7 +372,7 @@ Contributors receive the borrowed
 A dirty field before region activation, an unjournaled revision, contributor
 change, entering the mode, resource recreation or region movement requires a full
 rebuild. Activation's own `FieldDirty` does not disable regional updates.
-The Standard AO-only updater and full lighting coordinator use the same policy.
+The Classic AO-only updater and full lighting coordinator use the same policy.
 `GeometryLightingSolver` owns the field; a stable frame reuses the published field. `LightingPresentation`
 publishes the field and world mapping. The
 visible terrain fragment in `Terrain.shader` samples mip zero at
@@ -384,7 +384,7 @@ rectangle areas except when the fallback covers the bounding region. The R8
 target stores one byte per AO texel; the field uses signed-distance contact
 falloff for physical fragments, and one bilinear sample per
 receiving screen fragment; stable frames do not
-rasterize the field. Standard-preset rebuilds also write their dimensions and
+rasterize the field. Classic-preset rebuilds also write their dimensions and
 reason into `FrameEventLog`; `FrameStallMonitor` samples the
 `Kern.Lighting.AmbientOcclusionField` marker beside render-thread stalls.
 The half-cell carrier expansion grows a regular cell's field footprint from
@@ -834,7 +834,7 @@ without recomputing unchanged fields. Their sequence/revision/region is logged
 before acknowledgement. Reanchors compare old/new geometry and intersect every
 retained ray dependency against their common field, so discarded outer coverage
 cannot silently enter reused intervals. Unknown contributor revisions continue
-to invalidate the full field. Standard AO follows the same spatial rule.
+to invalidate the full field. Classic AO follows the same spatial rule.
 
 Production Metal tests now verify authored cascade density/directions, scalar vs
 vector depth over 200704 receiver pixels, continuous/standing sources, per-texel

@@ -161,7 +161,6 @@
                     <ui:VisualElement class="onb-row">
                         <ui:VisualElement class="onb-row-text">
                             <ui:Label class="onb-label" text="gateway.onb.lighting_label" />
-                            <ui:Label class="onb-hint" text="gateway.onb.lighting_hint" />
                         </ui:VisualElement>
                         <ui:DropdownField name="OnbGraphicsPreset" class="onb-select" />
                     </ui:VisualElement>

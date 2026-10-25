@@ -706,7 +706,7 @@ public static class Program
     {
         public ClientConfig Config { get; set; } = new();
         public string ConfigFilePath => "test_config.json";
-        public GraphicsPreset SelectedGraphicsPreset => GraphicsPreset.Standard;
+        public GraphicsPreset SelectedGraphicsPreset => GraphicsPreset.Classic;
         public void EnsureInitialized() { }
         public void Load() { }
         public void Save() { }

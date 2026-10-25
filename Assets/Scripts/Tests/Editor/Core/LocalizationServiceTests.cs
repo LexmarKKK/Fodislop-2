@@ -99,7 +99,7 @@ public class LocalizationServiceTests
     {
         public ClientConfig Config { get; } = new();
         public string ConfigFilePath => string.Empty;
-        public GraphicsPreset SelectedGraphicsPreset => GraphicsPreset.Standard;
+        public GraphicsPreset SelectedGraphicsPreset => GraphicsPreset.Classic;
         public void EnsureInitialized() { }
         public void SelectGraphicsPreset(GraphicsPreset preset) { }
         public void UpdateSection<TSection>(

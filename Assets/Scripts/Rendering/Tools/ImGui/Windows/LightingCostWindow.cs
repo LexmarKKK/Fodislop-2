@@ -156,8 +156,8 @@ public sealed class LightingCostWindow : ToolWindow
         string applied = LightingQualityTuningController.IsDynamicExecutionModeApplied
             ? "применён"
             : "ожидает пересчёта";
-        string execution = _lighting?.ActiveGraphicsPreset == Kern.Rendering.GraphicsPreset.Standard
-            ? "не выполняется: пресет Standard отключает динамический свет"
+        string execution = _lighting?.ActiveGraphicsPreset == Kern.Rendering.GraphicsPreset.Classic
+            ? "не выполняется: пресет «Классика» отключает динамический свет"
             : applied;
         _dynamicDetail = $"Режим: {transport}, {batching} ({execution}). " +
             $"Последний кадр: {_telemetry.LightingDynamicReceiverDispatchCount} dispatch-приёмников, " +
@@ -236,10 +236,10 @@ public sealed class LightingCostWindow : ToolWindow
             return;
         }
 
-        if (_lighting.ActiveGraphicsPreset == Kern.Rendering.GraphicsPreset.Standard)
+        if (_lighting.ActiveGraphicsPreset == Kern.Rendering.GraphicsPreset.Classic)
         {
             ToolChrome.Banner(
-                "ПРЕСЕТ STANDARD ОТКЛЮЧАЕТ ДИНАМИЧЕСКИЙ СВЕТ · DDA / JFA СЕЙЧАС НЕ ВЫПОЛНЯЮТСЯ",
+                "ПРЕСЕТ «КЛАССИКА» ОТКЛЮЧАЕТ ДИНАМИЧЕСКИЙ СВЕТ · DDA / JFA СЕЙЧАС НЕ ВЫПОЛНЯЮТСЯ",
                 ToolTheme.Warning);
         }
         GUILayout.Label("Выбор действует сразу до конца сессии; при смене света пересчитывается.", MutedLabelStyle);
@@ -294,9 +294,9 @@ public sealed class LightingCostWindow : ToolWindow
             "плотность переноса и карта света; плотность проб каскадов настраивается отдельно. " +
             "Выбери значения и нажми «Применить». Правка действует до конца сессии.", MutedLabelStyle);
         DrawQualityApplyControls();
-        if (_lighting?.ActiveGraphicsPreset == Kern.Rendering.GraphicsPreset.Standard)
+        if (_lighting?.ActiveGraphicsPreset == Kern.Rendering.GraphicsPreset.Classic)
         {
-            GUILayout.Label("Сейчас «Стандарт»: рассчитывается только AO. Для оценки света выбери Overdrive.",
+            GUILayout.Label("Сейчас «Классика»: рассчитывается только AO. Для оценки света выбери «Стандарт».",
                 MutedLabelStyle);
         }
 

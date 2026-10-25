@@ -14,6 +14,10 @@ using Kern.World;
 using Kern.World.Terrain;
 using MinesServer.Data;
 using MinesServer.Networking.Server.Packets.World;
+using Canvas = UnityEngine.UI.Canvas;
+using CanvasScaler = UnityEngine.UI.CanvasScaler;
+using GraphicRaycaster = UnityEngine.UI.GraphicRaycaster;
+using TMPro;
 using UnityEngine;
 
 namespace Kern.Game;
@@ -23,24 +27,16 @@ namespace Kern.Game;
 /// без звука). Визуал ищется как кадры анимации, статичная текстура или
 /// Effekseer-ассет "VFX/{имя эффекта}" (тот же конвейер, что у аудио-событий).
 ///
-/// VFX.Crystal: значок и количество проходят два этапа CrystallPlus.Update:
-/// подъём к исходной точке +0.25 по Y, затем движение к сохранённой точке робота.
+/// VFX.Crystal: исходный спрайт и счётчик едут одним корнем в двух фазах
+/// CrystallPlus.Update: подъём moveFrom на 0.25 по Y, затем полёт в moveTo.
 /// </summary>
 [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Gracefully handle any dynamic asset load/play errors.")]
 public sealed class ServerVFXEvent : IServerWorldEffect
 {
     private const int ProceduralCrystalSize = 8;
 
-    // Размер кристаллика в полёте: масштаб transform'а относительно «сырой»
-    // иконки (25×24 px при 16 px/юнит ≈ 1.56 юнита). 1 = как есть,
-    // 0.8 ≈ текущий мини-кристалл, 0.4 = совсем маленький. Меняется плавно.
+    // Масштаб старого варианта на отдельных ресурсах Crystals/{color}.png.
     private const float CrystalScale = 0.5f;
-
-    // Лист со спрайтами кристаллов и цифр из старого клиента
-    // (192×12: ячейки 0-5 - кристаллы, 6-14 - цифры 1-9, 15 - ноль).
-
-    // Цифры масштабируются под высоту кристаллика: текстура кристалла (24px)
-    // вдвое выше ячейки листа (12px), поэтому множитель 2.
 
     // VFX.PlaceDeny — маркер «клетку занять нельзя» при неудачной установке
     // пака. В клиентском пакете MinesServer.Data член не объявлен, сервер
@@ -61,6 +57,8 @@ public sealed class ServerVFXEvent : IServerWorldEffect
     private readonly ushort _targetBotId;
     private readonly IRobotService _robotService;
     private readonly IAssetLoader _assetLoader;
+    private readonly SpriteAnimationLibrary _spriteAnimations;
+    private readonly CrystalCollectionVisualVariant _crystalCollectionVariant;
     private readonly MapManager _mapManager;
     private readonly IVFXService _vfxPool;
 
@@ -76,6 +74,8 @@ public sealed class ServerVFXEvent : IServerWorldEffect
     private IWorldLabel? _collectionLabel;
     private readonly IWorldLabels? _worldLabels;
     private Sprite? _flightSprite;
+    private GameObject? _sourceCollectionSpriteObject;
+    private GameObject? _sourceCollectionCanvasObject;
     private bool _ownedStaticSpriteShared;
     private bool _flightSpriteShared;
     private int _currentFrame;
@@ -111,6 +111,7 @@ public sealed class ServerVFXEvent : IServerWorldEffect
     private readonly List<WorldEntityBatchRenderer.SpriteHandle> _digitHandles = new();
     private readonly List<Sprite> _digitSprites = new();
     private float _digitRowOffset;
+    private float _digitRowVerticalOffset;
     private float _digitStep = 0f;
 
     private CancellationTokenSource? _cts;
@@ -124,6 +125,8 @@ public sealed class ServerVFXEvent : IServerWorldEffect
         IVFXService vfxPool,
         IAsyncOperationSupervisor operations,
         WorldEntityBatchRenderer batchRenderer,
+        SpriteAnimationLibrary spriteAnimations,
+        CrystalCollectionVisualVariant crystalCollectionVariant,
         ISceneObjectFactory sceneObjects,
         IWorldLabels? worldLabels = null)
     {
@@ -134,6 +137,8 @@ public sealed class ServerVFXEvent : IServerWorldEffect
         _slot = slot;
         _robotService = robotService;
         _assetLoader = assetLoader;
+        _spriteAnimations = spriteAnimations;
+        _crystalCollectionVariant = crystalCollectionVariant;
         _mapManager = mapManager;
         _vfxPool = vfxPool;
         _batchRenderer = batchRenderer;
@@ -434,10 +439,21 @@ public sealed class ServerVFXEvent : IServerWorldEffect
             "b" => "blue", "r" => "red", "v" => "violet",
             "w" => "white", "c" => "cyan", _ => "green",
         };
-        Sprite? sprite = await TryLoadCrystalSpriteAsync($"Crystals/{mineral}.png", token);
+        Sprite? sprite;
+        bool isSharedSprite = false;
+        if (_crystalCollectionVariant == CrystalCollectionVisualVariant.SourceMineralAtlas)
+        {
+            sprite = _spriteAnimations.GetCrystalCollectionSprite(_parsedParams.CrystalColorLetter);
+            isSharedSprite = true;
+        }
+        else
+        {
+            sprite = await TryLoadCrystalSpriteAsync($"Crystals/{mineral}.png", token);
+        }
+
         if (token.IsCancellationRequested)
         {
-            if (sprite != null)
+            if (sprite != null && !isSharedSprite)
             {
                 UnityEngine.Object.Destroy(sprite);
             }
@@ -450,6 +466,7 @@ public sealed class ServerVFXEvent : IServerWorldEffect
             return false;
         }
 
+        _flightSpriteShared = isSharedSprite;
         await ConfigureFlightAsync(sprite, token);
         return true;
     }
@@ -498,25 +515,104 @@ public sealed class ServerVFXEvent : IServerWorldEffect
         await CreateCrystalDigitsAsync(token);
     }
 
-    // Original CrystallPlus uses a mineral sprite and a text count.
-    // World labels provide text without a nonexistent legacy cryfont asset.
+    // SourceMineralAtlas recreates the original Canvas and TMP hierarchy.
+    // CurrentAssets keeps the existing project world-label presentation.
     private UniTask CreateCrystalDigitsAsync(CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+
+        if (_crystalCollectionVariant == CrystalCollectionVisualVariant.SourceMineralAtlas)
+        {
+            if (_gameObject == null)
+            {
+                throw new InvalidOperationException("Source crystal collection requires its world root.");
+            }
+
+            string count = _parsedParams.CrystalCount < 2
+                ? string.Empty
+                : _parsedParams.CrystalCount.ToString(CultureInfo.InvariantCulture);
+            _sourceCollectionCanvasObject = CreateSourceCollectionCounter(
+                _sceneObjects,
+                _gameObject.transform,
+                count);
+            return UniTask.CompletedTask;
+        }
+
         if (_worldLabels == null)
         {
             throw new InvalidOperationException("Crystal collection requires world labels.");
         }
 
         _digitRowOffset = 0.25f;
+        _digitRowVerticalOffset = 0f;
         _collectionLabel = _worldLabels.Create(WorldLabelKind.Collection);
-        // CrystallPlus.Start, RVA 0x19B5418: counts below two have no text.
         _collectionLabel.SetText(_parsedParams.CrystalCount < 2
             ? string.Empty
             : _parsedParams.CrystalCount.ToString(CultureInfo.InvariantCulture));
-        _collectionLabel.SetPosition(_intendedWorldPosition + Vector3.right * _digitRowOffset);
+        _collectionLabel.SetPosition(_intendedWorldPosition +
+            new Vector3(_digitRowOffset, _digitRowVerticalOffset, 0f));
         _collectionLabel.SetVisible(true);
         return UniTask.CompletedTask;
+    }
+
+    internal static GameObject CreateSourceCollectionCounter(
+        ISceneObjectFactory sceneObjects,
+        Transform parent,
+        string count)
+    {
+        GameObject canvasObject = sceneObjects.Create("Canvas", RuntimeOwner.VFX);
+        GameObject textObject = sceneObjects.Create("Text (TMP)", RuntimeOwner.VFX);
+        try
+        {
+            canvasObject.layer = 5;
+            canvasObject.transform.SetParent(parent, worldPositionStays: false);
+            canvasObject.transform.localPosition = Vector3.zero;
+            canvasObject.transform.localRotation = Quaternion.identity;
+            canvasObject.transform.localScale = Vector3.one;
+
+            Canvas canvas = canvasObject.AddComponent<Canvas>();
+            if (canvasObject.transform is not RectTransform canvasRect)
+            {
+                throw new InvalidOperationException("World-space collection Canvas needs a RectTransform.");
+            }
+
+            canvasRect.sizeDelta = Vector2.one;
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.planeDistance = 100f;
+            canvas.overrideSorting = false;
+            canvas.sortingOrder = 100;
+            canvasObject.AddComponent<CanvasScaler>();
+            canvasObject.AddComponent<GraphicRaycaster>();
+
+            textObject.layer = 5;
+            textObject.transform.SetParent(canvasObject.transform, worldPositionStays: false);
+            textObject.transform.localPosition = Vector3.zero;
+            textObject.transform.localRotation = Quaternion.identity;
+            textObject.transform.localScale = Vector3.one;
+
+            TextMeshProUGUI counter = textObject.AddComponent<TextMeshProUGUI>();
+            if (textObject.transform is not RectTransform textRect)
+            {
+                throw new InvalidOperationException("World-space collection text needs a RectTransform.");
+            }
+
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.anchoredPosition = new Vector2(1f, 0.375f);
+            textRect.sizeDelta = Vector2.zero;
+            textRect.pivot = new Vector2(0.5f, 0.5f);
+            counter.fontSize = 0.5f;
+            counter.enableAutoSizing = false;
+            counter.overflowMode = TextOverflowModes.Truncate;
+            counter.text = count;
+            return canvasObject;
+        }
+        catch
+        {
+            UnityEngine.Object.Destroy(canvasObject);
+            UnityEngine.Object.Destroy(textObject);
+            throw;
+        }
     }
 
     private static Color CrystalNumberColor(string letter) => letter switch
@@ -657,11 +753,63 @@ public sealed class ServerVFXEvent : IServerWorldEffect
             // Иконка кристалла летит «как есть»: сбрасываем поворот, применённый
             // в SetupSlotPosition по направлению взгляда робота, и задаём масштаб.
             _gameObject.transform.rotation = Quaternion.identity;
-            _gameObject.transform.localScale = Vector3.one * CrystalScale;
+            _gameObject.transform.localScale = Vector3.one *
+                (_crystalCollectionVariant == CrystalCollectionVisualVariant.SourceMineralAtlas ? 1f : CrystalScale);
         }
 
-        _slot?.SetSprite(_flightSprite);
-        _slot?.SetEnabled(true);
+        if (_crystalCollectionVariant == CrystalCollectionVisualVariant.SourceMineralAtlas)
+        {
+            CreateSourceCollectionSprite();
+            _slot?.SetEnabled(false);
+        }
+        else
+        {
+            _slot?.SetSprite(_flightSprite);
+            _slot?.SetEnabled(true);
+        }
+    }
+
+    private void CreateSourceCollectionSprite()
+    {
+        if (_gameObject == null || _flightSprite == null)
+        {
+            throw new InvalidOperationException("Source crystal collection requires its world root and sprite.");
+        }
+
+        _sourceCollectionSpriteObject = CreateSourceCollectionSpriteObject(
+            _sceneObjects,
+            _gameObject.transform,
+            _flightSprite);
+    }
+
+    internal static GameObject CreateSourceCollectionSpriteObject(
+        ISceneObjectFactory sceneObjects,
+        Transform parent,
+        Sprite sprite)
+    {
+        GameObject spriteObject = sceneObjects.Create("CrystalCollectionMineral", RuntimeOwner.VFX);
+        try
+        {
+            spriteObject.transform.SetParent(parent, worldPositionStays: false);
+            spriteObject.transform.localPosition = Vector3.zero;
+            spriteObject.transform.localRotation = Quaternion.identity;
+            spriteObject.transform.localScale = Vector3.one;
+
+            SpriteRenderer renderer = spriteObject.AddComponent<SpriteRenderer>();
+            renderer.sprite = sprite;
+            renderer.sortingOrder = 5;
+            renderer.color = Color.white;
+            renderer.drawMode = SpriteDrawMode.Simple;
+            renderer.maskInteraction = SpriteMaskInteraction.None;
+            renderer.receiveShadows = false;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return spriteObject;
+        }
+        catch
+        {
+            UnityEngine.Object.Destroy(spriteObject);
+            throw;
+        }
     }
 
     private void UpdateFlight()
@@ -671,22 +819,26 @@ public sealed class ServerVFXEvent : IServerWorldEffect
             return;
         }
 
-        // CrystallPlus.Update, RVA 0x19B5710: two successive Lerp phases.
-        Vector3 destination = _flightReturning
-            ? _flightDestination
-            : _flightOrigin + Vector3.up * 0.25f;
+        // CrystallPlus.Update, RVA 0x19B5710: test == 0 moves toward
+        // moveFrom + (0, 0.25) at dt*8; test == 1 then moves to moveTo
+        // at dt*12 and completes within 0.05 units.
         Vector3 current = _gameObject != null
             ? _gameObject.transform.position
             : _flightOrigin;
-        Vector3 position = Vector3.Lerp(current, destination,
-            Time.deltaTime * (_flightReturning ? 12f : 8f));
+        Vector3 position = AdvanceCrystalFlightSourceLogic(
+            current,
+            _flightOrigin,
+            _flightDestination,
+            ref _flightReturning,
+            Time.deltaTime,
+            out bool completed);
 
         if (_gameObject != null)
         {
             _gameObject.transform.position = position;
         }
 
-        Vector3 digitBase = position + new Vector3(_digitRowOffset, 0f, 0f);
+        Vector3 digitBase = position + new Vector3(_digitRowOffset, _digitRowVerticalOffset, 0f);
         _collectionLabel?.SetPosition(digitBase);
         for (int i = 0; i < _digitObjects.Count; i++)
         {
@@ -697,20 +849,40 @@ public sealed class ServerVFXEvent : IServerWorldEffect
             }
         }
 
-        if (Vector2.Distance(position, destination) >= 0.05f)
+        if (completed)
         {
-            return;
+            _flightActive = false;
+            _flightMode = false;
+            _visualCompleted = true;
+        }
+    }
+
+    internal static Vector3 AdvanceCrystalFlightSourceLogic(
+        Vector3 current,
+        Vector3 origin,
+        Vector3 destination,
+        ref bool returning,
+        float deltaTime,
+        out bool completed)
+    {
+        Vector3 target = returning ? destination : origin + (Vector3.up * 0.25f);
+        float speed = returning ? 12f : 8f;
+        Vector3 next = Vector3.Lerp(current, target, deltaTime * speed);
+        completed = false;
+
+        if (Vector2.Distance(next, target) < 0.05f)
+        {
+            if (returning)
+            {
+                completed = true;
+            }
+            else
+            {
+                returning = true;
+            }
         }
 
-        if (!_flightReturning)
-        {
-            _flightReturning = true;
-            return;
-        }
-
-        _flightActive = false;
-        _flightMode = false;
-        _visualCompleted = true;
+        return next;
     }
 
     private async UniTask<bool> TryLoadEffekseerAsync(string filename, byte[] bytes, CancellationToken token)
@@ -864,6 +1036,16 @@ public sealed class ServerVFXEvent : IServerWorldEffect
     {
         _collectionLabel?.Dispose();
         _collectionLabel = null;
+        if (_sourceCollectionSpriteObject != null)
+        {
+            UnityEngine.Object.Destroy(_sourceCollectionSpriteObject);
+            _sourceCollectionSpriteObject = null;
+        }
+        if (_sourceCollectionCanvasObject != null)
+        {
+            UnityEngine.Object.Destroy(_sourceCollectionCanvasObject);
+            _sourceCollectionCanvasObject = null;
+        }
         if (_slotReleased)
         {
             return;

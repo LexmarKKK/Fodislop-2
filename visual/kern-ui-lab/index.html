@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Интерактивная лаборатория интерфейса Kern: полный путь игрока, HUD, окна и состояния клиента.">
-  <meta name="theme-color" content="#05080d">
+  <meta name="theme-color" content="#050a11">
   <meta name="color-scheme" content="dark">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Kern Interface Lab">
@@ -275,6 +275,7 @@
             <span class="btn-primary-text" data-i18n="mainmenu.start_descent">НАЧАТЬ СПУСК В ШАХТУ</span>
             <div class="action-arrow" translate="no"><svg class="fdn-icon" viewBox="0 0 24 24" aria-hidden="true" translate="no"><use href="#i-arrow-ne"/></svg></div>
           </button>
+          <button type="button" class="btn-outline-action menu-calibration-action" onclick="switchViewState('onboarding')" data-sfx="click" data-i18n="mock.menu.calibration">КАЛИБРОВКА И УПРАВЛЕНИЕ</button>
         </div>
 
         <div class="hotkey-hint">
@@ -341,7 +342,6 @@
 
         <div class="fdn-row fdn-row--flow fdn-row--gap-12 fdn-row--top-20">
           <button data-i18n="network.btn_gold_action" type="button" class="btn-gold-action" onclick="switchViewState('menu')" data-sfx="confirm" data-fit="wrap">ВЕРНУТЬСЯ В ОРБИТУ</button>
-          <button data-i18n="gateway.auth.offline" type="button" class="btn-outline-action" onclick="startOfflineDummy()" data-sfx="click" data-fit="wrap">ОФЛАЙН РЕЖИМ (DUMMY)</button>
         </div>
       </div>
     </div>
@@ -359,14 +359,6 @@
           <h1 class="auth-brand-title" translate="no">KERN</h1>
           <span data-i18n="gateway.auth_brand_subtitle" class="auth-brand-subtitle">DEEP SUBSURFACE EXPEDITION // MINES PROTOCOL v7</span>
 
-          <!-- Компактный статус готовности игровых систем -->
-          <div class="auth-status-row">
-            <span data-i18n="gateway.auth_brand_header" class="fdn-text--cyan">[GPU] <strong translate="no" class="fdn-text--ok">OK</strong></span>
-            <span class="fdn-text--disabled">·</span>
-            <span data-i18n="gateway.auth_brand_header_2" class="fdn-text--cyan">[FMOD] <strong data-i18n="gateway.auth_brand_header_3" class="fdn-text--ok">SYNCED</strong></span>
-            <span class="fdn-text--disabled">·</span>
-            <span data-i18n="gateway.auth_brand_header_4" class="fdn-text--cyan">[WORLD] <strong data-i18n="gateway.auth_brand_header_5" class="fdn-text--ok">MOUNTED</strong></span>
-          </div>
         </div>
 
         <!-- Переключатель Вход / Регистрация -->
@@ -382,7 +374,7 @@
             <label data-i18n="gateway.auth.login_field" class="auth-field-label" for="inputMinerName">ПОЗЫВНОЙ ШАХТЁРА (ЛОГИН):</label>
             <div class="auth-input-group">
               <span class="auth-input-icon"><svg class="fdn-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-user"/></svg></span>
-              <input type="text" class="auth-input" id="inputMinerName" name="username" autocomplete="username" value="ШАХТЁР-774 [DVM]" placeholder="Введите позывной">
+              <input type="text" class="auth-input" id="inputMinerName" name="username" autocomplete="username" placeholder="Введите логин">
             </div>
           </div>
 
@@ -391,7 +383,7 @@
             <label data-i18n="gateway.auth.password_field" class="auth-field-label" for="inputPassword">ПАРОЛЬ ДОСТУПА:</label>
             <div class="auth-input-group">
               <span class="auth-input-icon"><svg class="fdn-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-lock"/></svg></span>
-              <input type="password" class="auth-input" id="inputPassword" name="password" autocomplete="current-password" value="MiningPassword#2026" placeholder="Введите пароль">
+              <input type="password" class="auth-input" id="inputPassword" name="password" autocomplete="current-password" placeholder="Введите пароль">
               <button type="button" class="auth-eye-btn" onclick="togglePasswordVisibility('inputPassword', this)" title="Показать пароль" aria-label="Показать пароль" aria-pressed="false" data-sfx="click"><svg class="fdn-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-eye"/></svg></button>
             </div>
           </div>
@@ -399,11 +391,11 @@
           <!-- Опции: Запомнить / Авто-вход -->
           <div class="auth-options-row">
             <label class="auth-checkbox-label">
-              <input type="checkbox" checked id="authRememberMe">
+              <input type="checkbox" id="authRememberMe">
               <span data-i18n="gateway.auth.remember">Запомнить данные</span>
             </label>
             <label class="auth-checkbox-label">
-              <input type="checkbox" checked id="authAutoLogin">
+              <input type="checkbox" id="authAutoLogin">
               <span data-i18n="gateway.auth.auto_login">Авто-вход</span>
             </label>
           </div>
@@ -415,7 +407,7 @@
             <label data-i18n="gateway.auth.new_callsign_field" class="auth-field-label" for="inputRegMinerName">ПОЗЫВНОЙ НОВОГО ШАХТЁРА:</label>
             <div class="auth-input-group">
               <span class="auth-input-icon"><svg class="fdn-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-user"/></svg></span>
-              <input type="text" class="auth-input" id="inputRegMinerName" name="new-username" autocomplete="username" value="ШАХТЁР-774 [DVM]" placeholder="Введите позывной">
+              <input type="text" class="auth-input" id="inputRegMinerName" name="new-username" autocomplete="username" placeholder="Введите позывной">
             </div>
           </div>
 
@@ -423,7 +415,7 @@
             <label data-i18n="gateway.auth.password_field" class="auth-field-label" for="inputRegPassword">ПАРОЛЬ ДОСТУПА:</label>
             <div class="auth-input-group">
               <span class="auth-input-icon"><svg class="fdn-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-lock"/></svg></span>
-              <input type="password" class="auth-input" id="inputRegPassword" name="new-password" autocomplete="new-password" value="MiningPassword#2026" placeholder="Придумайте пароль">
+              <input type="password" class="auth-input" id="inputRegPassword" name="new-password" autocomplete="new-password" placeholder="Придумайте пароль">
               <button type="button" class="auth-eye-btn" onclick="togglePasswordVisibility('inputRegPassword', this)" title="Показать пароль" aria-label="Показать пароль" aria-pressed="false" data-sfx="click"><svg class="fdn-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-eye"/></svg></button>
             </div>
           </div>
@@ -432,7 +424,7 @@
             <label data-i18n="gateway.auth.confirm_password_field" class="auth-field-label" for="inputRegConfirmPassword">ПОДТВЕРЖДЕНИЕ ПАРОЛЯ:</label>
             <div class="auth-input-group">
               <span class="auth-input-icon"><svg class="fdn-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-lock"/></svg></span>
-              <input type="password" class="auth-input" id="inputRegConfirmPassword" name="confirm-password" autocomplete="new-password" value="MiningPassword#2026" placeholder="Повторите пароль">
+              <input type="password" class="auth-input" id="inputRegConfirmPassword" name="confirm-password" autocomplete="new-password" placeholder="Повторите пароль">
               <button type="button" class="auth-eye-btn" onclick="togglePasswordVisibility('inputRegConfirmPassword', this)" title="Показать пароль" aria-label="Показать пароль" aria-pressed="false" data-sfx="click"><svg class="fdn-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-eye"/></svg></button>
             </div>
           </div>
@@ -446,7 +438,7 @@
               <strong data-i18n="gateway.auth_eula_box_5">3. ПРОГРЕСС:</strong> Все данные синхронизируются по протоколу MinesProtocol v7.
             </div>
             <label class="auth-checkbox-label auth-checkbox-label--offset">
-              <input type="checkbox" checked id="authAcceptEula">
+              <input type="checkbox" id="authAcceptEula">
               <span data-i18n="gateway.auth.eula_accept" class="fdn-text--xs fdn-text--light">Принимаю Пользовательское соглашение и EULA</span>
             </label>
           </div>
@@ -458,10 +450,16 @@
           <span translate="no"><svg class="fdn-icon" viewBox="0 0 24 24" aria-hidden="true" translate="no"><use href="#i-arrow-ne"/></svg></span>
         </button>
 
+        <div class="auth-provider-divider"><span data-i18n="mock.auth.provider">ИЛИ ВОЙТИ ЧЕРЕЗ</span></div>
+        <button type="button" class="auth-vk-button" id="btnVkAuth" onclick="startVKPreview()" data-sfx="click">
+          <span class="auth-vk-mark">VK</span>
+          <span translate="no">VK ID</span>
+          <span aria-hidden="true">↗</span>
+        </button>
+        <p class="auth-availability" id="authAvailability" role="status" data-i18n="mock.auth.note" data-fit="wrap">В макете показан путь входа. Подключение к серверу выполняет клиент.</p>
+
         <!-- Вспомогательные ссылки -->
         <div class="auth-footer-links">
-          <span data-i18n="gateway.auth.offline" class="auth-footer-link" data-fit="wrap" onclick="startOfflineDummy()" role="button" tabindex="0" data-sfx="click">Офлайн режим (Dummy)</span>
-          <span class="fdn-text--disabled">|</span>
           <span data-i18n="gateway.auth.recover" class="auth-footer-link" data-fit="wrap" onclick="showToast(t('gateway.toast.recover'), 'info')" role="button" tabindex="0" data-sfx="click">Забыли пароль?</span>
         </div>
       </div>
@@ -674,21 +672,20 @@
           </div>
         </div>
 
-        <!-- Радар -->
+        <!-- Миникарта: нижний левый блок, как в текущем клиенте. -->
         <div class="sci-fi-panel hud-radar-panel">
           <div class="hud-title-row">
-            <span data-i18n="hud.hud_title_row_3" class="fdn-font-data fdn-text--2xs fdn-text--bold fdn-text--secondary">РАДАР СЕКТОРА</span>
+            <span data-i18n="mock.hud.minimap" class="fdn-font-data fdn-text--2xs fdn-text--bold fdn-text--secondary">МИНИКАРТА</span>
             <span data-i18n="hud.hud_title_row_4" class="fdn-font-data fdn-text--2xs fdn-text--gold">-840 М</span>
           </div>
           <div class="radar-screen">
-            <div class="radar-sweep-line"></div>
             <div class="radar-dot"></div>
             <div class="radar-dot radar-dot--danger"></div>
             <div class="radar-dot radar-dot--neutral"></div>
           </div>
         </div>
 
-        <!-- Действия -->
+        <!-- Управление: нижний левый блок над миникартой. -->
         <div class="hud-actions-column">
           <button type="button" class="hud-action-btn" id="btnAutoDig" onclick="toggleAutoDig()" data-sfx="click">
             <span class="led-indicator" id="ledAutoDig"></span>
@@ -702,18 +699,18 @@
             <kbd translate="no" class="hud-action-key">L</kbd>
           </button>
 
-          <div class="hud-action-sep"></div>
-
-          <button type="button" class="hud-action-btn" onclick="openModal('inventoryModal')" data-sfx="click">
-            <span class="led-indicator led-indicator--slot"></span>
-            <span data-i18n="hud.hud_action_label_3" class="hud-action-label">ГРУЗОВОЙ ОТСЕК</span>
-            <kbd data-i18n="hud.hud_action_key" class="hud-action-key">TAB</kbd>
-          </button>
-
           <button type="button" class="hud-action-btn" onclick="openModal('programmatorModal')" data-sfx="click">
             <span class="led-indicator led-indicator--slot"></span>
             <span data-i18n="hud.programmator" class="hud-action-label">ПРОГРАММАТОР</span>
             <kbd translate="no" class="hud-action-key">P</kbd>
+          </button>
+        </div>
+
+        <div class="hud-utility-row">
+          <button type="button" class="hud-action-btn" onclick="openModal('inventoryModal')" data-sfx="click">
+            <span class="led-indicator led-indicator--slot"></span>
+            <span data-i18n="hud.hud_action_label_3" class="hud-action-label">ГРУЗОВОЙ ОТСЕК</span>
+            <kbd data-i18n="hud.hud_action_key" class="hud-action-key">TAB</kbd>
           </button>
 
           <button type="button" class="hud-action-btn" onclick="openModal('chatModal')" data-sfx="click">
@@ -728,15 +725,33 @@
             <kbd translate="no" class="hud-action-key">K</kbd>
           </button>
 
-          <div class="hud-action-sep"></div>
-
           <button type="button" class="hud-action-btn hud-action-btn--gold" onclick="claimBonus()" data-sfx="confirm">
             <span class="led-indicator led-indicator--slot"></span>
             <span data-i18n="hud.hud_action_label_5" class="hud-action-label">БОНУС ШАХТЫ</span>
           </button>
         </div>
 
-        <!-- Хотбар -->
+        <div class="hud-chat-preview sci-fi-panel">
+          <div class="hud-chat-preview-head"><span data-i18n="mock.hud.chat">ОБЩИЙ ЧАТ</span><button type="button" onclick="openModal('chatModal')" data-sfx="click" data-i18n="mock.hud.chat_open">ОТКРЫТЬ ЧАТ ↗</button></div>
+          <div class="hud-chat-preview-line"><strong translate="no">[VOID]</strong> <span data-i18n="mock.hud.chat_line_1">Сектор 09: нужен напарник на глубину −1800 м</span></div>
+          <div class="hud-chat-preview-line"><strong translate="no">[DVM]</strong> <span data-i18n="mock.hud.chat_line_2">Караван у станции, обмен руды открыт</span></div>
+        </div>
+
+        <div class="hud-touch-controls" aria-label="Сенсорное управление">
+          <div class="hud-touch-pad" aria-hidden="true"><span></span></div>
+          <div class="hud-touch-actions">
+            <button type="button" onclick="toggleAutoDig()" data-sfx="click" data-i18n="mock.touch.auto">АВТО</button>
+            <button type="button" onclick="openModal('inventoryModal')" data-sfx="click" data-i18n="mock.touch.inventory">СУМКА</button>
+            <button type="button" onclick="simulateDamageOrHeal()" data-sfx="click" data-i18n="mock.touch.heal">ЛЕЧИТЬ</button>
+            <button type="button" class="hud-touch-primary" onclick="mockTouchDig()" data-sfx="drill" data-i18n="mock.touch.dig">КОПАТЬ</button>
+          </div>
+          <div class="hud-touch-system">
+            <button type="button" onclick="openModal('chatModal')" data-sfx="click" data-i18n="mock.touch.chat">ЧАТ</button>
+            <button type="button" onclick="switchViewState('pause')" data-sfx="click" data-i18n="mock.touch.menu">МЕНЮ</button>
+          </div>
+        </div>
+
+        <!-- Предметы: компактная колонка справа вверху, как в клиенте. -->
         <div class="hud-hotbar-container" id="hotbarSlotsWrap">
           <div class="hotbar-slot active" onclick="selectHotbarSlot(0)" role="button" tabindex="0" data-sfx="click">
             <span class="hotbar-num">1</span>
@@ -783,6 +798,7 @@
             <span class="hotbar-icon"><svg class="fdn-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-target"/></svg></span>
             <span translate="no" class="hotbar-count">x1</span>
           </div>
+          <button type="button" class="hud-hotbar-toggle" id="hudHotbarToggle" aria-expanded="false" onclick="toggleMockInventory()" data-sfx="click" title="Развернуть предметы">‹</button>
         </div>
       </div>
     </div>
@@ -1209,17 +1225,6 @@
                   <td><span data-i18n="server.ping_indicator_3" class="ping-indicator med">● 118ms</span></td>
                 </tr>
 
-                <tr onclick="selectServerDetail(this, 'Dummy Offline', 'Localhost', '1 / 1', '0 ms', '-100 м', '#000000', 'Тестовая (Офлайн песочница)')" role="row" tabindex="0" aria-selected="false" data-sfx="click">
-                  <td>
-                    <div class="server-name-cell">
-                      <strong data-i18n="server.server_name_cell_7">DUMMY OFFLINE</strong>
-                      <span data-i18n="server.server_name_cell_8">Локальная песочница</span>
-                    </div>
-                  </td>
-                  <td><span data-i18n="server.servers_table_6" class="fdn-font-data fdn-text--xs fdn-text--secondary">LOCAL</span></td>
-                  <td><span class="fdn-font-data fdn-text--bold">1/1</span></td>
-                  <td><span data-i18n="server.ping_indicator_4" class="ping-indicator good">● 0ms</span></td>
-                </tr>
               </tbody>
             </table>
 
@@ -1406,7 +1411,7 @@
       </div>
 
       <div class="modal-card-footer">
-        <button data-i18n="mainmenu.update_offline" type="button" class="btn-outline-action" data-fit="atomic" onclick="closeModal('mandatoryUpdateModal'); showToast(t('mainmenu.toast.update_deferred'), 'alert');" data-sfx="click">ОТЛОЖИТЬ (ТОЛЬКО ОФЛАЙН)</button>
+        <button type="button" class="btn-outline-action" data-fit="wrap" onclick="closeModal('mandatoryUpdateModal')" data-sfx="click">НАЗАД В МЕНЮ</button>
         <button  type="button" class="btn-gold-action" id="btnStartUpdate" data-fit="wrap" onclick="startUpdateDownloadProcess()" data-sfx="confirm"><span data-i18n="modal.btn_start_update" id="updateActionLabel">СКАЧАТЬ ОБНОВЛЕНИЕ И ПЕРЕЗАПУСТИТЬ</span><svg class="fdn-icon" viewBox="0 0 24 24" aria-hidden="true" translate="no"><use href="#i-arrow-ne"/></svg></button>
       </div>
     </div>

@@ -74,7 +74,8 @@ public static class AnimationContainerDecoder
             frameWidth = width;
             frameHeight = height / SparkFrameCount;
             frameCount = SparkFrameCount;
-            fps = 15f;
+            // IskraAnim is sampled at 60 Hz and its Animator state speed is 0.5.
+            fps = 30f;
             return true;
         }
 

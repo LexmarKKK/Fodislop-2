@@ -11,7 +11,7 @@ using UnityEngine;
 namespace Kern.Rendering
 {
     /// <summary>
-    /// Две неизменяемые ступени качества: «Стандарт» и «Overdrive».
+    /// Две неизменяемые ступени качества: «Классика» и «Стандарт».
     /// </summary>
     ///
     /// Значения живут кодом, а не ассетом: ступеней ровно две, они неизменяемы, и
@@ -19,20 +19,20 @@ namespace Kern.Rendering
     /// кодом пришлось бы ловить вручную.
     public sealed class GraphicsQualityProfile
     {
+        private readonly GraphicsQualitySettings _classic;
         private readonly GraphicsQualitySettings _standard;
-        private readonly GraphicsQualitySettings _overdrive;
 
         private GraphicsQualityProfile(
-            GraphicsQualitySettings standard,
-            GraphicsQualitySettings overdrive)
+            GraphicsQualitySettings classic,
+            GraphicsQualitySettings standard)
         {
+            _classic = classic;
             _standard = standard;
-            _overdrive = overdrive;
         }
 
         public static GraphicsQualityProfile CreateDefault()
         {
-            // Standard keeps contact AO while the radiance transport is off.
+            // Classic keeps contact AO while the radiance transport is off.
             GraphicsQualitySettings withoutLighting = new(
                 lightingPixelsPerCell: LightingConfigHolder.DefaultQuality.CascadeProbePixelsPerCell,
                 lightingMaximumTextureDimension: LightingConfigHolder.MaximumFieldTextureSize,
@@ -53,8 +53,8 @@ namespace Kern.Rendering
         {
             GraphicsQualitySettings settings = preset switch
             {
+                GraphicsPreset.Classic => _classic,
                 GraphicsPreset.Standard => _standard,
-                GraphicsPreset.Overdrive => _overdrive,
                 _ => throw new ArgumentOutOfRangeException(
                     nameof(preset),
                     preset,
@@ -111,26 +111,26 @@ namespace Kern.Rendering
                     $"LightingQuality value ({(int)settings.LightingQuality}).");
             }
 
-            // Обе ступени получают контактное AO; только Overdrive считает
+            // Обе ступени получают контактное AO; только Standard считает
             // транспорт света. Поэтому LightingQuality здесь означает именно
             // режим транспорта, а не наличие AO.
             // Раньше здесь стоял замок «Ultra обязан быть per-pixel»; теперь
             // инвариант сильнее: выключенный свет разрешён только «Стандарту»,
-            // включённый обязателен «Overdrive».
-            if (context == nameof(GraphicsPreset.Standard) &&
+            // включённый обязателен «Стандарт».
+            if (context == nameof(GraphicsPreset.Classic) &&
                 settings.LightingQuality != LightingQualityMode.Off)
             {
                 throw new InvalidOperationException(
                     $"Graphics quality settings '{context}' must disable lighting: " +
-                    $"'{nameof(GraphicsPreset.Standard)}' is the preset without radiance transport.");
+                    $"'{nameof(GraphicsPreset.Classic)}' is the preset without radiance transport.");
             }
 
-            if (context == nameof(GraphicsPreset.Overdrive) &&
+            if (context == nameof(GraphicsPreset.Standard) &&
                 settings.LightingQuality == LightingQualityMode.Off)
             {
                 throw new InvalidOperationException(
                     $"Graphics quality settings '{context}' must enable lighting: " +
-                    $"'{nameof(GraphicsPreset.Overdrive)}' is the preset with lighting.");
+                    $"'{nameof(GraphicsPreset.Standard)}' is the preset with lighting.");
             }
         }
     }

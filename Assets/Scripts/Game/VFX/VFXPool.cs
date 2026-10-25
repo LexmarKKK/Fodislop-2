@@ -68,7 +68,7 @@ namespace Kern.Game
             ShrinkExpiredSlots(Time.realtimeSinceStartup);
         }
 
-        public IVFXSlot? Acquire()
+        public IVFXSlot? Acquire(int sortingOrder = -500)
         {
             EnsureInitialized();
             if (_sceneObjects == null || _entityBatchRenderer == null)
@@ -76,7 +76,22 @@ namespace Kern.Game
                 return null;
             }
 
-            PooledSlot slot = _available.Count > 0 ? _available.Dequeue() : CreatePooledSlot();
+            PooledSlot? slot = null;
+            int availableCount = _available.Count;
+            for (int index = 0; index < availableCount; index++)
+            {
+                PooledSlot candidate = _available.Dequeue();
+                if (slot == null && candidate.SortingOrder == sortingOrder)
+                {
+                    slot = candidate;
+                }
+                else
+                {
+                    _available.Enqueue(candidate);
+                }
+            }
+
+            slot ??= CreatePooledSlot(sortingOrder);
             slot.IsInPool = false;
             _active.Add(slot);
             if (slot.GameObject != null)
@@ -126,7 +141,7 @@ namespace Kern.Game
             int initialSize = Mathf.Max(_initialSize, 1);
             while (_available.Count + _active.Count < initialSize)
             {
-                _available.Enqueue(CreatePooledSlot());
+                _available.Enqueue(CreatePooledSlot(-500));
             }
         }
 
@@ -153,19 +168,20 @@ namespace Kern.Game
             }
         }
 
-        private PooledSlot CreatePooledSlot()
+        private PooledSlot CreatePooledSlot(int sortingOrder)
         {
             GameObject go = _sceneObjects.Create("PooledVFX", RuntimeOwner.VFX);
             go.SetActive(false);
 
             WorldEntityBatchRenderer.SpriteHandle? handle =
-                _entityBatchRenderer?.RegisterSprite(go.transform, -500);
+                _entityBatchRenderer?.RegisterSprite(go.transform, sortingOrder);
 
             return new PooledSlot
             {
                 GameObject = go,
                 EntityBatchRenderer = _entityBatchRenderer!,
                 BatchHandle = handle!,
+                SortingOrder = sortingOrder,
                 IsInPool = true,
                 ReleasedAt = Time.realtimeSinceStartup,
             };
@@ -189,6 +205,7 @@ namespace Kern.Game
             public GameObject? GameObject { get; set; }
             public WorldEntityBatchRenderer EntityBatchRenderer = null!;
             public WorldEntityBatchRenderer.SpriteHandle BatchHandle = null!;
+            public int SortingOrder;
             public bool IsInPool;
             public float ReleasedAt;
 

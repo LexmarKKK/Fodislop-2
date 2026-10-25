@@ -20,6 +20,11 @@ namespace Kern.Game.Managers
     public class ServerAudioEventManager : MonoBehaviour, IServerAudioService, IServerVFXService
     {
         private const string TAG = "[ServerAudioEventManager]";
+        // Select the crystal collection visual here. Set to CurrentAssets to
+        // use the existing standalone crystal sprites instead.
+        private const CrystalCollectionVisualVariant CrystalCollectionVariant =
+            CrystalCollectionVisualVariant.SourceMineralAtlas;
+        private const int SourceCrystalSortingOrder = 5; // SpriteRenderer.m_SortingOrder in the source prefab.
 
         private const string MusicEventName = "music/evil_huge";
         private readonly List<IServerWorldEffect> _activeEffects = new();
@@ -138,7 +143,10 @@ namespace Kern.Game.Managers
                 return;
             }
 
-            IVFXSlot? slot = _vfxService.Acquire();
+            IVFXSlot? slot = packet.EffectType == global::MinesServer.Data.VFX.Crystal &&
+                CrystalCollectionVariant == CrystalCollectionVisualVariant.SourceMineralAtlas
+                ? _vfxService.Acquire(SourceCrystalSortingOrder)
+                : _vfxService.Acquire();
 
             var effect = new ServerVFXEvent(
                 packet,
@@ -149,6 +157,8 @@ namespace Kern.Game.Managers
                 _vfxPool,
                 _operations,
                 _entityBatchRenderer,
+                _spriteAnimations,
+                CrystalCollectionVariant,
                 _sceneObjects,
                 _worldLabels);
             _activeEffects.Add(effect);

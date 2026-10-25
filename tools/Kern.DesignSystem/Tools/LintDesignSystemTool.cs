@@ -52,7 +52,7 @@ internal static class LintDesignSystemTool
     ];
 
     private static readonly Regex EmojiRegex = new(
-        "[\U0001F300-\U0001FAFF\U00002600-\U000027BF\U0001F1E6-\U0001F1FF\uFE0F]",
+        @"[\u2600-\u27BF\uFE0F]|[\uD83C-\uDBFF][\uDC00-\uDFFF]",
         RegexOptions.Compiled);
 
     private static readonly HashSet<char> Geometric = new()

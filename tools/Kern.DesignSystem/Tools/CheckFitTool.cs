@@ -26,8 +26,23 @@ internal static class CheckFitTool
         string gameStylesDir = Path.Combine(repo, "Assets", "Resources", "Styles");
         string uxmlDir = Path.Combine(repo, "Assets", "Resources", "UI");
 
-        var map = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(File.ReadAllText(mapPath)) ?? new();
-        var toGame = map.SelectMany(s => s.Value).ToDictionary(kv => kv.Key, kv => kv.Value);
+        using JsonDocument map = JsonDocument.Parse(File.ReadAllText(mapPath));
+        var toGame = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (JsonProperty section in map.RootElement.EnumerateObject())
+        {
+            if (section.Value.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            foreach (JsonProperty pair in section.Value.EnumerateObject())
+            {
+                if (pair.Value.ValueKind == JsonValueKind.String && pair.Value.GetString() is { } mockClass)
+                {
+                    toGame.TryAdd(mockClass, pair.Name);
+                }
+            }
+        }
 
         var ussFiles = Directory.GetFiles(gameStylesDir, "*.uss");
         var uss = ParseUssRules(ussFiles);

@@ -628,7 +628,7 @@ public sealed class FrameBenchmarkPlayModeTests
         LightingGeometryRegistry registry = ResolveInScene<LightingGeometryRegistry>(game);
         GraphicsSettingsController graphics = ResolveInScene<GraphicsSettingsController>(game);
         GraphicsPreset originalPreset = _bootstrap.Container.Resolve<IClientConfigManager>().Config.GraphicsPreset;
-        graphics.SelectPreset(GraphicsPreset.Overdrive);
+        graphics.SelectPreset(GraphicsPreset.Standard);
         yield return Skip(30);
         UniversalAdditionalCameraData data = camera.GetUniversalAdditionalCameraData();
         RenderTexture? originalTarget = camera.targetTexture;
@@ -1104,7 +1104,7 @@ Vector2.zero, Vector2.right, Vector2.one, Vector2.up
         string directory = DiagnosticArtifactPaths.CreateDirectory("Performance", "render_path_ab");
         try
         {
-            graphics.SelectPreset(GraphicsPreset.Overdrive);
+            graphics.SelectPreset(GraphicsPreset.Standard);
             yield return Skip(30);
             Camera outputCamera = PostProcessRuntimeState.DiagnosticOffscreenCamera ?? camera;
             Assert.That(outputCamera.pixelWidth, Is.EqualTo(3420));
@@ -1467,7 +1467,7 @@ ProjectRuntimeContracts.Camera.MinimumOrthographicSize, originalZoom,
         IClientConfigManager config = _bootstrap.Container.Resolve<IClientConfigManager>();
         GraphicsPreset originalPreset = config.Config.GraphicsPreset;
         yield return Await(_bootstrap.TransitionAsync("MainMenu"), UITimeoutSeconds);
-        config.SelectGraphicsPreset(GraphicsPreset.Standard);
+        config.SelectGraphicsPreset(GraphicsPreset.Classic);
         yield return Await(_bootstrap.TransitionAsync("MainGame"), WorldTimeoutSeconds);
         Scene game = SceneManager.GetSceneByName("MainGame");
         TerrainRenderer terrain = FindComponentInScene<TerrainRenderer>(game)
@@ -1522,7 +1522,7 @@ ProjectRuntimeContracts.Camera.MinimumOrthographicSize, originalZoom,
             camera.orthographicSize = 8f;
             diagnosticCamera.ApplyPoseToGameplay();
             yield return Skip(5);
-            ResolveInScene<GraphicsSettingsController>(game).SelectPreset(GraphicsPreset.Overdrive);
+            ResolveInScene<GraphicsSettingsController>(game).SelectPreset(GraphicsPreset.Standard);
             zoomLighting.SetDynamicLight(ZoomProbeId,
                 new Vector2(originalPosition.x, originalPosition.y), Color.white, 8f);
             const int ZoomCaptureCount = 3; // near, far, then near again
@@ -1894,7 +1894,7 @@ ProjectRuntimeContracts.Camera.MinimumOrthographicSize, originalZoom,
         IClientConfigManager config = _bootstrap.Container.Resolve<IClientConfigManager>();
         GraphicsPreset originalPreset = config.Config.GraphicsPreset;
         yield return Await(_bootstrap.TransitionAsync("MainMenu"), UITimeoutSeconds);
-        config.SelectGraphicsPreset(GraphicsPreset.Standard);
+        config.SelectGraphicsPreset(GraphicsPreset.Classic);
         yield return Await(_bootstrap.TransitionAsync("MainGame"), WorldTimeoutSeconds);
         Scene game = SceneManager.GetSceneByName("MainGame");
         TerrainRenderer terrain = FindComponentInScene<TerrainRenderer>(game)
@@ -1944,7 +1944,7 @@ ProjectRuntimeContracts.Camera.MinimumOrthographicSize, originalZoom,
                 Mathf.Floor(originalPosition.y), originalPosition.z);
             diagnosticCamera.ApplyPoseToGameplay();
             yield return Skip(5);
-            graphics.SelectPreset(GraphicsPreset.Overdrive);
+            graphics.SelectPreset(GraphicsPreset.Standard);
             yield return Skip(60);
             foreach (Robot robot in frozenRobots) { robot.enabled = false; }
             Assert.That(lighting.GPUResources.Direct.Static, Is.Not.Null, "Atlas oracle requires real static transport.");
@@ -2180,7 +2180,7 @@ new(1, 0), new(-1, 0), new(-1, 0), new(-1, 0),
         IClientConfigManager config = _bootstrap.Container.Resolve<IClientConfigManager>();
         GraphicsPreset originalPreset = config.Config.GraphicsPreset;
         yield return Await(_bootstrap.TransitionAsync("MainMenu"), UITimeoutSeconds);
-        config.SelectGraphicsPreset(GraphicsPreset.Standard);
+        config.SelectGraphicsPreset(GraphicsPreset.Classic);
         yield return Await(_bootstrap.TransitionAsync("MainGame"), WorldTimeoutSeconds);
         Scene game = SceneManager.GetSceneByName("MainGame");
         TerrainRenderer terrain = FindComponentInScene<TerrainRenderer>(game)!;
@@ -2301,7 +2301,7 @@ new(1, 0), new(-1, 0), new(-1, 0), new(-1, 0),
             // Settle the explicit source fixture before acquiring dense light
             // targets: the initial replicated crowd is not this workload.
             SetSources(Vector2.zero, 8f);
-            graphics.SelectPreset(GraphicsPreset.Overdrive);
+            graphics.SelectPreset(GraphicsPreset.Standard);
             yield return Skip(30);
             Assert.That(lighting.UploadedDynamicLightCount, Is.EqualTo(sourceCount),
                 "Production must upload the entire requested source workload.");

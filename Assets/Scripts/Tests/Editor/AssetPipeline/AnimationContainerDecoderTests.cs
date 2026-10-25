@@ -28,7 +28,7 @@ public sealed class AnimationContainerDecoderTests
         Assert.That(AnimationContainerDecoder.DetectType(new byte[] { 0x89, 0x50 }), Is.EqualTo(AnimationContainerDecoder.ContainerType.None));
     }
 
-    [TestCase("vfx/bz", 16, 480, 16, 32, 15, 15f)]
+    [TestCase("vfx/bz", 16, 480, 16, 32, 15, 30f)]
     [TestCase("VFX/death.png", 64, 2496, 64, 64, 39, 40f)]
     [TestCase("VFX/destroy", 1, 1, 1, 1, 1, 0f)]
     [TestCase("cells/GrayAcid.png", 32, 160, 32, 32, 5, 10f)]
@@ -191,9 +191,9 @@ public sealed class AnimationContainerDecoderTests
 
         Assert.That(result.Sprites, Is.Not.Null);
         Assert.That(result.Sprites.Length, Is.EqualTo(15));
-        Assert.That(result.FrameHeight, Is.EqualTo(32));
+        Assert.That(result.FrameHeight, Is.EqualTo(64));
         Assert.That(result.FrameCount, Is.EqualTo(15));
-        Assert.That(result.FPS, Is.EqualTo(15f));
+        Assert.That(result.FPS, Is.EqualTo(30f));
         Assert.That(result.Atlas, Is.Not.Null);
 
         UnityEngine.Object.DestroyImmediate(result.Atlas);

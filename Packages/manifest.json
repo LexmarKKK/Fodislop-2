@@ -8,6 +8,7 @@
     "com.unity.pipeline": "0.7.0-exp.1",
     "com.unity.render-pipelines.universal": "17.7.0",
     "com.unity.test-framework": "1.8.0",
+    "com.unity.ugui": "2.7.0",
     "darkar25.kern.data": "file:MinesServerNetworking/MinesServer.Data",
     "darkar25.kern.networking": "file:MinesServerNetworking/MinesServer.Networking",
     "darkar25.kern.networking.client": "file:MinesServerNetworking/MinesServer.Networking.Connection.Client",
@@ -33,7 +34,6 @@
     "com.unity.modules.spritemask": "1.0.0",
     "com.unity.modules.terrain": "1.0.0",
     "com.unity.modules.tetgen": "1.0.0",
-    "com.unity.modules.vectorgraphics": "1.0.0",
     "com.unity.modules.ui": "1.0.0",
     "com.unity.modules.uielements": "1.0.0",
     "com.unity.modules.unityanalytics": "1.0.0",
@@ -42,6 +42,7 @@
     "com.unity.modules.unitywebrequestaudio": "1.0.0",
     "com.unity.modules.unitywebrequesttexture": "1.0.0",
     "com.unity.modules.unitywebrequestwww": "1.0.0",
+    "com.unity.modules.vectorgraphics": "1.0.0",
     "com.unity.modules.xr": "1.0.0"
   }
 }

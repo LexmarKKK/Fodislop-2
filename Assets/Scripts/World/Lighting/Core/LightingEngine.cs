@@ -154,7 +154,7 @@ namespace Kern.World.Lighting
                 _clientConfig.Config.GraphicsQualitySettings);
             _orientationValidationStarted = true;
             _orientationValidationRequired = QualityController.QualityMode != LightingQualityMode.Off ||
-                QualityController.ActivePreset == GraphicsPreset.Standard;
+                QualityController.ActivePreset == GraphicsPreset.Classic;
             if (!_orientationValidationRequired)
             {
                 return Cysharp.Threading.Tasks.UniTask.CompletedTask;
@@ -384,7 +384,7 @@ namespace Kern.World.Lighting
             // publishes a lighting or AO field; resource setup must never
             // proceed with unconfirmed row orientation.
             if (QualityController.QualityMode != LightingQualityMode.Off ||
-                QualityController.ActivePreset == GraphicsPreset.Standard)
+                QualityController.ActivePreset == GraphicsPreset.Classic)
             {
                 LightingFieldOrientationValidator.EnsureValidated();
             }
@@ -395,7 +395,7 @@ namespace Kern.World.Lighting
             OnInitialized?.Invoke();
 
             if (QualityController.QualityMode == LightingQualityMode.Off &&
-                QualityController.ActivePreset != GraphicsPreset.Standard)
+                QualityController.ActivePreset != GraphicsPreset.Classic)
             {
                 DisableGPULighting();
             }
@@ -526,7 +526,7 @@ namespace Kern.World.Lighting
             }
 
             if ((QualityController.QualityMode == LightingQualityMode.Off &&
-                 QualityController.ActivePreset != GraphicsPreset.Standard) ||
+                 QualityController.ActivePreset != GraphicsPreset.Classic) ||
                 BypassLightingCompute)
             {
                 UpdateLightingCoordinator(frame);
@@ -573,7 +573,7 @@ namespace Kern.World.Lighting
                 QualityController.QualityMode,
                 _debugView,
                 BypassLightingCompute,
-                QualityController.ActivePreset == GraphicsPreset.Standard);
+                QualityController.ActivePreset == GraphicsPreset.Classic);
         }
 
         private void ApplyVisualTuningIfChanged()

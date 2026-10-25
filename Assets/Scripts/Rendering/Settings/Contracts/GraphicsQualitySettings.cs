@@ -8,13 +8,13 @@ using UnityEngine;
 namespace Kern.Rendering;
 
 // Ступеней ровно две, и они неизменяемы. Отличие одно — освещение:
-// «Стандарт» оставляет только контактное AO, «Overdrive» включает транспорт света.
+// «Классика» оставляет только контактное AO, «Стандарт» включает транспорт света.
 public enum GraphicsPreset
 {
+    [Kern.Core.SettingLabel("settings.preset.classic")]
+    Classic,
     [Kern.Core.SettingLabel("settings.preset.standard")]
     Standard,
-    [Kern.Core.SettingLabel("settings.preset.overdrive")]
-    Overdrive,
 }
 
 [Serializable]
@@ -61,7 +61,7 @@ public struct GraphicsQualitySettings : IEquatable<GraphicsQualitySettings>
     public int AntiAliasing;
 
     [SettingUnbounded("Режим освещения — перечисление; проверяется на определённость.")]
-    [Tooltip("Режим транспорта света: «Стандарт» оставляет контактное AO, «Overdrive» считает свет попиксельно.")]
+    [Tooltip("Режим транспорта света: «Классика» оставляет контактное AO, «Стандарт» считает свет попиксельно.")]
     [SettingConsumer(SettingConsumerTarget.LightingEngine, "LightingQualityController.QualityMode")]
     public LightingQualityMode LightingQuality;
 

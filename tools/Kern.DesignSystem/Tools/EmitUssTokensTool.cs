@@ -110,7 +110,7 @@ internal static class EmitUssTokensTool
                 }
                 continue;
             }
-            if (trimmed.StartsWith(":root"))
+            if (trimmed == ":root {")
             {
                 if (!inMedia) current = baseTokens;
                 continue;
@@ -178,6 +178,18 @@ internal static class EmitUssTokensTool
         if (Regex.IsMatch(value, @"[\d.]+(em|rem|ch|ex|vw|vh|vmin|vmax)\b"))
             return null;
 
+        var color = Regex.Match(value, @"^rgb\(\s*(\d+)\s+(\d+)\s+(\d+)(?:\s*/\s*([\d.]+)%)?\s*\)$");
+        if (color.Success)
+        {
+            if (color.Groups[4].Success)
+            {
+                double alpha = double.Parse(color.Groups[4].Value, System.Globalization.CultureInfo.InvariantCulture) / 100;
+                return $"rgba({color.Groups[1].Value}, {color.Groups[2].Value}, {color.Groups[3].Value}, {alpha.ToString(System.Globalization.CultureInfo.InvariantCulture)})";
+            }
+
+            return $"rgb({color.Groups[1].Value}, {color.Groups[2].Value}, {color.Groups[3].Value})";
+        }
+
         return value;
     }
 
@@ -185,8 +197,8 @@ internal static class EmitUssTokensTool
     {
         var sb = new StringBuilder();
         sb.AppendLine("/* ФАЙЛ МАШИННЫЙ. Правки будут затёрты.");
-        sb.AppendLine("   Источник истины: css/tokens.css");
-        sb.AppendLine("   Генератор: tools/emit-uss-tokens.py");
+        sb.AppendLine("   Источник истины: visual/kern-ui-lab/css/tokens.css");
+        sb.AppendLine("   Генератор: tools/Kern.DesignSystem/Tools/EmitUssTokensTool.cs");
         sb.AppendLine("   Расхождение ловит CI. */");
         sb.AppendLine(":root {");
 
@@ -268,24 +280,27 @@ internal static class EmitUssTokensTool
 
     private static string EmitPalette(Dictionary<string, string> baseTokens)
     {
-        var colors = new Dictionary<string, int[]>();
+        var colors = new Dictionary<string, double[]>();
         var space = new Dictionary<string, int>();
 
         foreach (var (name, raw) in baseTokens)
         {
             if (DropPrefix.Any(p => name.StartsWith(p))) continue;
             string resolved = Resolve(raw, baseTokens);
-            var m = Regex.Match(resolved, @"rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s]+([\d.]+))?\s*\)");
+            var m = Regex.Match(resolved, @"^rgb\(\s*(\d+)\s+(\d+)\s+(\d+)(?:\s*/\s*([\d.]+)%)?\s*\)$");
             if (m.Success)
             {
-                colors[name] = new[] { (int)float.Parse(m.Groups[1].Value), (int)float.Parse(m.Groups[2].Value), (int)float.Parse(m.Groups[3].Value), m.Groups[4].Success ? (int)Math.Round(float.Parse(m.Groups[4].Value), 4) : 1 };
+                double alpha = m.Groups[4].Success
+                    ? double.Parse(m.Groups[4].Value, System.Globalization.CultureInfo.InvariantCulture) / 100
+                    : 1;
+                colors[name] = new[] { double.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture), double.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture), double.Parse(m.Groups[3].Value, System.Globalization.CultureInfo.InvariantCulture), alpha };
                 continue;
             }
             var hex = Regex.Match(resolved, @"#([0-9a-fA-F]{6})");
             if (hex.Success)
             {
                 string h = hex.Groups[1].Value;
-                colors[name] = new[] { int.Parse(h.Substring(0, 2), System.Globalization.NumberStyles.HexNumber), int.Parse(h.Substring(2, 2), System.Globalization.NumberStyles.HexNumber), int.Parse(h.Substring(4, 2), System.Globalization.NumberStyles.HexNumber), 1 };
+                colors[name] = new double[] { int.Parse(h.Substring(0, 2), System.Globalization.NumberStyles.HexNumber), int.Parse(h.Substring(2, 2), System.Globalization.NumberStyles.HexNumber), int.Parse(h.Substring(4, 2), System.Globalization.NumberStyles.HexNumber), 1 };
                 continue;
             }
             if (name.StartsWith("--space-"))
@@ -297,12 +312,16 @@ internal static class EmitUssTokensTool
 
         var palette = new Dictionary<string, object>
         {
-            ["_"] = "Машинный файл. Источник css/tokens.css, генератор tools/emit-uss-tokens.py.",
+            ["_"] = "Машинный файл. Источник visual/kern-ui-lab/css/tokens.css, генератор tools/Kern.DesignSystem/Tools/EmitUssTokensTool.cs.",
             ["colors"] = colors.OrderBy(kv => kv.Key).ToDictionary(kv => kv.Key, kv => (object)kv.Value),
             ["space"] = space.OrderBy(kv => kv.Value).ToDictionary(kv => kv.Key, kv => (object)kv.Value),
         };
 
-        return JsonSerializer.Serialize(palette, new JsonSerializerOptions { WriteIndented = true }) + "\n";
+        return JsonSerializer.Serialize(palette, new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        }) + "\n";
     }
 
     private static string GetRoot() => DesignSystemPaths.GetRoot();

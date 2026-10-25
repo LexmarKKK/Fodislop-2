@@ -1,0 +1,87 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>flow: running</title>
+<!-- Сценарный прогон потока: загрузка → вход → онбординг → меню → обновление → спуск → игра → навыки.
+     Запуск: chrome --headless --dump-dom --virtual-time-budget=60000 .../tools/flow.html; итог в <title>. -->
+<iframe id="f" src="../index.html?screen=boot" style="width:1920px;height:1080px;border:0"></iframe>
+<pre id="log"></pre>
+<script>
+const log = [], fail = [];
+const f = document.getElementById('f');
+const wait = ms => new Promise(r => setTimeout(r, ms));
+async function until(cond, what, ms = 15000) {
+  for (let t = 0; t < ms; t += 50) { try { if (cond()) return true; } catch {} await wait(50); }
+  fail.push('timeout: ' + what); return false;
+}
+function check(ok, what) { (ok ? log : fail).push((ok ? 'ok: ' : 'FAIL: ') + what); }
+
+f.onload = async () => {
+  const w = f.contentWindow, d = w.document, $ = id => d.getElementById(id);
+  const screen = () => $('frame').dataset.screen;
+  const visible = el => el && !el.hidden && el.offsetParent !== null;
+
+  await until(() => screen() === 'auth', 'boot → auth');
+  check(screen() === 'auth', 'загрузка переходит ко входу');
+
+  $('authSubmit').click();
+  check(screen() === 'auth' && $('authHint').textContent === 'Введите логин и пароль', 'пустые поля не пускают');
+  check(!d.getElementById('authOffline'), 'офлайн-входа нет');
+  $('authLogin').value = 'shahter774'; $('authPassword').value = 'secret';
+  $('authSubmit').click();
+  await until(() => screen() === 'onboarding', 'auth → onboarding');
+  check(screen() === 'onboarding', 'первый вход ведёт в онбординг');
+
+  check($('onbPrev').disabled, 'на первом шаге «Назад» недоступна');
+  $('onbNext').click(); $('onbNext').click();
+  check($('onbNext').textContent === 'Готово', 'третий шаг: «Готово»');
+  $('onbNext').click();
+  check(screen() === 'menu', 'онбординг ведёт в меню');
+
+  check(visible($('descendBtn')), 'кнопка спуска видна');
+  d.querySelector('[data-update="1"]').click();
+  check(!visible($('descendBtn')) && visible($('updateBlock')), 'обязательное обновление заменяет спуск');
+  check(!d.getElementById('serverBtn'), 'выбора сервера нет');
+  check(!d.querySelector('.rail-badge').hidden, 'на кнопке «Обновление» значок');
+  $('updateBtn').click();
+  check(visible($('updateDialog')), 'окно обновления открывается кнопкой на месте спуска');
+  $('updConfirm').click();
+  await until(() => visible($('descendBtn')), 'обновление завершается');
+  check($('versionLabel').textContent === '0.9.0' && $('updateDialog').hidden, 'после обновления версия 0.9.0, окно закрыто');
+  check(d.querySelector('.rail-badge').hidden, 'значок обновления снят');
+  $('railUpdate').click();
+  check(visible($('updateDialog')) && $('updConfirm').disabled, 'кнопка «Обновление» открывает окно, загрузка недоступна');
+  $('updateDialog').querySelector('[data-close]').click();
+
+  $('descendBtn').click();
+  check(screen() === 'descent' && visible($('descent')), 'спуск начался');
+  await until(() => screen() === 'game', 'descent → game', 20000);
+  check(screen() === 'game', 'спуск ведёт в игру');
+  check(visible($('hud')) && visible($('minimap')) && visible($('online')), 'HUD, миникарта и онлайн на месте');
+  check(visible($('assetLoad')) && /^\d+\/\d+$/.test($('assetLoadText').textContent), 'догрузка ресурсов показана как «N/M»');
+  await until(() => $('assetLoad').hidden, 'догрузка ресурсов завершается', 15000);
+  check($('assetLoad').hidden, 'после загрузки строка ресурсов пропадает');
+
+  check($('inventory').querySelectorAll('.inv-slots li').length > 30, 'в инвентаре полный набор предметов');
+  $('invExpand').click();
+  check($('inventory').classList.contains('is-open') && $('invDialog').hidden, 'на ПК инвентарь раскрывается на месте, без окна');
+  $('invExpand').click();
+  w.openSkills(0);
+  check(visible($('skillsDialog')), 'окно навыков открыто');
+  check($('skillsRobot').querySelectorAll('.slot').length === 20, '20 слотов по умолчанию');
+  check(/Добыча Уровень:/.test($('skillInfo').textContent), 'описание навыка в формате сервера');
+  w.openSkills(-1);
+  $('buySlot').click();
+  check($('skillsRobot').querySelectorAll('.slot').length === 21, 'покупка слота добавляет слот');
+  d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape' }));
+  check(!visible($('skillsDialog')), 'Esc закрывает окно навыков');
+
+  // повторный вход идёт мимо онбординга
+  d.querySelector('button[data-screen="auth"]').click();
+  $('authVk').click();
+  await until(() => screen() === 'menu', 'повторный вход → меню');
+  check(screen() === 'menu', 'повторный вход минует онбординг');
+
+  document.getElementById('log').textContent = [...log, ...fail].join('\n');
+  document.title = fail.length ? `flow: FAIL ${fail.length}` : `flow: ok ${log.length}`;
+};
+</script>

@@ -72,23 +72,34 @@ public sealed class InstallUpgradeTests
     }
 
     [Test]
-    public void AndroidCleanInstall_SelectsLightingPreset()
+    public void DesktopCleanInstall_SelectsStandardPreset()
     {
-        ClientConfigLoader.Result result = LoadConfig(isAndroidPlayer: true);
+        ClientConfigLoader.Result result = LoadConfig();
 
-        Assert.That(result.Config.GraphicsPreset, Is.EqualTo(GraphicsPreset.Overdrive));
+        Assert.That(result.Config.GraphicsPreset, Is.EqualTo(GraphicsPreset.Standard));
         Assert.That(
             result.Config.GraphicsQualitySettings.LightingQuality,
             Is.EqualTo(Kern.World.Lighting.Quality.LightingQualityMode.PerPixel));
     }
 
     [Test]
-    public void AndroidSchema42StandardConfig_MigratesToLightingPreset()
+    public void AndroidCleanInstall_SelectsLightingPreset()
+    {
+        ClientConfigLoader.Result result = LoadConfig(isAndroidPlayer: true);
+
+        Assert.That(result.Config.GraphicsPreset, Is.EqualTo(GraphicsPreset.Standard));
+        Assert.That(
+            result.Config.GraphicsQualitySettings.LightingQuality,
+            Is.EqualTo(Kern.World.Lighting.Quality.LightingQualityMode.PerPixel));
+    }
+
+    [Test]
+    public void AndroidSchema42ClassicConfig_MigratesToLightingPreset()
     {
         ClientConfig config = ClientConfigDefaults.Create(_profile);
         config.SchemaVersion = 42;
-        config.GraphicsPreset = GraphicsPreset.Standard;
-        config.GraphicsQualitySettings = _profile.Get(GraphicsPreset.Standard);
+        config.GraphicsPreset = GraphicsPreset.Classic;
+        config.GraphicsQualitySettings = _profile.Get(GraphicsPreset.Classic);
         Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
         File.WriteAllText(ConfigPath, JsonUtility.ToJson(config, prettyPrint: true));
 
@@ -96,7 +107,7 @@ public sealed class InstallUpgradeTests
 
         Assert.That(result.Outcome, Is.EqualTo(ClientConfigLoader.Outcome.Migrated));
         Assert.That(result.Config.SchemaVersion, Is.EqualTo(ClientConfig.CurrentSchemaVersion));
-        Assert.That(result.Config.GraphicsPreset, Is.EqualTo(GraphicsPreset.Overdrive));
+        Assert.That(result.Config.GraphicsPreset, Is.EqualTo(GraphicsPreset.Standard));
         Assert.That(
             result.Config.GraphicsQualitySettings.LightingQuality,
             Is.EqualTo(Kern.World.Lighting.Quality.LightingQualityMode.PerPixel));
@@ -104,16 +115,18 @@ public sealed class InstallUpgradeTests
     }
 
     [Test]
-    public void DesktopSchema42StandardConfig_RemainsStandard()
+    public void DesktopSchema42ClassicConfig_RemainsClassic()
     {
         ClientConfig config = ClientConfigDefaults.Create(_profile);
         config.SchemaVersion = 42;
+        config.GraphicsPreset = GraphicsPreset.Classic;
+        config.GraphicsQualitySettings = _profile.Get(GraphicsPreset.Classic);
         Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
         File.WriteAllText(ConfigPath, JsonUtility.ToJson(config, prettyPrint: true));
 
         ClientConfigLoader.Result result = LoadConfig();
 
-        Assert.That(result.Config.GraphicsPreset, Is.EqualTo(GraphicsPreset.Standard));
+        Assert.That(result.Config.GraphicsPreset, Is.EqualTo(GraphicsPreset.Classic));
         Assert.That(
             result.Config.GraphicsQualitySettings.LightingQuality,
             Is.EqualTo(Kern.World.Lighting.Quality.LightingQualityMode.Off));
@@ -192,7 +205,7 @@ public sealed class InstallUpgradeTests
         Assert.That(result.Config.Terrain.EnableRim, Is.True);
         Assert.That(result.Config.Terrain.EnableDistortion, Is.True);
         Assert.That(JsonUtility.ToJson(result.Config.Terrain), Does.Not.Contain("DistortionStyle"));
-        Assert.That(result.Config.GraphicsPreset, Is.EqualTo(GraphicsPreset.Overdrive));
+        Assert.That(result.Config.GraphicsPreset, Is.EqualTo(GraphicsPreset.Standard));
         Assert.That(File.ReadAllText(ConfigPath + ".backup"), Is.EqualTo(previousJson));
     }
 
@@ -360,7 +373,7 @@ public sealed class InstallUpgradeTests
         string json = JsonUtility.ToJson(config, prettyPrint: true);
         // Ступень пишется числом старой схемы (5 — прежнее «Ultra»): нынешнее
         // перечисление такой ступени уже не знает, и миграция обязана перевести
-        // её в «Overdrive», а не оставить как есть.
+        // её в «Стандарт», а не оставить как есть.
         json = Regex.Replace(json, @"""GraphicsPreset"":\s*\d+", "\"GraphicsPreset\": 5");
         Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
         File.WriteAllText(ConfigPath, json);

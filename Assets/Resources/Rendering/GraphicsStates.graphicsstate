@@ -95,6 +95,46 @@
         {
             "first": {
                 "serializedVersion": "2",
+                "Hash": "61301bb153e65fd1563ebc220b1c3638"
+            },
+            "second": {
+                "shader": {
+                    "fileID": 4800000,
+                    "guid": "e260cfa7296ee7642b167f1eb5be5023",
+                    "type": 3
+                },
+                "shaderName": "Universal Render Pipeline/2D/Sprite-Lit-Default",
+                "shaderAssetGUID": "e260cfa7296ee7642b167f1eb5be5023",
+                "shaderAssetLocalIdentifierInFile": 4800000,
+                "keywordNames": "",
+                "subShaderIndex": 0,
+                "passIndex": 0,
+                "graphicsStateInfoSet": [
+                    {
+                        "vertexLayout": 2316758587097474483,
+                        "renderPass": 4524451620886802199,
+                        "renderState": 1698731472292646774,
+                        "subPassIndex": 0,
+                        "topology": 0,
+                        "forceCullMode": -1,
+                        "shadingRateCombinerPrimitive": 0,
+                        "shadingRateCombinerFragment": 0,
+                        "baseShadingRate": 0,
+                        "depthBias": 0.0,
+                        "slopeDepthBias": 0.0,
+                        "userBackface": false,
+                        "appBackface": false,
+                        "wireframe": false,
+                        "invertProjectionMatrix": true,
+                        "unfilterableTextureBindings": 0,
+                        "nonfilteringSamplerBindings": 0
+                    }
+                ]
+            }
+        },
+        {
+            "first": {
+                "serializedVersion": "2",
                 "Hash": "8a1081383ae928fe47b5a05e17b535e0"
             },
             "second": {
@@ -1434,19 +1474,41 @@
         {
             "first": {
                 "serializedVersion": "2",
-                "Hash": "edc351c9bb572a3950bd4e0774bd39cd"
+                "Hash": "ea73c19842fdd8de2a1d538eaad58a94"
             },
             "second": {
                 "shader": {
-                    "instanceID": 0
+                    "fileID": 4800000,
+                    "guid": "b5b2cd0432454877a4825471a6e12a70",
+                    "type": 3
                 },
-                "shaderName": "Hidden/SceneView grid",
-                "shaderAssetGUID": "aa6da1052aa4244fc92589df8b7608b4",
+                "shaderName": "Kern/World Surface",
+                "shaderAssetGUID": "b5b2cd0432454877a4825471a6e12a70",
                 "shaderAssetLocalIdentifierInFile": 4800000,
-                "keywordNames": "",
+                "keywordNames": "KERN_SURFACE_REDROCK KERN_WORLD_LIGHTING",
                 "subShaderIndex": 0,
                 "passIndex": 0,
-                "graphicsStateInfoSet": []
+                "graphicsStateInfoSet": [
+                    {
+                        "vertexLayout": 4933427786327595115,
+                        "renderPass": 15945554207292896147,
+                        "renderState": 2874810695172648804,
+                        "subPassIndex": 0,
+                        "topology": 0,
+                        "forceCullMode": -1,
+                        "shadingRateCombinerPrimitive": 0,
+                        "shadingRateCombinerFragment": 0,
+                        "baseShadingRate": 0,
+                        "depthBias": 0.0,
+                        "slopeDepthBias": 0.0,
+                        "userBackface": false,
+                        "appBackface": false,
+                        "wireframe": false,
+                        "invertProjectionMatrix": true,
+                        "unfilterableTextureBindings": 0,
+                        "nonfilteringSamplerBindings": 0
+                    }
+                ]
             }
         },
         {
@@ -1530,41 +1592,19 @@
         {
             "first": {
                 "serializedVersion": "2",
-                "Hash": "ea73c19842fdd8de2a1d538eaad58a94"
+                "Hash": "edc351c9bb572a3950bd4e0774bd39cd"
             },
             "second": {
                 "shader": {
-                    "fileID": 4800000,
-                    "guid": "b5b2cd0432454877a4825471a6e12a70",
-                    "type": 3
+                    "instanceID": 0
                 },
-                "shaderName": "Kern/World Surface",
-                "shaderAssetGUID": "b5b2cd0432454877a4825471a6e12a70",
+                "shaderName": "Hidden/SceneView grid",
+                "shaderAssetGUID": "aa6da1052aa4244fc92589df8b7608b4",
                 "shaderAssetLocalIdentifierInFile": 4800000,
-                "keywordNames": "KERN_SURFACE_REDROCK KERN_WORLD_LIGHTING",
+                "keywordNames": "",
                 "subShaderIndex": 0,
                 "passIndex": 0,
-                "graphicsStateInfoSet": [
-                    {
-                        "vertexLayout": 4933427786327595115,
-                        "renderPass": 15945554207292896147,
-                        "renderState": 2874810695172648804,
-                        "subPassIndex": 0,
-                        "topology": 0,
-                        "forceCullMode": -1,
-                        "shadingRateCombinerPrimitive": 0,
-                        "shadingRateCombinerFragment": 0,
-                        "baseShadingRate": 0,
-                        "depthBias": 0.0,
-                        "slopeDepthBias": 0.0,
-                        "userBackface": false,
-                        "appBackface": false,
-                        "wireframe": false,
-                        "invertProjectionMatrix": true,
-                        "unfilterableTextureBindings": 0,
-                        "nonfilteringSamplerBindings": 0
-                    }
-                ]
+                "graphicsStateInfoSet": []
             }
         },
         {
@@ -6407,6 +6447,46 @@
         {
             "first": {
                 "serializedVersion": "2",
+                "Hash": "2d0c7e9fe30954f47d9f613e1413ec6f"
+            },
+            "second": {
+                "shader": {
+                    "fileID": 4800000,
+                    "guid": "fe393ace9b354375a9cb14cdbbc28be4",
+                    "type": 3
+                },
+                "shaderName": "TextMeshPro/Mobile/Distance Field",
+                "shaderAssetGUID": "fe393ace9b354375a9cb14cdbbc28be4",
+                "shaderAssetLocalIdentifierInFile": 4800000,
+                "keywordNames": "",
+                "subShaderIndex": 0,
+                "passIndex": 0,
+                "graphicsStateInfoSet": [
+                    {
+                        "vertexLayout": 976940153445574426,
+                        "renderPass": 4524451620886802199,
+                        "renderState": 6103291256792766063,
+                        "subPassIndex": 0,
+                        "topology": 0,
+                        "forceCullMode": -1,
+                        "shadingRateCombinerPrimitive": 0,
+                        "shadingRateCombinerFragment": 0,
+                        "baseShadingRate": 0,
+                        "depthBias": 0.0,
+                        "slopeDepthBias": 0.0,
+                        "userBackface": false,
+                        "appBackface": false,
+                        "wireframe": false,
+                        "invertProjectionMatrix": true,
+                        "unfilterableTextureBindings": 0,
+                        "nonfilteringSamplerBindings": 0
+                    }
+                ]
+            }
+        },
+        {
+            "first": {
+                "serializedVersion": "2",
                 "Hash": "7e7c61fce5cd46fe0f3855ac77a8be30"
             },
             "second": {
@@ -9543,6 +9623,108 @@
                     0
                 ],
                 "vertexStreamCount": 2
+            }
+        },
+        {
+            "first": 976940153445574426,
+            "second": {
+                "vertexChannelsInfo": [
+                    {
+                        "stream": 0,
+                        "offset": 0,
+                        "format": 0,
+                        "dimension": 3
+                    },
+                    {
+                        "stream": 0,
+                        "offset": 12,
+                        "format": 0,
+                        "dimension": 3
+                    },
+                    {
+                        "stream": 0,
+                        "offset": 24,
+                        "format": 0,
+                        "dimension": 4
+                    },
+                    {
+                        "stream": 0,
+                        "offset": 40,
+                        "format": 2,
+                        "dimension": 4
+                    },
+                    {
+                        "stream": 0,
+                        "offset": 44,
+                        "format": 0,
+                        "dimension": 4
+                    },
+                    {
+                        "stream": 0,
+                        "offset": 60,
+                        "format": 0,
+                        "dimension": 4
+                    },
+                    {
+                        "stream": 0,
+                        "offset": 0,
+                        "format": 0,
+                        "dimension": 0
+                    },
+                    {
+                        "stream": 0,
+                        "offset": 0,
+                        "format": 0,
+                        "dimension": 0
+                    },
+                    {
+                        "stream": 0,
+                        "offset": 0,
+                        "format": 0,
+                        "dimension": 0
+                    },
+                    {
+                        "stream": 0,
+                        "offset": 0,
+                        "format": 0,
+                        "dimension": 0
+                    },
+                    {
+                        "stream": 0,
+                        "offset": 0,
+                        "format": 0,
+                        "dimension": 0
+                    },
+                    {
+                        "stream": 0,
+                        "offset": 0,
+                        "format": 0,
+                        "dimension": 0
+                    },
+                    {
+                        "stream": 0,
+                        "offset": 0,
+                        "format": 0,
+                        "dimension": 0
+                    },
+                    {
+                        "stream": 0,
+                        "offset": 0,
+                        "format": 0,
+                        "dimension": 0
+                    }
+                ],
+                "vertexStrides": [
+                    76,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "vertexStreamCount": 1
             }
         },
         {
@@ -38858,6 +39040,118 @@
                     },
                     "stencilState": {
                         "stencilEnable": 0,
+                        "readMask": 255,
+                        "writeMask": 255,
+                        "padding": 0,
+                        "stencilFuncFront": 8,
+                        "stencilPassOpFront": 0,
+                        "stencilFailOpFront": 0,
+                        "stencilZFailOpFront": 0,
+                        "stencilFuncBack": 8,
+                        "stencilPassOpBack": 0,
+                        "stencilFailOpBack": 0,
+                        "stencilZFailOpBack": 0
+                    },
+                    "stencilRef": 0,
+                    "mask": 15
+                }
+            }
+        },
+        {
+            "first": 6103291256792766063,
+            "second": {
+                "renderState": {
+                    "blendState": {
+                        "rt": [
+                            {
+                                "writeMask": 15,
+                                "srcBlend": 1,
+                                "dstBlend": 10,
+                                "srcBlendAlpha": 1,
+                                "dstBlendAlpha": 10,
+                                "blendOp": 0,
+                                "blendOpAlpha": 0
+                            },
+                            {
+                                "writeMask": 15,
+                                "srcBlend": 1,
+                                "dstBlend": 0,
+                                "srcBlendAlpha": 1,
+                                "dstBlendAlpha": 0,
+                                "blendOp": 0,
+                                "blendOpAlpha": 0
+                            },
+                            {
+                                "writeMask": 15,
+                                "srcBlend": 1,
+                                "dstBlend": 0,
+                                "srcBlendAlpha": 1,
+                                "dstBlendAlpha": 0,
+                                "blendOp": 0,
+                                "blendOpAlpha": 0
+                            },
+                            {
+                                "writeMask": 15,
+                                "srcBlend": 1,
+                                "dstBlend": 0,
+                                "srcBlendAlpha": 1,
+                                "dstBlendAlpha": 0,
+                                "blendOp": 0,
+                                "blendOpAlpha": 0
+                            },
+                            {
+                                "writeMask": 15,
+                                "srcBlend": 1,
+                                "dstBlend": 0,
+                                "srcBlendAlpha": 1,
+                                "dstBlendAlpha": 0,
+                                "blendOp": 0,
+                                "blendOpAlpha": 0
+                            },
+                            {
+                                "writeMask": 15,
+                                "srcBlend": 1,
+                                "dstBlend": 0,
+                                "srcBlendAlpha": 1,
+                                "dstBlendAlpha": 0,
+                                "blendOp": 0,
+                                "blendOpAlpha": 0
+                            },
+                            {
+                                "writeMask": 15,
+                                "srcBlend": 1,
+                                "dstBlend": 0,
+                                "srcBlendAlpha": 1,
+                                "dstBlendAlpha": 0,
+                                "blendOp": 0,
+                                "blendOpAlpha": 0
+                            },
+                            {
+                                "writeMask": 15,
+                                "srcBlend": 1,
+                                "dstBlend": 0,
+                                "srcBlendAlpha": 1,
+                                "dstBlendAlpha": 0,
+                                "blendOp": 0,
+                                "blendOpAlpha": 0
+                            }
+                        ],
+                        "separateMRTBlend": 0,
+                        "alphaToMask": 0
+                    },
+                    "rasterState": {
+                        "cullMode": 0,
+                        "depthBias": 0,
+                        "slopeScaledDepthBias": 0.0,
+                        "depthClip": 1,
+                        "conservative": 0
+                    },
+                    "depthState": {
+                        "depthWrite": 0,
+                        "depthFunc": 4
+                    },
+                    "stencilState": {
+                        "stencilEnable": 1,
                         "readMask": 255,
                         "writeMask": 255,
                         "padding": 0,

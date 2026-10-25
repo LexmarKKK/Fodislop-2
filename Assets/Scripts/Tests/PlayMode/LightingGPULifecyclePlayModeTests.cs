@@ -107,7 +107,7 @@ public sealed class LightingGPULifecyclePlayModeTests
 #endif
             // Load the scene with AO only, then enable transport at the
             // test's actual smaller coverage. Raster density stays 32.
-            _config.SelectGraphicsPreset(GraphicsPreset.Standard);
+            _config.SelectGraphicsPreset(GraphicsPreset.Classic);
         }
         yield return PlayModeHarness.EnterMainGame(_bootstrap);
         TerrainRenderer terrain = PlayModeHarness.RequireInGame<TerrainRenderer>();
@@ -221,7 +221,7 @@ public sealed class LightingGPULifecyclePlayModeTests
         foreach (Robot robot in _subcellRobots) { robot.enabled = false; }
         LightingEngine lighting = _walkingProbeLighting;
         lighting.ClearDynamicLights();
-        yield return SelectAndSettle(GraphicsPreset.Overdrive);
+        yield return SelectAndSettle(GraphicsPreset.Standard);
         float previousTimeScale = Time.timeScale;
         Time.timeScale = 0;
         var clip = new CellDestructionClip();
@@ -360,7 +360,7 @@ public sealed class LightingGPULifecyclePlayModeTests
         _subcellRobotEnabled = _subcellRobots.Select(robot => robot.enabled).ToArray();
         foreach (Robot robot in _subcellRobots) { robot.enabled = false; }
         _walkingProbeLighting.ClearDynamicLights();
-        yield return SelectAndSettle(GraphicsPreset.Overdrive);
+        yield return SelectAndSettle(GraphicsPreset.Standard);
         float previousTimeScale = Time.timeScale;
         Time.timeScale = 0;
         var clip = new CellDestructionClip();
@@ -414,7 +414,7 @@ public sealed class LightingGPULifecyclePlayModeTests
     public IEnumerator EnteringWorld_CreatesPipelineThatUpdatesDynamicLighting()
     {
         LightingEngine lighting = PlayModeHarness.RequireInGame<LightingEngine>();
-        yield return SelectAndSettle(GraphicsPreset.Overdrive);
+        yield return SelectAndSettle(GraphicsPreset.Standard);
 
         Assert.That(lighting.IsInitialized, Is.True);
         Assert.That(lighting.IsGPUPipelineInitialized, Is.True);
@@ -436,7 +436,7 @@ public sealed class LightingGPULifecyclePlayModeTests
         _walkingProbeFollow = PlayModeHarness.RequireInGame<CameraFollow>();
         _walkingProbeFollowWasEnabled = _walkingProbeFollow.enabled;
         _walkingProbeFollow.enabled = false;
-        yield return SelectAndSettle(GraphicsPreset.Overdrive);
+        yield return SelectAndSettle(GraphicsPreset.Standard);
         yield return PlayModeHarness.Frames(3);
 
         Vector3 cameraPosition = _walkingProbeCamera.transform.position;
@@ -488,8 +488,8 @@ public sealed class LightingGPULifecyclePlayModeTests
         GraphicsPreset[] presets =
         new[] {
 
+            GraphicsPreset.Classic,
             GraphicsPreset.Standard,
-            GraphicsPreset.Overdrive,
 
         };
 
@@ -510,7 +510,7 @@ public sealed class LightingGPULifecyclePlayModeTests
                 Assert.That(ao.height, Is.EqualTo(Mathf.RoundToInt(aoRect.w * 32)));
                 Assert.That(ao.filterMode, Is.EqualTo(FilterMode.Point));
 
-                if (preset == GraphicsPreset.Standard)
+                if (preset == GraphicsPreset.Classic)
                 {
                     Assert.That(lighting.GPUResources.Geometry.AmbientOcclusion, Is.Not.Null);
                     Assert.That(lighting.GPUResources.Geometry.AmbientOcclusion!.IsCreated(), Is.True);
@@ -578,7 +578,7 @@ public sealed class LightingGPULifecyclePlayModeTests
         LightingQualityTuningController.Apply(new LightingQualityTuning(tuning.FieldPixelsPerCell,
             tuning.LightPixelsPerCell, tuning.CascadeProbePixelsPerCell, tuning.MaximumStaticCascadeDirections, 0.5f,
             tuning.DynamicAngularSampleCount, tuning.DynamicEmitterPointsPerAxis, tuning.DynamicPolarDirectionCount));
-        yield return SelectAndSettle(GraphicsPreset.Overdrive);
+        yield return SelectAndSettle(GraphicsPreset.Standard);
         Vector4 previousRect = lighting.WorldRect;
         Vector4 originalFieldRect = previousRect;
         source = new Vector2(previousRect.x + previousRect.z - 8f + 0.375f,
@@ -679,7 +679,7 @@ public sealed class LightingGPULifecyclePlayModeTests
         _walkingProbeCamera.aspect = 1f;
         _walkingProbeCamera.orthographicSize = 8f;
         yield return PlayModeHarness.Frames(5);
-        yield return SelectAndSettle(GraphicsPreset.Overdrive);
+        yield return SelectAndSettle(GraphicsPreset.Standard);
         _subcellRobots = Object.FindObjectsByType<Robot>();
         _subcellRobotEnabled = _subcellRobots.Select(robot => robot.enabled).ToArray();
         foreach (Robot robot in _subcellRobots) { robot.enabled = false; }
@@ -764,7 +764,7 @@ public sealed class LightingGPULifecyclePlayModeTests
                     LightingQualityTuningController.SetBatchDynamicLights(batchLights);
                     LightingComputeBinder.DiagnosticTransportCounters = true;
                     _walkingProbeLighting = PlayModeHarness.RequireInGame<LightingEngine>();
-                    yield return SelectAndSettle(GraphicsPreset.Overdrive);
+                    yield return SelectAndSettle(GraphicsPreset.Standard);
                     yield return PlayModeHarness.WaitUntil(
                         () => _walkingProbeLighting.IsGPUPipelineInitialized &&
                               _walkingProbeLighting.HasDiagnosticTransportCounterBuffer,
@@ -967,7 +967,7 @@ WalkingProbeLightId + 1, WalkingProbeLightId + 2, WalkingProbeLightId + 3
  };
         try
         {
-            yield return SelectAndSettle(GraphicsPreset.Overdrive);
+            yield return SelectAndSettle(GraphicsPreset.Standard);
             LightingQualityTuning transportQuality = LightingQualityTuningController.Current;
             LightingQualityTuningController.Apply(new LightingQualityTuning(
                 transportQuality.FieldPixelsPerCell,
@@ -1143,7 +1143,7 @@ new(1f, 0.25f, 0.125f), new(0f, 0.5f, 1f), new(0.3f, 1f, 0f)
         _walkingProbeCamera.orthographicSize = 8f;
         LightingEngine lighting = _walkingProbeLighting;
         lighting.ClearDynamicLights();
-        yield return SelectAndSettle(GraphicsPreset.Overdrive);
+        yield return SelectAndSettle(GraphicsPreset.Standard);
 
         // One solid cell in the upper half and right quarter of the region. The field
         // is cleared to air first, so the oracle is the cell's world position
@@ -1356,7 +1356,7 @@ Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero
         _walkingProbeCamera.aspect = 1f;
         _walkingProbeCamera.orthographicSize = ProjectRuntimeContracts.Camera.MinimumOrthographicSize;
         yield return PlayModeHarness.Frames(5);
-        yield return SelectAndSettle(GraphicsPreset.Overdrive);
+        yield return SelectAndSettle(GraphicsPreset.Standard);
         _subcellRobots = Object.FindObjectsByType<Robot>();
         _subcellRobotEnabled = _subcellRobots.Select(robot => robot.enabled).ToArray();
         foreach (Robot robot in _subcellRobots)
@@ -1463,7 +1463,7 @@ Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero
     [UnityTest]
     public IEnumerator LeavingWorld_ReleasesEveryLightingTarget()
     {
-        yield return SelectAndSettle(GraphicsPreset.Overdrive);
+        yield return SelectAndSettle(GraphicsPreset.Standard);
         Assert.That(LiveLightingTargets(), Is.Not.Empty);
 
         yield return PlayModeHarness.Await(
@@ -1510,7 +1510,7 @@ Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero
         _walkingProbeCamera.aspect = 1f;
         _walkingProbeCamera.orthographicSize = ProjectRuntimeContracts.Camera.MinimumOrthographicSize;
         yield return PlayModeHarness.Frames(5);
-        yield return SelectAndSettle(GraphicsPreset.Overdrive);
+        yield return SelectAndSettle(GraphicsPreset.Standard);
         _walkingProbeDebugView = _walkingProbeLighting.ActiveDebugView;
         _walkingProbeLighting.SetDebugView(LightingEngine.DebugView.DynamicDirect);
 
@@ -1583,7 +1583,7 @@ Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero
     public IEnumerator SubcellSource_IntegratesContinuousEmitterBounds()
     {
         _walkingProbeLighting = PlayModeHarness.RequireInGame<LightingEngine>();
-        yield return SelectAndSettle(GraphicsPreset.Standard);
+        yield return SelectAndSettle(GraphicsPreset.Classic);
         _subcellRobots = Object.FindObjectsByType<Robot>();
         _subcellRobotEnabled = _subcellRobots.Select(robot => robot.enabled).ToArray();
         foreach (Robot robot in _subcellRobots)
@@ -1638,7 +1638,7 @@ Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero
             batchCamera.enabled = true;
         }
         yield return PlayModeHarness.Frames(5);
-        yield return SelectAndSettle(GraphicsPreset.Overdrive);
+        yield return SelectAndSettle(GraphicsPreset.Standard);
         LightingEngine lighting = _walkingProbeLighting;
         _walkingProbeDebugView = lighting.ActiveDebugView;
         lighting.SetDebugView(LightingEngine.DebugView.FinalLighting);
@@ -1975,7 +1975,7 @@ Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero
     public IEnumerator WalkingAcrossLightingRegionBoundary_KeepsDynamicLightAtSameWorldPosition()
     {
         _walkingProbeLighting = PlayModeHarness.RequireInGame<LightingEngine>();
-        yield return SelectAndSettle(GraphicsPreset.Overdrive);
+        yield return SelectAndSettle(GraphicsPreset.Standard);
 
         yield return PlayModeHarness.WaitUntil(
             () => _walkingProbeLighting.IsGPUPipelineInitialized &&

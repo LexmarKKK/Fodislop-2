@@ -50,9 +50,9 @@ internal sealed class PauseMenuGraphicsTabBuilder
 
         presetButton.clicked += () =>
         {
-            GraphicsPreset next = _graphicsSettings.SelectedPreset == GraphicsPreset.Standard
-                ? GraphicsPreset.Overdrive
-                : GraphicsPreset.Standard;
+            GraphicsPreset next = _graphicsSettings.SelectedPreset == GraphicsPreset.Classic
+                ? GraphicsPreset.Standard
+                : GraphicsPreset.Classic;
             _graphicsSettings.SelectPreset(next);
             _refreshAll();
         };

@@ -1,0 +1,24 @@
+/* Стенд: панель управления макетом над кадром и сам кадр игры.
+   Кадр всегда 1080 px в высоту (эталон Kern) и вписывается в окно целиком. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { background: #07090b; color: var(--bone); font: var(--t-body)/1.4 var(--font); font-variant-numeric: tabular-nums; display: flex; flex-direction: column; overflow: hidden; }
+
+.stand-bar { flex: none; display: flex; align-items: center; gap: 20px; padding: 10px 16px; border-bottom: 1px solid #1a1f24; background: #0c0f12; font-size: 13px; }
+.stand-group { display: flex; align-items: center; gap: 4px; }
+.stand-label { color: var(--smoke); margin-right: 6px; }
+.stand-group button { font: inherit; color: var(--ash); background: transparent; border: 1px solid #222a31; border-radius: 3px; padding: 4px 10px; cursor: pointer; }
+.stand-group button:hover { color: var(--bone); }
+.stand-group button.is-on { color: var(--on-signal); background: var(--signal); border-color: var(--signal); }
+.stand-hint { margin-left: auto; display: flex; gap: 16px; color: var(--smoke); }
+
+.stand-stage { flex: 1; min-height: 0; position: relative; overflow: hidden; }
+.frame { position: relative; height: var(--fh, 1080px); width: var(--fw, calc(1080px * var(--aspect, 1.7778))); overflow: hidden; position: absolute; left: 50%; top: 50%; transform-origin: center; background: #000; }
+.stand-bar { flex-wrap: wrap; row-gap: 8px; white-space: nowrap; }
+@media (max-width: 2400px) { .stand-hint { display: none !important; } }
+/* Устройство: кадр в dp экрана (паспорт из MobileDeviceMatrix), углы и вырез камеры — часть стенда */
+.frame.touch { border-radius: var(--corner, 0); box-shadow: 0 0 0 10px #15191d, 0 0 0 11px #262d33; }
+.cutout { display: none; position: absolute; z-index: 50; pointer-events: none; background: #000; }
+.frame[data-device="promax"] .cutout { display: block; left: 11px; top: 50%; width: 37px; height: 126px; margin-top: -63px; border-radius: 19px; }
+.frame[data-device="pixel8"] .cutout { display: block; left: 18px; top: 50%; width: 13px; height: 13px; margin-top: -6px; border-radius: 50%; }
+.stand-res { color: var(--smoke); }

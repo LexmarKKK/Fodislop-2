@@ -24,6 +24,13 @@ public sealed class GatewayOnboarding
         "gateway.onb.step3_title",
     };
 
+    // Ступени качества — те же, что в паузе: «Классика» без освещения, «Стандарт» с ним.
+    private static readonly Kern.Rendering.GraphicsPreset[] s_graphicsPresets =
+    {
+        Kern.Rendering.GraphicsPreset.Classic,
+        Kern.Rendering.GraphicsPreset.Standard,
+    };
+
     private static readonly (string Label, int Value)[] s_frameRates =
     {
         ("gateway.onb.fps.unlimited", -1),
@@ -157,14 +164,14 @@ public sealed class GatewayOnboarding
         var preset = _root.Q<DropdownField>("OnbGraphicsPreset");
         if (preset != null)
         {
-            preset.choices = new List<string>
+            var labels = new List<string>();
+            foreach (Kern.Rendering.GraphicsPreset value in s_graphicsPresets)
             {
-                _loc.Get("gateway.onb.preset.ultra"),
-                _loc.Get("gateway.onb.preset.high"),
-                _loc.Get("gateway.onb.preset.medium"),
-                _loc.Get("gateway.onb.preset.fast"),
-            };
-            preset.index = 0;
+                labels.Add(_loc.Get(SettingSchema.LabelOf(value)));
+            }
+
+            preset.choices = labels;
+            preset.index = Array.IndexOf(s_graphicsPresets, _clientConfig.SelectedGraphicsPreset);
         }
 
         var vsync = _root.Q<Toggle>("OnbVSync");
@@ -283,6 +290,12 @@ public sealed class GatewayOnboarding
 
     private void SaveSettings()
     {
+        var preset = _root.Q<DropdownField>("OnbGraphicsPreset");
+        if (preset != null && preset.index >= 0 && preset.index < s_graphicsPresets.Length)
+        {
+            _clientConfig.SelectGraphicsPreset(s_graphicsPresets[preset.index]);
+        }
+
         _clientConfig.UpdateAndSave(config =>
         {
             var uiScale = _root.Q<DropdownField>("OnbUIScale");

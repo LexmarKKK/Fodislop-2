@@ -16,6 +16,6 @@ public interface IVFXSlot
 
 public interface IVFXService
 {
-    IVFXSlot? Acquire();
+    IVFXSlot? Acquire(int sortingOrder = -500);
     void Release(IVFXSlot slot);
 }

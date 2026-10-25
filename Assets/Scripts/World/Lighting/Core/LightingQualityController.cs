@@ -60,9 +60,9 @@ namespace Kern.World.Lighting
             QualityMode = resolvedQuality;
 
             if (resolvedQuality == LightingQualityMode.Off &&
-                preset == GraphicsPreset.Standard)
+                preset == GraphicsPreset.Classic)
             {
-                // Standard renders contact AO without the radiance solve.
+                // Classic renders contact AO without the radiance solve.
                 // Keep the neutral light binding until its first AO field is published.
                 _getComposition().Presentation.PublishDisabled();
             }

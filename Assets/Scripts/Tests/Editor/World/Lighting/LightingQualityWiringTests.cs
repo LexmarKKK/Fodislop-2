@@ -20,22 +20,22 @@ public sealed class LightingQualityWiringTests
     private static readonly GraphicsQualityProfile s_profile = GraphicsQualityProfile.CreateDefault();
 
     [Test]
-    public void StandardPresetDisablesLighting()
+    public void ClassicPresetDisablesLighting()
     {
         Assert.That(
-            s_profile.Get(GraphicsPreset.Standard).LightingQuality,
+            s_profile.Get(GraphicsPreset.Classic).LightingQuality,
             Is.EqualTo(LightingQualityMode.Off),
-            "'Стандарт' is the preset without lighting: if it ever drifts back to a " +
+            "'Классика' is the preset without lighting: if it ever drifts back to a " +
             "solving mode, the cheap preset silently starts computing light.");
     }
 
     [Test]
-    public void OverdrivePresetSolvesLightingPerPixel()
+    public void StandardPresetSolvesLightingPerPixel()
     {
         Assert.That(
-            s_profile.Get(GraphicsPreset.Overdrive).LightingQuality,
+            s_profile.Get(GraphicsPreset.Standard).LightingQuality,
             Is.EqualTo(LightingQualityMode.PerPixel),
-            "'Overdrive' is the preset with lighting - dropping back to a disabled mode " +
+            "'Стандарт' is the preset with lighting - dropping back to a disabled mode " +
             "silently removes light from the preset that is supposed to show it.");
     }
 
@@ -44,37 +44,37 @@ public sealed class LightingQualityWiringTests
     {
         // The whole point of the pair: «всё, кроме освещения» and «всё». If any other
         // field ever drifts apart, one of the two stops being "everything".
+        GraphicsQualitySettings classic = s_profile.Get(GraphicsPreset.Classic);
         GraphicsQualitySettings standard = s_profile.Get(GraphicsPreset.Standard);
-        GraphicsQualitySettings overdrive = s_profile.Get(GraphicsPreset.Overdrive);
-        overdrive.LightingQuality = standard.LightingQuality;
+        standard.LightingQuality = classic.LightingQuality;
         Assert.That(
-            overdrive,
-            Is.EqualTo(standard),
+            standard,
+            Is.EqualTo(classic),
             "The two presets must be identical apart from LightingQuality.");
     }
 
     [Test]
-    public void ValidateSettingsRejectsLightingOnTheStandardPreset()
+    public void ValidateSettingsRejectsLightingOnTheClassicPreset()
     {
-        GraphicsQualitySettings settings = s_profile.Get(GraphicsPreset.Standard);
+        GraphicsQualitySettings settings = s_profile.Get(GraphicsPreset.Classic);
         settings.LightingQuality = LightingQualityMode.PerPixel;
 
         Assert.Throws<InvalidOperationException>(
             () => GraphicsQualityProfile.ValidateSettings(
                 settings,
-                nameof(GraphicsPreset.Standard)));
+                nameof(GraphicsPreset.Classic)));
     }
 
     [Test]
-    public void ValidateSettingsRejectsDisabledLightingOnOverdrive()
+    public void ValidateSettingsRejectsDisabledLightingOnStandard()
     {
-        GraphicsQualitySettings settings = s_profile.Get(GraphicsPreset.Overdrive);
+        GraphicsQualitySettings settings = s_profile.Get(GraphicsPreset.Standard);
         settings.LightingQuality = LightingQualityMode.Off;
 
         Assert.Throws<InvalidOperationException>(
             () => GraphicsQualityProfile.ValidateSettings(
                 settings,
-                nameof(GraphicsPreset.Overdrive)));
+                nameof(GraphicsPreset.Standard)));
     }
 
     [Test]
@@ -98,7 +98,7 @@ public sealed class LightingQualityWiringTests
         Assert.Throws<InvalidOperationException>(
             () => GraphicsQualityProfile.ValidateSettings(
                 settings,
-                nameof(GraphicsPreset.Overdrive)));
+                nameof(GraphicsPreset.Standard)));
     }
 
     [Test]
@@ -116,7 +116,7 @@ public sealed class LightingQualityWiringTests
         Assert.Throws<InvalidOperationException>(
             () => GraphicsQualityProfile.ValidateSettings(
                 settings,
-                nameof(GraphicsPreset.Overdrive)));
+                nameof(GraphicsPreset.Standard)));
     }
 }
 #endif

@@ -13,8 +13,10 @@ public sealed class SpriteAnimationLibrary : IDisposable
     private readonly Dictionary<string, Clip> _clips = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Material> _materials = new(StringComparer.Ordinal);
     private readonly List<Texture2D> _textures = new();
+    private readonly List<Sprite> _sprites = new();
     private readonly Mesh[] _meshes;
     private readonly Material[] _meshMaterials;
+    private readonly Sprite[] _crystalCollectionSprites;
 
     public SpriteAnimationLibrary()
     {
@@ -51,6 +53,8 @@ public sealed class SpriteAnimationLibrary : IDisposable
             if (clip.Duration <= 0f || clip.Frames.Length == 0) { throw new InvalidOperationException($"Invalid sprite animation clip: {clip.Id}."); }
             _clips.Add(clip.Id, clip);
         }
+
+        _crystalCollectionSprites = LoadCrystalCollectionSprites();
     }
 
     internal Material GunLineMaterial => GetGunMaterial("GunLine", Texture2D.whiteTexture);
@@ -86,6 +90,48 @@ public sealed class SpriteAnimationLibrary : IDisposable
     internal Mesh MeshAt(int index) => _meshes[index];
     internal Material MaterialAt(int index) => _meshMaterials[index];
 
+    internal Sprite GetCrystalCollectionSprite(string colorLetter)
+    {
+        int index = colorLetter switch
+        {
+            "g" => 0,
+            "r" => 1,
+            "v" => 2,
+            "b" => 3,
+            "w" => 4,
+            "c" => 5,
+            _ => throw new ArgumentOutOfRangeException(nameof(colorLetter), colorLetter, "Unknown crystal color."),
+        };
+        return _crystalCollectionSprites[index];
+    }
+
+    private Sprite[] LoadCrystalCollectionSprites()
+    {
+        const string resource = "VFX/SpriteAnimations/MineralsPanelImage";
+        TextAsset asset = Resources.Load<TextAsset>(resource)
+            ?? throw new InvalidOperationException("The source crystal collection atlas is missing.");
+        Texture2D atlas = RuntimeTextureFactory.DecodeEncodedImageToRGBA32NoMip(
+            asset.bytes, resource, RuntimeTextureColorSpace.Srgb, FilterMode.Point, TextureWrapMode.Clamp,
+            makeNoLongerReadable: true)
+            ?? throw new InvalidOperationException("Cannot decode the source crystal collection atlas.");
+        if (atlas.width != 200 || atlas.height != 12)
+        {
+            UnityEngine.Object.Destroy(atlas);
+            throw new InvalidOperationException($"Crystal collection atlas must be 200x12, got {atlas.width}x{atlas.height}.");
+        }
+
+        _textures.Add(atlas);
+        var sprites = new Sprite[6];
+        for (int index = 0; index < sprites.Length; index++)
+        {
+            sprites[index] = Sprite.Create(atlas, new Rect(index * 12, 0, 12, 12),
+                new Vector2(0.5f, 0.5f), 16f);
+            _sprites.Add(sprites[index]);
+        }
+
+        return sprites;
+    }
+
     private Texture2D ImportTexture(string resource)
     {
         TextAsset image = Resources.Load<TextAsset>(resource)
@@ -120,6 +166,7 @@ public sealed class SpriteAnimationLibrary : IDisposable
     {
         foreach (Mesh mesh in _meshes) { UnityEngine.Object.Destroy(mesh); }
         foreach (Material material in _materials.Values) { UnityEngine.Object.Destroy(material); }
+        foreach (Sprite sprite in _sprites) { UnityEngine.Object.Destroy(sprite); }
         foreach (Texture2D texture in _textures) { UnityEngine.Object.Destroy(texture); }
     }
 
