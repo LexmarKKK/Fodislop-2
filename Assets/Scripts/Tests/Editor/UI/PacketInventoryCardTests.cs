@@ -97,17 +97,18 @@ public class PacketInventoryCardTests
     }
 
     [Test]
-    public void ExitMarkedButton_IsBuiltHidden()
+    public void ExitMarkedButton_IsBuiltAsRegularAction()
     {
-        // Закрывающая кнопка не рисуется (окно закрывают крестик рамки и
-        // ESC), но строится — её индекс в кликабельном порядке не сдвигается.
+        // Закрывающая кнопка — обычная видимая кнопка ряда (крестик рамки и
+        // ESC шлют клик по её индексу), без клиентских спец-веток.
         VisualElement exit = Builder().Build(PacketTestFactory.Text(
             "ВЫЙТИ",
             ".",
             PacketTestFactory.Pair("PacketUI.ExitAction", "1")));
 
         Assert.That(exit, Is.InstanceOf<Button>());
-        Assert.That(exit.style.display.value, Is.EqualTo(DisplayStyle.None));
+        Assert.That(exit.ClassListContains("packet-window-action"), Is.True);
+        Assert.That(exit.style.display.value, Is.EqualTo(DisplayStyle.Flex));
     }
 
     [Test]

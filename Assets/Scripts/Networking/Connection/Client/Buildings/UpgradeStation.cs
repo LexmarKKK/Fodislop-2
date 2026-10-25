@@ -8,7 +8,6 @@ public sealed class UpgradeStation : PackBuilding
 {
     public override BuildingType Type => BuildingType.Up;
 
-    public override UnityEngine.Vector2 RoofCenterOffsetCells => new(0f, -0.4525f);
 
     public override IEnumerable<((int X, int Y) Pos, CellType Cell)> CellsToPlace()
     {

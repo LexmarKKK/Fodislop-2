@@ -46,16 +46,6 @@ public class PacketUIBuilder
         VisualElement element = builder.Build(packet, this);
         StyleApplicator.ApplyStyles(element, packet);
         ApplyCanvasGeometry(element, packet);
-
-        // Закрывающая кнопка не рисуется: окно закрывают крестик рамки и
-        // ESC, шлющие клик по её индексу (как в старом клиенте, где кнопка
-        // с action "exit" не попадала в ряд кнопок). Пакет остаётся в
-        // дереве — индексы кликабельных для сервера не сдвигаются.
-        if (AttachedProperties.Has(packet, ExitActionKey))
-        {
-            element.style.display = DisplayStyle.None;
-        }
-
         element.userData = packet;
 
         return element;

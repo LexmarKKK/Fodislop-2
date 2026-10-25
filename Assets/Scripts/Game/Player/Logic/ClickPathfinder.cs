@@ -14,27 +14,11 @@ namespace Kern.Player.Logic;
 // допускаются в маршрут только при включённом автокопании (allowDigging):
 // без него путь строится лишь по проходимым (isEmpty/passable) клеткам,
 // породы обходятся, как и паки со стройблоками.
-// Непроходимы насовсем (маршрут их обходит, не бурит):
-//  - незагруженные клетки (шаг туда всё равно не провалидировать);
-//  - неломаемые буром породы: сплошные клетки без is_diggable в cells.json
-//    сервера - Черноскал, Красноскал, Гипноскал, Череп, Суперрадуга,
-//    Федеральный блок и пр. Бит Diggable в конфиге клетки отличает их от
-//    is_destructible (бомба/падение): тот тоже несёт Breakable, но буром
-//    такие клетки не взять;
-//  - паки и строительные блоки: клетки с битом Structure в конфиге -
-//    сервер ставит его по World.isPackBlock/isBuildingBlock (стены и углы
-//    пака, Green/Yellow/Red/Military/Quad/Support-блоки).
-//    BuildingRoad тут НЕ блокер: это дорога внутри пака, по ней роботы
-//    ездят (в cells.json она isEmpty/passable, WASD на неё пускает) - клик
-//    по ней строит обычный маршрут по проходимости из данных клетки.
-//    BuildingDoor - отдельное правило: клик ПРЯМО по двери ведёт робота
-//    на неё (осознанный вход в пак), в маршрутах НАЧАТЫХ вне пака дверь
-//    обходится: проход через неё открывает окно пака, и случайное движение
-//    мышкой не должно его дёргать. Если робот уже стоит на паковой клетке
-//    (дверь или дорога пака) - это выход из пака: двери на маршруте
-//    разрешены, иначе из пака мышкой не выйти.
-// Клик по непроходимой клетке пака/стройблока ведёт робота к ближайшей
-// достижимой клетке рядом с целью (подойти к паку вплотную).
+// Проходимость и бурые-небурые решает только конфиг клетки (cells.json
+// сервера: isEmpty, is_diggable + бит Structure у стен/углов пака и
+// стройблоков) - собственных списков типов маршрут не ведёт. Клик по
+// непроходимой клетке пака/стройблока ведёт робота к ближайшей достижимой
+// клетке рядом с целью (подойти к паку вплотную).
 public static class ClickPathfinder
 {
     private const int MaxExpandedNodes = 24000;
@@ -80,20 +64,11 @@ public static class ClickPathfinder
         }
 
         // Клетка цели: >0 - обычный маршрут до неё (ломаемая сплошная тоже -
-        // бурим до неё); <0 и это пак/стройблок - ведём к ближайшей достижимой
-        // клетке рядом (подойти к паку); <0 у неломаемой породы или
-        // незагруженной клетки - маршрута нет. Дверь пака разрешена только
-        // как явная цель клика (allowBuildingDoor: true).
+        // бурим до неё); <0 и это пак/стройблок (бит Structure) - ведём к
+        // ближайшей достижимой клетке рядом (подойти к паку); <0 у прочих
+        // неломаемых пород - маршрута нет.
         CellType targetCell = storage.GetCell(target.x, target.y);
-        int targetCost = CellCost(targetCell, mapDataProvider, allowBuildingDoor: true, allowDigging);
-        // Клик по двери: вход в пак осознанный - промежуточные двери на пути
-        // к ней тоже разрешены (двери бывают двухклеточными).
-        bool targetIsDoor = targetCell == CellType.BuildingDoor;
-        // Старт на паковой клетке (дверь или дорога пака): робот уже в паке -
-        // это ВЫХОД, а не вход. Двери на маршруте разрешены, иначе из пака
-        // мышкой не выйти (стоя на двери, наружу ведёт только соседняя дверь).
-        CellType startCell = storage.GetCell(start.x, start.y);
-        bool startInPack = startCell is CellType.BuildingRoad or CellType.BuildingDoor;
+        int targetCost = CellCost(targetCell, mapDataProvider, allowDigging);
         bool targetIsStructure = mapDataProvider
             .GetCellConfig(targetCell).Properties.HasFlag(CellConfigProperties.Structure);
         if (targetCost < 0 && !targetIsStructure)
@@ -173,9 +148,7 @@ public static class ClickPathfinder
                     }
 
                     int neighbor = ny * width + nx;
-                    bool neighborIsTarget = neighbor == targetIndex;
-                    bool allowDoor = neighborIsTarget || targetIsDoor || startInPack;
-                    int cellCost = CellCost(storage, mapDataProvider, nx, ny, allowBuildingDoor: allowDoor, allowDigging);
+                    int cellCost = CellCost(storage, mapDataProvider, nx, ny, allowDigging);
                     if (cellCost < 0)
                     {
                         continue;
@@ -222,40 +195,20 @@ public static class ClickPathfinder
     }
 
     // Стоимость входа в клетку: -1 непроходимо насовсем (обход), StepCost -
-    // можно идти, DigCost - сплошная ломаемая (бурим по дороге).
-    // allowBuildingDoor: дверь пака проходима только когда она сама - цель
-    // клика; в любых других маршрутах она обходится (иначе мышинное движение
-    // по КД проваливалось бы в пак и открывало его окно).
-    private static int CellCost(IWorldDataStorage storage, IMapDataProvider mapDataProvider, int x, int y, bool allowBuildingDoor, bool allowDigging)
+    // можно идти, DigCost - сплошная ломаемая (бурим по дороге). Всё решает
+    // конфиг клетки: Passable/Diggable/Structure из серверного cells.json.
+    private static int CellCost(IWorldDataStorage storage, IMapDataProvider mapDataProvider, int x, int y, bool allowDigging)
     {
-        return CellCost(storage.GetCell(x, y), mapDataProvider, allowBuildingDoor, allowDigging);
+        return CellCost(storage.GetCell(x, y), mapDataProvider, allowDigging);
     }
 
-    private static int CellCost(CellType cell, IMapDataProvider mapDataProvider, bool allowBuildingDoor, bool allowDigging)
+    private static int CellCost(CellType cell, IMapDataProvider mapDataProvider, bool allowDigging)
     {
-        if (cell == CellType.Unloaded)
-        {
-            return -1;
-        }
-
         // Стены/углы пака и стройблоки (бит Structure в конфиге клетки):
         // бурением не убираются - только обход.
         if (mapDataProvider.GetCellConfig(cell).Properties.HasFlag(CellConfigProperties.Structure))
         {
             return -1;
-        }
-
-        // Дверь пака: только как явная цель клика, иначе - обход.
-        if (cell == CellType.BuildingDoor && !allowBuildingDoor)
-        {
-            return -1;
-        }
-
-        // Федеральный блок: в игре это проходимая клетка, хотя в cells.json
-        // у него нет isEmpty - без этой ветки путь через него не строится.
-        if (cell == CellType.FedBlock)
-        {
-            return StepCost;
         }
 
         if (PlayerMovementValidator.IsPassable(cell, mapDataProvider.GetCellConfig(cell)))

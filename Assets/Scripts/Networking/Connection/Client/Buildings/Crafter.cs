@@ -8,7 +8,6 @@ public sealed class Crafter : PackBuilding
 {
     public override BuildingType Type => BuildingType.Craft;
 
-    public override UnityEngine.Vector2 RoofCenterOffsetCells => new(0f, 0f);
 
     public override IEnumerable<((int X, int Y) Pos, CellType Cell)> CellsToPlace()
     {

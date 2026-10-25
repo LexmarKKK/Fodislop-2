@@ -8,7 +8,6 @@ public sealed class Storage : PackBuilding
 {
     public override BuildingType Type => BuildingType.Storage;
 
-    public override UnityEngine.Vector2 RoofCenterOffsetCells => new(0f, -0.5f);
 
     public override IEnumerable<((int X, int Y) Pos, CellType Cell)> CellsToPlace()
     {
