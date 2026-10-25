@@ -7,16 +7,21 @@ namespace Kern.UI;
 
 internal static class ChatChannelPresenter
 {
+    // Заголовок ленты — имя активного чата; дефолт — «Глобальный» (FED),
+    // для остальных каналов/приватов берётся серверное имя из ChatListPacket.
     public static void UpdatePresentation(
         Label? header,
         Button? globalButton,
-        ILocalizationService? loc)
+        ILocalizationService? loc,
+        string? activeChatName = null)
     {
         if (header != null && loc != null)
         {
-            header.text = loc.Get("chat.channel.global");
+            header.text = string.IsNullOrEmpty(activeChatName)
+                ? loc.Get("chat.channel.global")
+                : activeChatName;
         }
 
-        globalButton?.EnableInClassList("gchat-channel-button--active", true);
+        globalButton?.EnableInClassList("gchat-channel-button--active", false);
     }
 }
