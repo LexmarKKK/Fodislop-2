@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Kern.Core.Interfaces;
+using MinesServer.Networking.Client.Packets.GUI;
 using MinesServer.Networking.Client.Packets.Programmator;
 using MinesServer.Networking.Server.Packets.Programmator;
 using MinesServer.Data;
@@ -77,6 +78,12 @@ public sealed class ProgrammatorProcessor(INetworkService networkService) : ISta
     public void DeleteProgram() => _networkService.Send(new DeleteProgramClickPacket());
 
     public void RenameProgram() => _networkService.Send(new RenameProgramClickPacket());
+
+    // Кнопка «Программы» в HUD и «К списку» в редакторе (G7-C): источник списка
+    // — сервер. Ответ сервера — OpenProgrammatorPacket (грид открывается по
+    // OpenRequested), выбор программы ходит ElementClickPacket'ом openprog:{i}.
+    // DummyConnection отвечает тем же пакетом — путь един для сети и оффлайна.
+    public void RequestProgramList() => _networkService.Send(new OpenProgramListClickPacket());
 
     public void QueryMemory(IReadOnlyList<string> variables, ushort arrayStart, ushort arrayStop) =>
         _networkService.Send(new QueryProgramMemoryPacket(variables, arrayStart, arrayStop));

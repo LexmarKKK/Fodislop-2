@@ -96,7 +96,7 @@ public sealed class ProgrammatorGrid : IDisposable
             radial.OnLastCellPlaced = programs.AdvancePageIfAtEnd;
             var clipboard = new ProgrammatorClipboardController(selection, view.UpdateCell, _data);
 
-            view.Build(selection, radial, programs, clipboard, Hide);
+            view.Build(selection, radial, programs, clipboard, Hide, CloseToProgramList);
 
             _view = view;
             _selection = selection;
@@ -166,7 +166,7 @@ public sealed class ProgrammatorGrid : IDisposable
 
                 if (_view!.Panel.style.display == DisplayStyle.Flex)
                 {
-                    _programs!.CloseProgram();
+                    CloseToProgramList();
                     return;
                 }
 
@@ -292,7 +292,8 @@ public sealed class ProgrammatorGrid : IDisposable
             _isOpen = true;
             _uiInput.IsProgrammatorOpen = true;
             _view.Popup.style.display = DisplayStyle.Flex;
-            _programs!.ShowProgramList();
+            // G7-C: локального списка программ больше нет — выбранный серверный
+            // контент приходит UpdateProgramPacket'ом (см. ProgrammatorProgramStore).
         }
 
         public void Hide()
@@ -310,6 +311,15 @@ public sealed class ProgrammatorGrid : IDisposable
             _view!.ProgramListPanel.style.display = DisplayStyle.None;
             _view.Panel.style.display = DisplayStyle.None;
             _view.Popup.style.display = DisplayStyle.None;
+        }
+
+        // «К списку» (G7-C): редактор закрывается, список запрашивается у
+        // сервера заново — серверное окно списка переоткрывается; в оффлайне
+        // тем же путём отвечает DummyConnection.
+        private void CloseToProgramList()
+        {
+            Hide();
+            _protocol.RequestProgramList();
         }
 
         // Запуск программы из окна: окно убирается с экрана, но программа
