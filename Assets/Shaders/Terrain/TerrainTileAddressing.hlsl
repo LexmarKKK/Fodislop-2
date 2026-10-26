@@ -3,9 +3,12 @@
 
 static const float KernTileAddressEpsilon = 0.0001;
 
-float KernPositiveModulo(float value, float modulus)
+// Tile addresses are integers. Floating fmod is lowered to reciprocal/multiply
+// on some GPUs and loses exact remainders at large world coordinates.
+int KernPositiveCellModulo(int value, int modulus)
 {
-    return fmod(fmod(value, modulus) + modulus, modulus);
+    int remainder = value % modulus;
+    return remainder < 0 ? remainder + modulus : remainder;
 }
 
 float2 KernResolveTerrainTileIndex(
@@ -14,18 +17,13 @@ float2 KernResolveTerrainTileIndex(
     float tileGroupColumn,
     float useTileGroupColumn)
 {
-    float2 integerGridPosition = floor(
-        gridPosition + KernTileAddressEpsilon);
-    float tileX = useTileGroupColumn > 0.5
-        ? floor(tileGroupColumn + KernTileAddressEpsilon)
-        : floor(
-            KernPositiveModulo(integerGridPosition.x, tileCount.x) +
-            KernTileAddressEpsilon);
-    float tileY = floor(
-        tileCount.y -
-        KernTileAddressEpsilon -
-        KernPositiveModulo(integerGridPosition.y, tileCount.y));
-    return clamp(float2(tileX, tileY), 0.0, tileCount - 1.0);
+    int2 cell = (int2)round(gridPosition);
+    int2 count = (int2)round(tileCount);
+    int tileX = useTileGroupColumn > 0.5
+        ? (int)round(tileGroupColumn)
+        : KernPositiveCellModulo(cell.x, count.x);
+    int tileY = count.y - 1 - KernPositiveCellModulo(cell.y, count.y);
+    return (float2)clamp(int2(tileX, tileY), int2(0, 0), count - 1);
 }
 
 float2 KernResolveTerrainSheetUv(

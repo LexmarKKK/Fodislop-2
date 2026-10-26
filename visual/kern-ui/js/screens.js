@@ -163,6 +163,7 @@
 
   // ── Спуск: пять фаз MenuLoaderProgress, затем игра ──
   const PHASES = ['Подключение к серверу', 'Загрузка ресурсов', 'Получение позиции', 'Построение мира', 'Загрузка текстур'];
+  const PHASE_DETAILS = ['Устанавливаем соединение с сервером.', 'Подготавливаем игровые ресурсы.', 'Получаем место появления вашего робота.', 'Подготавливаем участок шахты вокруг вас.', 'Загружаем изображения блоков и предметов.'];
   function runDescent() {
     let i = 0, p = 0;
     const items = [...document.querySelectorAll('#descentPhases li')];
@@ -171,6 +172,7 @@
       i = Math.min(4, Math.floor(p / 20));
       $('descentFill').style.width = p + '%';
       $('descentPhase').textContent = PHASES[i];
+      $('descentExplain').textContent = PHASE_DETAILS[i];
       $('descentCount').textContent = `${i + 1} / 5`;
       items.forEach((li, k) => { li.classList.toggle('is-done', k < i || p === 100); li.classList.toggle('is-on', k === i && p < 100); });
       if (hold && p >= hold) return;                              // ?hold=N — снимок на N %

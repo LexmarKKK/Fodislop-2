@@ -73,6 +73,10 @@ internal static class TerrainMaterialTuning
     private static readonly int s_alphaCutoffPropertyId =
         Shader.PropertyToID("_AlphaCutoff");
 
+    private static readonly int s_emissionBrightnessStartId = Shader.PropertyToID("_EmissionBrightnessStart");
+    private static readonly int s_emissionBrightnessEndId = Shader.PropertyToID("_EmissionBrightnessEnd");
+    private static readonly int s_surfaceEmissionStrengthId = Shader.PropertyToID("_SurfaceEmissionStrength");
+
     public static void Apply(Material material, bool enableRim)
     {
         material.SetFloat(s_rimEnabledPropertyId, enableRim ? 1f : 0f);
@@ -88,6 +92,9 @@ internal static class TerrainMaterialTuning
         material.SetFloat(
             s_rimFalloffPropertyId,
             TerrainConfigHolder.RimFalloff);
+        material.SetFloat(s_emissionBrightnessStartId, TerrainConfigHolder.EmissionBrightnessStart);
+        material.SetFloat(s_emissionBrightnessEndId, TerrainConfigHolder.EmissionBrightnessEnd);
+        material.SetFloat(s_surfaceEmissionStrengthId, TerrainConfigHolder.SurfaceEmissionStrength);
         material.SetFloat(s_groundDecalStrengthPropertyId, TerrainConfigHolder.GroundDecalStrength);
         material.SetFloat(s_rockDecalStrengthPropertyId, TerrainConfigHolder.RockDecalStrength);
         material.SetFloat(s_decalPlacementOffsetPropertyId, TerrainConfigHolder.DecalPlacementOffset);

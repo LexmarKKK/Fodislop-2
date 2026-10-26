@@ -1474,6 +1474,26 @@
         {
             "first": {
                 "serializedVersion": "2",
+                "Hash": "aa03240798bc5123b2d50a81987bba9f"
+            },
+            "second": {
+                "shader": {
+                    "fileID": 4800000,
+                    "guid": "943286b1ceedb6e49881652498d6ec13",
+                    "type": 3
+                },
+                "shaderName": "Universal Render Pipeline/Custom/Terrain",
+                "shaderAssetGUID": "943286b1ceedb6e49881652498d6ec13",
+                "shaderAssetLocalIdentifierInFile": 4800000,
+                "keywordNames": "KERN_EMISSION_ADAPTIVE KERN_WORLD_LIGHTING",
+                "subShaderIndex": 0,
+                "passIndex": 2,
+                "graphicsStateInfoSet": []
+            }
+        },
+        {
+            "first": {
+                "serializedVersion": "2",
                 "Hash": "ea73c19842fdd8de2a1d538eaad58a94"
             },
             "second": {
@@ -1605,6 +1625,46 @@
                 "subShaderIndex": 0,
                 "passIndex": 0,
                 "graphicsStateInfoSet": []
+            }
+        },
+        {
+            "first": {
+                "serializedVersion": "2",
+                "Hash": "15141969621e44f76ba8d60d08452e5d"
+            },
+            "second": {
+                "shader": {
+                    "fileID": 4800000,
+                    "guid": "943286b1ceedb6e49881652498d6ec13",
+                    "type": 3
+                },
+                "shaderName": "Universal Render Pipeline/Custom/Terrain",
+                "shaderAssetGUID": "943286b1ceedb6e49881652498d6ec13",
+                "shaderAssetLocalIdentifierInFile": 4800000,
+                "keywordNames": "KERN_EMISSION_FIXED KERN_WORLD_LIGHTING",
+                "subShaderIndex": 0,
+                "passIndex": 0,
+                "graphicsStateInfoSet": [
+                    {
+                        "vertexLayout": 7985057163393096329,
+                        "renderPass": 4524451620886802199,
+                        "renderState": 2874810695172648804,
+                        "subPassIndex": 0,
+                        "topology": 0,
+                        "forceCullMode": -1,
+                        "shadingRateCombinerPrimitive": 0,
+                        "shadingRateCombinerFragment": 0,
+                        "baseShadingRate": 0,
+                        "depthBias": 0.0,
+                        "slopeDepthBias": 0.0,
+                        "userBackface": false,
+                        "appBackface": false,
+                        "wireframe": false,
+                        "invertProjectionMatrix": true,
+                        "unfilterableTextureBindings": 0,
+                        "nonfilteringSamplerBindings": 0
+                    }
+                ]
             }
         },
         {
@@ -3460,6 +3520,46 @@
         {
             "first": {
                 "serializedVersion": "2",
+                "Hash": "6d57a857689c69672a45cfa8113bbe8a"
+            },
+            "second": {
+                "shader": {
+                    "fileID": 4800000,
+                    "guid": "943286b1ceedb6e49881652498d6ec13",
+                    "type": 3
+                },
+                "shaderName": "Universal Render Pipeline/Custom/Terrain",
+                "shaderAssetGUID": "943286b1ceedb6e49881652498d6ec13",
+                "shaderAssetLocalIdentifierInFile": 4800000,
+                "keywordNames": "KERN_EMISSION_ADAPTIVE KERN_WORLD_LIGHTING",
+                "subShaderIndex": 0,
+                "passIndex": 0,
+                "graphicsStateInfoSet": [
+                    {
+                        "vertexLayout": 7985057163393096329,
+                        "renderPass": 4524451620886802199,
+                        "renderState": 2874810695172648804,
+                        "subPassIndex": 0,
+                        "topology": 0,
+                        "forceCullMode": -1,
+                        "shadingRateCombinerPrimitive": 0,
+                        "shadingRateCombinerFragment": 0,
+                        "baseShadingRate": 0,
+                        "depthBias": 0.0,
+                        "slopeDepthBias": 0.0,
+                        "userBackface": false,
+                        "appBackface": false,
+                        "wireframe": false,
+                        "invertProjectionMatrix": true,
+                        "unfilterableTextureBindings": 0,
+                        "nonfilteringSamplerBindings": 0
+                    }
+                ]
+            }
+        },
+        {
+            "first": {
+                "serializedVersion": "2",
                 "Hash": "8e871b5a5b18670ad071db29227c470a"
             },
             "second": {
@@ -4960,6 +5060,26 @@
         {
             "first": {
                 "serializedVersion": "2",
+                "Hash": "3b78b7f55a132b02ae4eb608ed28f7e1"
+            },
+            "second": {
+                "shader": {
+                    "fileID": 4800000,
+                    "guid": "943286b1ceedb6e49881652498d6ec13",
+                    "type": 3
+                },
+                "shaderName": "Universal Render Pipeline/Custom/Terrain",
+                "shaderAssetGUID": "943286b1ceedb6e49881652498d6ec13",
+                "shaderAssetLocalIdentifierInFile": 4800000,
+                "keywordNames": "KERN_EMISSION_FIXED KERN_WORLD_LIGHTING",
+                "subShaderIndex": 0,
+                "passIndex": 2,
+                "graphicsStateInfoSet": []
+            }
+        },
+        {
+            "first": {
+                "serializedVersion": "2",
                 "Hash": "17082f2b5ca7cee55dabba3d0037af75"
             },
             "second": {
@@ -6088,6 +6208,46 @@
                         "appBackface": false,
                         "wireframe": false,
                         "invertProjectionMatrix": false,
+                        "unfilterableTextureBindings": 0,
+                        "nonfilteringSamplerBindings": 0
+                    }
+                ]
+            }
+        },
+        {
+            "first": {
+                "serializedVersion": "2",
+                "Hash": "237b23cc2a31dc9cdc6b67f58e06a8e4"
+            },
+            "second": {
+                "shader": {
+                    "fileID": 4800000,
+                    "guid": "943286b1ceedb6e49881652498d6ec13",
+                    "type": 3
+                },
+                "shaderName": "Universal Render Pipeline/Custom/Terrain",
+                "shaderAssetGUID": "943286b1ceedb6e49881652498d6ec13",
+                "shaderAssetLocalIdentifierInFile": 4800000,
+                "keywordNames": "KERN_EMISSION_FIXED KERN_WORLD_LIGHTING",
+                "subShaderIndex": 0,
+                "passIndex": 1,
+                "graphicsStateInfoSet": [
+                    {
+                        "vertexLayout": 7985057163393096329,
+                        "renderPass": 7163637868986753362,
+                        "renderState": 2847598806215351619,
+                        "subPassIndex": -1,
+                        "topology": 0,
+                        "forceCullMode": -1,
+                        "shadingRateCombinerPrimitive": 0,
+                        "shadingRateCombinerFragment": 0,
+                        "baseShadingRate": 0,
+                        "depthBias": 0.0,
+                        "slopeDepthBias": 0.0,
+                        "userBackface": false,
+                        "appBackface": false,
+                        "wireframe": false,
+                        "invertProjectionMatrix": true,
                         "unfilterableTextureBindings": 0,
                         "nonfilteringSamplerBindings": 0
                     }
@@ -7639,6 +7799,46 @@
                 "subShaderIndex": 0,
                 "passIndex": 0,
                 "graphicsStateInfoSet": []
+            }
+        },
+        {
+            "first": {
+                "serializedVersion": "2",
+                "Hash": "955e184a5aaed5f732d26984810d1d42"
+            },
+            "second": {
+                "shader": {
+                    "fileID": 4800000,
+                    "guid": "943286b1ceedb6e49881652498d6ec13",
+                    "type": 3
+                },
+                "shaderName": "Universal Render Pipeline/Custom/Terrain",
+                "shaderAssetGUID": "943286b1ceedb6e49881652498d6ec13",
+                "shaderAssetLocalIdentifierInFile": 4800000,
+                "keywordNames": "KERN_EMISSION_ADAPTIVE KERN_WORLD_LIGHTING",
+                "subShaderIndex": 0,
+                "passIndex": 1,
+                "graphicsStateInfoSet": [
+                    {
+                        "vertexLayout": 7985057163393096329,
+                        "renderPass": 7163637868986753362,
+                        "renderState": 2847598806215351619,
+                        "subPassIndex": -1,
+                        "topology": 0,
+                        "forceCullMode": -1,
+                        "shadingRateCombinerPrimitive": 0,
+                        "shadingRateCombinerFragment": 0,
+                        "baseShadingRate": 0,
+                        "depthBias": 0.0,
+                        "slopeDepthBias": 0.0,
+                        "userBackface": false,
+                        "appBackface": false,
+                        "wireframe": false,
+                        "invertProjectionMatrix": true,
+                        "unfilterableTextureBindings": 0,
+                        "nonfilteringSamplerBindings": 0
+                    }
+                ]
             }
         },
         {

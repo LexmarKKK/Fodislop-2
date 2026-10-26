@@ -28,6 +28,10 @@ CBUFFER_START(UnityPerMaterial)
     // Авторский вид поверхности: числа лежат в TerrainConfigHolder и приезжают
     // свойствами материала. Блок один на все проходы, поэтому раскладку держит
     // этот файл, а не дисциплина копий.
+    int _TerrainEmissionMethod; // Debug identity; all cached masks share one GPU variant.
+    float _EmissionBrightnessStart;
+    float _EmissionBrightnessEnd;
+    float _SurfaceEmissionStrength;
     float _GroundDecalStrength;
     float _RockDecalStrength;
     float _DecalPlacementOffset;

@@ -14,7 +14,7 @@ using Kern.World;
 using Kern.World.Terrain;
 using MinesServer.Data;
 using MinesServer.Networking.Server.Packets.World;
-using Canvas = UnityEngine.UI.Canvas;
+using Canvas = UnityEngine.Canvas;
 using CanvasScaler = UnityEngine.UI.CanvasScaler;
 using GraphicRaycaster = UnityEngine.UI.GraphicRaycaster;
 using TMPro;

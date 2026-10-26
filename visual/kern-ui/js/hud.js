@@ -55,9 +55,26 @@
   };
   window.kernSkills = skills;
   const SLOT_OF = { m: 0, d: 1, M: 2, l: 3 };
+  const previewSkills = {
+    ...skills,
+    A: { name: 'Строительство дорог' }, L: { name: 'Зелёное строительство' },
+    Y: { name: 'Жёлтое строительство' }, E: { name: 'Красное строительство' },
+    F: { name: 'Охлаждение' }, t: { name: 'Передвижение по дороге' },
+    p: { name: 'Упаковка' }, b: { name: 'Упаковка синих кристаллов' },
+    c: { name: 'Упаковка голубых кристаллов' }, v: { name: 'Упаковка фиолетовых кристаллов' },
+    r: { name: 'Упаковка красных кристаллов' }, w: { name: 'Упаковка белых кристаллов' },
+  };
+  let allMiniSkills = false;
   const timers = {};
+  function renderMiniPreview() {
+    const list = $('miniSkills');
+    Object.keys(timers).forEach(code => clearTimeout(timers[code]));
+    list.replaceChildren();
+    if (allMiniSkills) Object.keys(previewSkills).forEach(code => showMini(code));
+    else showMini('M');
+  }
   function showMini(code) {
-    const s = skills[code];
+    const s = skills[code] || { ...previewSkills[code], exp: .55, color: '#58ced3' };
     let el = document.querySelector(`.mini-skill[data-code="${code}"]`);
     if (!el) {
       el = document.createElement('li');
@@ -73,7 +90,7 @@
     el.classList.toggle('is-ready', ready);
     el.querySelector('.bar i').style.height = (ready ? 100 : s.exp * 100) + '%';
     clearTimeout(timers[code]);
-    if (!ready) timers[code] = setTimeout(() => el.remove(), 5000);
+    if (!ready && !allMiniSkills) timers[code] = setTimeout(() => el.remove(), 5000);
   }
   const grow = (code, step) => { skills[code].exp = Math.min(1, skills[code].exp + step); showMini(code); };
 
@@ -254,6 +271,8 @@
   document.querySelectorAll('[data-state]').forEach(b => b.onclick = () => {
     document.querySelectorAll('[data-state]').forEach(x => x.classList.toggle('is-on', x === b));
     const busy = b.dataset.state === 'busy';
+    allMiniSkills = busy;
+    renderMiniPreview();
     $('mission').hidden = !busy; $('geo').hidden = !busy; $('states').hidden = !busy;
     if (busy !== state.prog) $('progRun').click();
     state.basket = busy ? { g: 2340, r: 96, b: 1204, v: 12, w: 3, c: 57 } : { g: 412, r: 96, b: 1204, v: 0, w: 0, c: 57 };
@@ -271,7 +290,6 @@
     d219: { w: 2560, h: 1080, px: '2560×1080', scale: 1 },
     d4k150: { w: 2560, h: 1440, px: '3840×2160', scale: 1.5 },
     d4k200: { w: 1920, h: 1080, px: '3840×2160', scale: 2 },
-    se: { w: 654, h: 368, form: 'phone', corner: 0, short: true },
     promax: { w: 973, h: 449, safe: [0, 62, 22, 62], form: 'phone', corner: 55 },
     pixel8: { w: 897, h: 404, safe: [0, 0, 0, 44], form: 'phone', corner: 40 },
     ipadmini: { w: 1112, h: 730, safe: [0, 0, 20, 0], form: 'tablet', corner: 22 },
@@ -286,7 +304,6 @@
     frame.classList.toggle('touch', touch);
     frame.classList.toggle('phone', touch && d.form === 'phone');
     frame.classList.toggle('tablet', touch && d.form === 'tablet');
-    frame.classList.toggle('short', !!d.short);
     const tier = d.form === 'phone' ? 'compact' : d.form === 'tablet' ? 'standard' : d.w < 900 ? 'compact' : d.w < 1600 ? 'standard' : 'wide';
     ['compact', 'standard', 'wide'].forEach(t => frame.classList.toggle('tier-' + t, t === tier));
     ['--fw', '--fh', '--corner', '--st', '--sr', '--sb', '--sl'].forEach(v => frame.style.removeProperty(v));
@@ -311,11 +328,10 @@
     }
     // Программатор и автокопание: на пальце — над хотбаром и в дуге действий
     const prog = document.querySelector('.prog');
-    if (touch) { $('lowRow').append(prog, $('miniSkills')); $('touchBuild').after($('autodig')); }
+    if (touch) { $('lowRow').append(prog); $('touchBuild').after($('autodig')); }
     else {
       document.querySelector('.col-bottom').insertBefore(prog, document.querySelector('.col-bottom .minimap'));
       document.querySelector('.col-bottom').insertBefore($('autodig'), prog);
-      $('itemHint').after($('miniSkills'));
     }
     [$('bonus'), prog, $('autodig'), $('miniSkills'), ...sysOrig.list, mapBtn].forEach(el => el.toggleAttribute('data-relocated', touch));
     $('keyHint').style.visibility = touch ? 'hidden' : '';
@@ -326,6 +342,20 @@
   document.querySelectorAll('[data-device]').forEach(b => b.onclick = () => setDevice(b.dataset.device));
 
   $('statusBar').append(document.querySelector('.diag'), $('assetLoad'));
+
+  // Подписи остаются видимыми и на сенсорном экране, где нет наведения.
+  document.querySelectorAll('.sysbuttons button, .menu-rail button').forEach(button => {
+    const label = document.createElement('span');
+    label.className = 'control-label';
+    label.textContent = button.id === 'respawnBtn' ? 'На респаун'
+      : button.id === 'railHealth' ? 'Проверка файлов'
+      : button.title === 'Выход из игры' ? 'Выход' : button.title;
+    button.append(label);
+  });
+  const bonusLabel = document.createElement('span');
+  bonusLabel.className = 'control-label';
+  bonusLabel.textContent = 'Бонусы';
+  $('bonus').append(bonusLabel);
 
   // Ресурсы догружаются фоном после входа: «N / M», тонкая полоса; по завершении строка пропадает
   let assetTimer = 0;

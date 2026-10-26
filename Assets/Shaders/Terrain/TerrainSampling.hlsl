@@ -9,6 +9,18 @@
 // выборка атласа. Guard'ы делают повторное включение безопасным.
 #include "TerrainAtlasSampling.hlsl"
 #include "TerrainMaterialCBuffer.hlsl"
+#include "TerrainAdaptiveEmission.hlsl"
+
+// Coefficient in linear source space; apply before spatial reduction, never
+// threshold the averaged blue host rock and bright green crystal together.
+float4 TerrainSourceEmission(float4 source)
+{
+    // Peak-channel brightness preserves saturated blue/red emitters too.
+    float brightness = max(source.r, max(source.g, source.b));
+    float mask = smoothstep(_EmissionBrightnessStart, _EmissionBrightnessEnd, brightness);
+    mask *= source.a >= _AlphaCutoff ? source.a : 0.0;
+    return float4(source.rgb * mask, mask);
+}
 
 struct TerrainTileUvResult
 {

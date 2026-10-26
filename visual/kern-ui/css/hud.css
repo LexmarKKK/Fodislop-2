@@ -40,8 +40,8 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .col-top { position: absolute; left: var(--margin); top: var(--margin); display: flex; flex-direction: column; align-items: flex-start; gap: var(--gap); }
 .player-row { display: flex; align-items: flex-start; gap: var(--gap); }
 /* Ряд игрока не заходит под правый верх: на узком мониторе (и при открытом чате) миссия сжимается до 180 */
-.col-top { max-width: calc(100% - 2 * var(--margin) - 400px); }
-.hud[data-chat="1"] .col-top { max-width: calc(100% - 2 * var(--margin) - 400px - var(--chat-w)); }
+.col-top { max-width: calc(100% - 2 * var(--margin) - 480px); }
+.hud[data-chat="1"] .col-top { max-width: calc(100% - 2 * var(--margin) - 480px - var(--chat-w)); }
 .player-row > .mission { min-width: 180px; }
 .player { width: var(--col); padding: 12px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
 .player-head { display: flex; align-items: center; gap: 8px; }
@@ -53,9 +53,9 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 /* Деления по 10 % — полоса читается как запас, а не как прогресс-бар */
 .hp .meter::after { content: ""; position: absolute; inset: 0; z-index: 1; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(11,15,18,.55) calc(10% - 1px) 10%); }
 .hp-value { font-weight: 600; min-width: 58px; text-align: right; }
-.wallet { display: grid; grid-template-columns: 1fr; gap: 2px; }
-.wallet > div { display: flex; align-items: baseline; gap: 8px; }
-.wallet dt { display: none; }                                    /* название — подсказкой значения */
+.wallet { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
+.wallet > div { display: flex; flex-direction: column; gap: 2px; }
+.wallet dt { display: none; }
 .wallet dd { font-variant-numeric: tabular-nums; font-weight: 600; display: flex; align-items: center; gap: 6px; }
 .money { color: var(--money); }
 .creds { color: var(--creds); }
@@ -82,15 +82,20 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .cargo-head strong { font-weight: 700; }
 .cargo-head .icon-btn { margin-left: auto; margin-right: -6px; }
 .meter--cargo { height: 6px; }
-.crystals { list-style: none; display: grid; grid-template-columns: 1fr; row-gap: 2px; }
+.crystals { list-style: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .crystals li { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.crystals .share { flex: 1; min-width: 16px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, currentColor var(--w), rgba(141,151,158,.14) var(--w)); opacity: .7; }
+.crystals .share { flex: 1; min-width: 8px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, currentColor var(--w), rgba(141,151,158,.14) var(--w)); opacity: .7; }
 .crystals li > span { flex: none; }
 .crystals img { width: 18px; height: 18px; image-rendering: pixelated; flex: none; }
+.frame:not(.touch).tier-standard .cargo { padding: 8px 14px; gap: 4px; }
+.frame:not(.touch).tier-standard .crystals li { line-height: 18px; }
+.frame:not(.touch).tier-standard .crystals img { width: 16px; height: 16px; }
 
 .states { list-style: none; width: var(--col); display: flex; flex-direction: column; gap: 4px; }
 .states li { display: flex; justify-content: space-between; padding: 5px 12px 5px 10px; border-radius: 3px; background: var(--graphite); border-left: 3px solid var(--c); font-size: var(--t-small); color: var(--bone); }
 .states time { color: var(--ash); }
+.frame:not(.touch).tier-standard .states { position: absolute; left: calc(var(--col) + var(--gap)); top: 120px; display: grid; grid-template-columns: 1fr 1fr; }
+.frame:not(.touch).tier-standard .states li { flex-direction: column; padding: 4px 8px; }
 
 /* ── Левый низ: режимы, программатор, миникарта ─────────────── */
 .col-bottom { position: absolute; left: var(--margin); bottom: var(--margin); width: var(--col); display: flex; flex-direction: column; gap: var(--gap); }
@@ -150,6 +155,14 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .online b { color: var(--bone); font-weight: 600; }
 .online em { font-style: normal; color: var(--signal); }
 .sysbuttons { display: flex; align-items: center; gap: 2px; padding: 2px; border-radius: var(--radius); background: var(--graphite); border: 1px solid var(--seam); }
+.sysbuttons .icon-btn, .sysbar .bonus { width: auto; min-width: 52px; height: 48px; padding: 4px 8px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.control-label { font-size: 12px; line-height: 14px; white-space: nowrap; color: #b3bdc4; }
+.sysbuttons .icon-btn:hover .control-label { color: var(--bone); }
+.frame:not(.touch) .sysbuttons { padding: 0; border: 0; background: none; gap: 6px; }
+.frame:not(.touch) .sysbuttons .icon-btn, .frame:not(.touch) .sysbar .bonus { width: 72px; min-width: 72px; height: 52px; padding: 4px 2px; border: 1px solid var(--seam); background: var(--graphite); border-radius: var(--radius); }
+.frame:not(.touch) .sysbar .bonus { border-color: rgba(232,176,74,.45); }
+.frame:not(.touch) .sysbuttons .control-label { font-size: 11px; }
+.frame:not(.touch) .sys-sep { display: none; }
 .sys-sep { width: 1px; height: 20px; background: var(--seam); margin: 0 4px; }
 /* Вплотную к верхнему краю, в полосе над полем 24: ни с одной панелью не пересекается */
 .status-bar { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 0 8px; line-height: 16px;
@@ -199,7 +212,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .item-hint[hidden] { display: none; }
 
 /* ── Мини-навыки: справа снизу, растут от правого края ──────── */
-.mini-skills { position: absolute; right: var(--margin); bottom: var(--margin); list-style: none; display: flex; flex-direction: row-reverse; gap: 14px; }
+.mini-skills { position: absolute; right: var(--margin); bottom: var(--margin); list-style: none; display: grid; grid-template-columns: repeat(4, 32px); gap: 14px; }
 .mini-skill { position: relative; width: 32px; height: 32px; padding-right: 0; cursor: pointer; }
 .mini-skill .ico { position: absolute; inset: 0; border-radius: 50%; }
 .mini-skill .bar { position: absolute; right: -8px; bottom: 0; width: 4px; height: 32px; border-radius: 2px; background: var(--well); overflow: hidden; }

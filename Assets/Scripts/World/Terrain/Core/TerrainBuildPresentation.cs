@@ -29,11 +29,18 @@ internal sealed class TerrainBuildPresentation : IDisposable
 
     public float CellSize => _cellSize;
 
+    public void BeginEmissionWorldGeneration() => _materials.BeginEmissionWorldGeneration();
+
+    public bool PollEmissionPreparation() => _materials.PollEmissionPreparation();
+    public void InvalidateEmissionSource(CellType type) => _materials.InvalidateEmissionSource(type);
+
     public void SetTerrainShader(Shader? shader) => _materials.TerrainShader = shader;
 
     public void InitializeShader() => _materials.InitializeShader();
 
     public void ApplyClientConfig(ClientConfig config) => _materials.ApplyClientConfig(config);
+
+    public void RefreshEmissionMethod(ITextureService textures) => _materials.RefreshEmissionMethod(textures);
 
     public void BindAtlasTextures(
         IReadOnlyList<IAtlasDescriptor> atlases,

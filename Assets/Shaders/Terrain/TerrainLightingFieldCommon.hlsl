@@ -7,7 +7,7 @@ struct TerrainLightingFieldVaryings
 {
     float4 positionCS   : SV_POSITION;
     float2 uv           : TEXCOORD0;
-    float4 worldPos     : TEXCOORD1;
+    nointerpolation float4 worldPos : TEXCOORD1;
     float4 animData     : TEXCOORD2;
     float4 packedData   : TEXCOORD3;
     float4 lightContourDecal : TEXCOORD4;
@@ -18,6 +18,7 @@ struct TerrainLightingFieldVaryings
     nointerpolation float4 geometryCornersX : TEXCOORD9;
     nointerpolation float4 geometryCornersY : TEXCOORD10;
     nointerpolation float uvBits : TEXCOORD11;
+    nointerpolation uint sourceType : TEXCOORD12;
 };
 
 TerrainLightingFieldVaryings TerrainLightingFieldVert(TerrainVertexInput input)

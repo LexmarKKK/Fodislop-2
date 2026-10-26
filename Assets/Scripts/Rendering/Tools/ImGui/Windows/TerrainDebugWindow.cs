@@ -17,6 +17,8 @@ public sealed class TerrainDebugWindow : ToolWindow
     private static readonly TerrainDebugView[] s_views =
         (TerrainDebugView[])Enum.GetValues(typeof(TerrainDebugView));
 
+    private static readonly TerrainEmissionMethod[] s_emissionMethods =
+        (TerrainEmissionMethod[])Enum.GetValues(typeof(TerrainEmissionMethod));
     private readonly TerrainRenderer? _terrainRenderer;
 
     private Vector2 _scroll;
@@ -55,6 +57,7 @@ public sealed class TerrainDebugWindow : ToolWindow
                 GUILayout.Space(4f);
             }
 
+            DrawEmissionMethods();
             DrawViewRow(TerrainDebugView.Off, active);
 
             ToolChrome.SectionHeader("ГЕОМЕТРИЯ");
@@ -83,6 +86,36 @@ public sealed class TerrainDebugWindow : ToolWindow
 
             DrawGeometry();
         }
+    }
+
+    private void DrawEmissionMethods()
+    {
+        ToolChrome.SectionHeader("МЕТОД СВЕЧЕНИЯ · ЭКСПЕРИМЕНТ");
+        GUILayout.Label($"Запрошен: {TerrainEmissionDebugState.Describe(TerrainEmissionDebugState.Requested)}", MutedLabelStyle);
+        TerrainEmissionMethod? visible = _terrainRenderer?.VisibleEmissionMethod;
+        GUILayout.Label(visible.HasValue
+            ? $"В материале: {TerrainEmissionDebugState.Describe(visible.Value)}"
+            : "Материал террейна ещё не опубликован", MutedLabelStyle);
+        foreach (TerrainEmissionMethod method in s_emissionMethods)
+        {
+            bool selected = TerrainEmissionDebugState.Requested == method;
+            EventType inputType = Event.current.type;
+            bool toggled = GUILayout.Toggle(selected, TerrainEmissionDebugState.Describe(method), ToolTheme.SegmentedButton);
+            if (toggled && !selected)
+            {
+                if (_terrainRenderer == null)
+                {
+                    throw new InvalidOperationException("Emission selector has no TerrainRenderer binding.");
+                }
+                _terrainRenderer.SetEmissionMethod(method);
+                Debug.Log($"[TerrainEmission] {inputType}: requested={method}; visible={_terrainRenderer.VisibleEmissionMethod}; {TerrainEmissionDebugState.Status}");
+            }
+        }
+        if (!string.IsNullOrEmpty(TerrainEmissionDebugState.Status))
+        {
+            GUILayout.Label(TerrainEmissionDebugState.Status, MutedLabelStyle);
+        }
+        GUILayout.Space(6f);
     }
 
     private static void DrawViewRow(TerrainDebugView view, TerrainDebugView active)

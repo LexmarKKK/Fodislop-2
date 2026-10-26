@@ -174,19 +174,25 @@ namespace Kern.World.Terrain
         public static Color PerspectiveGlowColor => Color.white;
         public const float PerspectiveGlowStrength = 0.12f;
 
+        // Debug emission: shared linear peak-brightness thresholds, before reduction.
+        public const float EmissionBrightnessStart = 0.25f;
+        public const float EmissionBrightnessEnd = 0.60f;
+        // Visible source radiance in paper-white units; transport gain is separate.
+        public const float SurfaceEmissionStrength = 1.0f;
+
         // 6. Контактное затенение: сила контраста и самый тёмный уровень,
         // до которого оно опускает поверхность.
         //
-        // Сила слегка усиливает среднюю часть контактной маски; насыщение
+        // Сила масштабирует контактную маску; насыщение
         // остаётся ограничено единицей в KernSampleTerrainAmbientOcclusion.
         // Пол задаёт нижний уровень яркости поверхности.
         //
         // 0.51 — не подбор на глаз. В оригинале тень на полу это 1 - z² при
         // z = 0.7, то есть ровно 0.51, и глубже пол там не темнеет никогда.
-        public const float AmbientOcclusionStrength = 1.1f;
+        public const float AmbientOcclusionStrength = 0.9f;
         public const float AmbientOcclusionFloor = 0.51f;
         // Максимальная ширина поля контактного затенения за геометрией, в клетках.
-        public const float AmbientOcclusionDistanceCells = 0.75f;
+        public const float AmbientOcclusionDistanceCells = 0.60f;
 
         // Радиус скруглённого силуэта loose-террейна, в клетках.
         public const float RoundableCornerRadiusCells = 0.51f;
@@ -249,7 +255,10 @@ namespace Kern.World.Lighting
         // Конфигурация вне бюджета отклоняется с требованием изменить настройки явно.
         public const long MaximumStaticCascadeRayWorkUnits = 200_000_000;
 
-        public static LightingFeatureFlags EnabledFeatures { get; set; } =
+        public static LightingFeatureFlags EnabledFeatures
+        {
+            get; set;
+        } =
             LightingFeatureFlags.StaticRC |
             LightingFeatureFlags.DynamicLights;
 

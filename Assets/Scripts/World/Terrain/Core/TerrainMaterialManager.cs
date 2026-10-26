@@ -32,6 +32,104 @@ public sealed class TerrainMaterialManager
     private Shader? _terrainShader;
     private readonly List<IAtlasDescriptor> _lastAtlases = new();
     private bool _lightingBindingValidated;
+    private AdaptiveTerrainEmissionCache? _emissionCache;
+    private readonly Dictionary<TerrainEmissionMethod, AdaptiveTerrainEmissionCache> _emissionCaches = new();
+    private bool _emissionSourcesDirty = true;
+    private readonly List<AdaptiveTerrainEmissionCache> _retiredEmissionCaches = new();
+
+    public void BeginEmissionWorldGeneration()
+    {
+        foreach (AdaptiveTerrainEmissionCache cache in _emissionCaches.Values)
+        {
+            _retiredEmissionCaches.Add(cache);
+        }
+        _emissionCaches.Clear();
+        _emissionCache = null;
+        _emissionSourcesDirty = true;
+    }
+
+    private void ReleaseRetiredEmissionCaches()
+    {
+        foreach (AdaptiveTerrainEmissionCache cache in _retiredEmissionCaches)
+        {
+            cache.Dispose();
+        }
+        _retiredEmissionCaches.Clear();
+    }
+
+    public bool PollEmissionPreparation()
+    {
+        if (_emissionCache == null || !_emissionCache.HasPendingWork)
+        {
+            return false;
+        }
+        bool changed = _emissionCache.Poll();
+        if (TerrainEmissionDebugState.UsesCachedSource(TerrainEmissionDebugState.Requested))
+        {
+            TerrainEmissionDebugState.Status = _emissionCache.Error ??
+                $"Подготовка текстур: {_emissionCache.PendingCount}";
+        }
+        return changed && _emissionCache.PendingCount == 0 &&
+            TerrainEmissionDebugState.UsesCachedSource(TerrainEmissionDebugState.Requested);
+    }
+
+    public void InvalidateEmissionSource(CellType type)
+    {
+        _emissionSourcesDirty = true;
+        foreach (AdaptiveTerrainEmissionCache cache in _emissionCaches.Values)
+        {
+            cache.Invalidate(type);
+        }
+    }
+
+    private void BindEmissionMethod(Material material, IReadOnlyList<IAtlasDescriptor> atlases, ITextureService textures)
+    {
+        TerrainEmissionMethod requested = TerrainEmissionDebugState.Requested;
+        if (!TerrainEmissionDebugState.UsesCachedSource(requested))
+        {
+            TerrainEmissionDebugState.Apply(material, requested);
+            TerrainEmissionDebugState.Commit(requested);
+            TerrainEmissionDebugState.Status = string.Empty;
+            ReleaseRetiredEmissionCaches();
+            return;
+        }
+        if (!_emissionCaches.TryGetValue(requested, out AdaptiveTerrainEmissionCache selected))
+        {
+            selected = new AdaptiveTerrainEmissionCache(requested);
+            _emissionCaches.Add(requested, selected);
+        }
+        bool cacheChanged = !ReferenceEquals(_emissionCache, selected);
+        _emissionCache = selected;
+        if (_emissionSourcesDirty || cacheChanged)
+        {
+            _emissionCache.EnsureSources(atlases, textures);
+            _emissionSourcesDirty = false;
+        }
+        _emissionCache.Poll();
+        bool bound = false;
+        if (_emissionCache.Error == null &&
+            (_emissionCache.PendingCount == 0 || (!cacheChanged && TerrainEmissionDebugState.Active == requested)))
+        {
+            bound = _emissionCache.Bind(material);
+        }
+        if (bound && _emissionCache.PendingCount == 0 && _emissionCache.Error == null)
+        {
+            TerrainEmissionDebugState.Apply(material, requested);
+            TerrainEmissionDebugState.Commit(requested);
+            TerrainEmissionDebugState.Status = $"Маски: {_emissionCache.PreparedCount}; извлечений всего: {_emissionCache.SourceDispatchCount}\n" +
+                $"Исходных пикселей всего: {_emissionCache.SourceTexelCount}; GPU-кэш: {_emissionCache.SampleCapacity * 16L / 1024} КиБ";
+        }
+        else
+        {
+            TerrainEmissionDebugState.Apply(material, TerrainEmissionDebugState.Active);
+            TerrainEmissionDebugState.Status = _emissionCache.Error ??
+                $"Подготовка текстур: {_emissionCache.PendingCount}; пока активен {TerrainEmissionDebugState.Describe(TerrainEmissionDebugState.Active)}";
+        }
+        if (bound)
+        {
+            ReleaseRetiredEmissionCaches();
+        }
+    }
 
     public Shader? TerrainShader
     {
@@ -216,6 +314,17 @@ public sealed class TerrainMaterialManager
         }
     }
 
+    public void RefreshEmissionMethod(ITextureService textureService)
+    {
+        if (_cellMaterials.Length > 0)
+        {
+            // Reuse the atlas set belonging to the visible material. A debug
+            // method selection must not rebind streamed textures before the
+            // normal terrain publication accepts their cell metadata.
+            BindEmissionMethod(_cellMaterials[0], _lastAtlases, textureService);
+        }
+    }
+
     public void BindAtlasTextures(
         IReadOnlyList<IAtlasDescriptor> atlases,
         ITextureService textureService)
@@ -233,6 +342,7 @@ public sealed class TerrainMaterialManager
             SetTextureIfChanged(material, s_terrainAtlasPropertyIds[i], atlases[i].Texture);
         }
 
+        BindEmissionMethod(material, atlases, textureService);
         SetTextureIfChanged(material, s_flowMapPropertyId, textureService.FlowMapTexture);
         SetTextureIfChanged(material, s_prismaticFlowMapPropertyId, textureService.PrismaticFlowMapTexture);
         SetTextureIfChanged(material, s_terrainDecalAtlasPropertyId, textureService.TerrainDecalAtlasTexture);
@@ -300,6 +410,15 @@ public sealed class TerrainMaterialManager
 
     public void CleanupMaterials()
     {
+        foreach (AdaptiveTerrainEmissionCache cache in _emissionCaches.Values)
+        {
+            cache.Dispose();
+        }
+        _emissionCaches.Clear();
+        ReleaseRetiredEmissionCaches();
+        _emissionCache = null;
+        _emissionSourcesDirty = true;
+        TerrainEmissionDebugState.Commit(TerrainEmissionMethod.Original);
         foreach (Material material in _cellMaterials)
         {
             if (material == null)
@@ -334,6 +453,10 @@ public sealed class TerrainMaterialManager
             "_TerrainRimEnabled",
             "_RimFalloff",
             "_RimDistanceScale",
+            "_TerrainEmissionMethod",
+            "_EmissionBrightnessStart",
+            "_EmissionBrightnessEnd",
+            "_SurfaceEmissionStrength",
         };
         foreach (string propertyName in requiredProperties)
         {

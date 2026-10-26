@@ -94,10 +94,10 @@
 .update { display: flex; flex-direction: column; gap: 10px; }
 .update-note { padding: 10px 14px; border-left: 3px solid var(--signal); background: rgba(18,23,27,.88); color: var(--ash); font-size: var(--t-small); border-radius: 0 3px 3px 0; }
 .menu-rail { position: absolute; right: 40px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; }
-.rail-btn { width: 52px; height: 52px; display: grid; place-items: center; border-radius: var(--radius); background: var(--graphite); border: 1px solid var(--seam); }
+.rail-btn { width: 176px; height: 48px; padding: 0 12px; display: flex; align-items: center; gap: 10px; border-radius: var(--radius); background: var(--graphite); border: 1px solid var(--seam); text-align: left; }
 .rail-btn:hover { border-color: var(--seam-strong); background: var(--plate); }
 .rail-btn img { width: 24px; height: 24px; opacity: .85; }
-.rail-btn .rail-icon { width: 24px; height: 24px; stroke-width: 2.5; }
+.rail-btn .rail-icon { width: 24px; height: 24px; flex: none; stroke-width: 2.5; }
 .rail-sep { height: 1px; background: var(--seam); margin: 4px 8px; }
 .frame[data-screen="descent"] .menu-rail { display: none; }
 .menu-foot { position: absolute; left: 0; right: 0; bottom: 0; height: 80px; padding: 0 64px; display: flex; align-items: center; justify-content: flex-end; gap: 32px; border-top: 1px solid rgba(44,53,61,.6); color: var(--ash); font-size: var(--t-small); }
@@ -108,10 +108,12 @@
 
 /* Спуск */
 .descent-progress { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; width: 440px; }
+.descent-explain { color: #b3bdc4; line-height: 1.5; font-size: 17px; max-width: 440px; min-height: 3em; }
+.descent .menu-title { font-size: 48px; }
 .descent-meta { display: flex; justify-content: space-between; color: var(--bone); }
 .descent-meta span:last-child { color: var(--ash); }
 .phases { list-style: none; display: flex; flex-direction: column; gap: 8px; width: 440px; }
-.phases li { display: flex; align-items: center; gap: 10px; color: var(--smoke); }
+.phases li { display: flex; align-items: center; gap: 10px; color: #a4afb7; }
 .phases li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--smoke); flex: none; }
 .phases li.is-done { color: var(--ash); }
 .phases li.is-done::before { background: var(--ok); border-color: var(--ok); }

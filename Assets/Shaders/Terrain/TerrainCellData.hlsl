@@ -522,6 +522,7 @@ TerrainCellVertex LoadTerrainCellVertex(
         (uvBits >> (corner * KERN_TERRAIN_UV_BITS_PER_CORNER)) & 1u,
         (uvBits >> (corner * KERN_TERRAIN_UV_BITS_PER_CORNER + 1)) & 1u);
     v.atlasIndex = (float)TerrainTypeSlot(row);
+    v.sourceType = layerType;
 
     // Мировая клетка — от адреса: высота мира переводит строку Unity в
     // серверную, как CoordinateUtils.UnityToServerY.

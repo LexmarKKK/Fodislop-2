@@ -46,6 +46,10 @@ namespace Kern.World.Terrain
 
         public ulong RecordConfigurationChange()
         {
+            // Process skips scheduling when origin/cells/textures are unchanged.
+            // A revision and lighting reset alone never publish new material
+            // keywords, including a completed adaptive emission preparation.
+            _window.NeedsRefresh = true;
             ulong revision = _contentRevision.RecordConfigurationChange();
             _getLightingFramePublisher().RequestFullReset(
                 TerrainLightingFullResetReason.TerrainConfigurationChanged);

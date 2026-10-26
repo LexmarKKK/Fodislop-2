@@ -18,7 +18,7 @@ namespace Kern.World.Terrain
     [ExecuteAlways]
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
     [DefaultExecutionOrder(100)]
-public class TerrainRenderer : MonoBehaviour, Kern.Core.Interfaces.WorldLighting.ILightingGeometryContributor
+    public class TerrainRenderer : MonoBehaviour, Kern.Core.Interfaces.WorldLighting.ILightingGeometryContributor
     {
         [Header("Configuration")]
         [SerializeField]
@@ -128,6 +128,41 @@ public class TerrainRenderer : MonoBehaviour, Kern.Core.Interfaces.WorldLighting
         public bool IsReadyForGameplay =>
             TerrainReadiness.IsReadyForGameplay(_window, _textureService);
 
+        public TerrainEmissionMethod? VisibleEmissionMethod => _meshRenderer?.sharedMaterial is { } material
+            ? TerrainEmissionDebugState.ReadMaterial(material)
+            : null;
+
+        private void RefreshEmissionMaterial()
+        {
+            if (!_window.Driver.Presentation.HasMaterials)
+            {
+                TerrainEmissionDebugState.Status = "Ожидание опубликованного материала террейна";
+                return;
+            }
+            if (TerrainEmissionDebugState.UsesCachedSource(TerrainEmissionDebugState.Requested) &&
+                (_window.HoldPublication || _window.PendingTextureCellTypes.Count > 0))
+            {
+                TerrainEmissionDebugState.Status = "Ожидание согласованной публикации текстур мира";
+                return;
+            }
+            ITextureService textures = _textureService ?? throw new InvalidOperationException(
+                "Terrain emission switching requires ITextureService injection.");
+            _window.Driver.Presentation.RefreshEmissionMethod(textures);
+        }
+
+        public void SetEmissionMethod(TerrainEmissionMethod method)
+        {
+            if (method == TerrainEmissionDebugState.Requested)
+            {
+                return;
+            }
+            TerrainEmissionDebugState.Request(method);
+            // A debug material change must not wait for CPU geometry scheduling
+            // or a successful mesh rebuild. Lighting invalidation stays journaled.
+            RefreshEmissionMaterial();
+            WorldChanges.RecordConfigurationChange();
+        }
+
         public void ApplyClientConfig()
         {
             IClientConfigManager clientConfigManager = _clientConfigManager ??
@@ -211,6 +246,13 @@ public class TerrainRenderer : MonoBehaviour, Kern.Core.Interfaces.WorldLighting
 
         protected void LateUpdate()
         {
+            // Preparation and material selection are independent of geometry
+            // readiness. A retained view can still compare emission methods.
+            if (_window.Driver.Presentation.PollEmissionPreparation())
+            {
+                RefreshEmissionMaterial();
+                WorldChanges.RecordConfigurationChange();
+            }
             if (_fatalBuildError)
             {
                 return;
@@ -471,11 +513,20 @@ public class TerrainRenderer : MonoBehaviour, Kern.Core.Interfaces.WorldLighting
             _meshRenderer.sortingLayerName = _sortingLayerName;
             _meshRenderer.sortingOrder = _sortingOrder;
         }
-        private void OnTextureLoaded(string filename, Texture2D texture) =>
+        private void OnTextureLoaded(string filename, Texture2D texture)
+        {
+            if (TerrainCellTextureName.TryParseCellType(filename, out CellType type))
+            {
+                _window.Driver.Presentation.InvalidateEmissionSource(type);
+            }
             TerrainRendererSupport.HandleTextureLoaded(Diagnostics, WorldChanges, filename, texture);
+        }
 
-        private void OnWorldDataLoaded() =>
+        private void OnWorldDataLoaded()
+        {
+            _window.Driver.Presentation.BeginEmissionWorldGeneration();
             WorldChanges.HandleWorldDataLoaded(EnsureSubscriptions);
+        }
         private bool TryResolveCamera()
         {
             if (!_cameraFrame.UseCameraCandidate(_gameplayCamera?.Camera))

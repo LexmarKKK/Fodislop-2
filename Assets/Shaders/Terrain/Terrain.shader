@@ -13,6 +13,10 @@ Shader "Universal Render Pipeline/Custom/Terrain"
         _FlowScale ("Flow Scale", Vector) = (0,0,0,0)
         _ShimmerSpeedScale ("Shimmer Speed Scale", Float) = 0
         _BlinkingSpeedScale ("Blinking Speed Scale", Float) = 0
+        [HideInInspector] _TerrainEmissionMethod ("Terrain Emission Method", Integer) = 0
+        _EmissionBrightnessStart ("Emission Brightness Start", Float) = 0.25
+        _EmissionBrightnessEnd ("Emission Brightness End", Float) = 0.60
+        _SurfaceEmissionStrength ("Surface Emission Strength", Float) = 1
         _RoundableCornerRadius ("Roundable Corner Radius", Float) = 0.51
         [HideInInspector] _RimDistanceScale ("Rim Distance Scale", Float) = 0
         [HideInInspector] _RimFalloff ("Rim Falloff", Float) = 0
@@ -78,6 +82,7 @@ Shader "Universal Render Pipeline/Custom/Terrain"
             #pragma target 4.5
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_local_fragment _ KERN_EMISSION_FIXED KERN_EMISSION_ADAPTIVE
             #pragma multi_compile _ KERN_WORLD_LIGHTING
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -113,7 +118,7 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                 float2 uv           : TEXCOORD0;
                 float4 subAtlasRect : TEXCOORD1;
                 float4 tileSizeUV   : TEXCOORD2;
-                float4 worldPos     : TEXCOORD3;
+                nointerpolation float4 worldPos : TEXCOORD3;
                 float4 animData     : TEXCOORD4;
                 float4 packedData   : TEXCOORD5;
                 float3 worldPosition : TEXCOORD6;
@@ -125,6 +130,7 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                 nointerpolation float uvBits : TEXCOORD12;
                 // Мировая клетка квада — целые числа, точные в float32.
                 nointerpolation float2 cellWorldOrigin : TEXCOORD13;
+                nointerpolation uint sourceType : TEXCOORD14;
             };
 
             half4 SampleAtlasColor(int slot, float2 uv)
@@ -272,6 +278,13 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                                 input.packedData,
                                 _Time.y,
                                 debugAtlasTexelSize.xy);
+                            if (input.isForeground < 0.5 && debugTile.isValid &&
+                                KernTerrainStaticBackgroundAddressMismatch(
+                                    input.worldPos, input.subAtlasRect, input.tileSizeUV,
+                                    debugTile.identityTileOffsetUV))
+                            {
+                                return half4(1.0, 0.0, 0.0, 1.0);
+                            }
                             return half4(
                                 KernTerrainUniqueTileColor(
                                     input.atlasIndex,
@@ -455,6 +468,29 @@ Shader "Universal Render Pipeline/Custom/Terrain"
 
                 // Keep texture coverage in SrcAlpha blending; compensating
                 // RGB by texColor.a would cancel the authored transparency.
+                #if defined(KERN_EMISSION_FIXED) || defined(KERN_EMISSION_ADAPTIVE)
+                uint emissionFlags = KernTerrainLightingFlags(input.lightContourDecal.y);
+                float emissionStrength = KernTerrainGlow(input.lightContourDecal.y, emissionFlags);
+                [branch]
+                if (emissionStrength > 0.0)
+                {
+                    float3 visibleEmission;
+                    #if defined(KERN_EMISSION_ADAPTIVE)
+                    float2 sourceUv = (finalUV - input.subAtlasRect.xy) /
+                        (input.subAtlasRect.zw * float2(1.0, input.tileSizeUV.z));
+                    float transportGain;
+                    float sourceAlpha = TerrainSampleAtlas(atlasSlot, sampler_PointClamp, finalUV).a;
+                    // Cached coefficients are premultiplied for field reduction.
+                    // Surface blending applies authored coverage once at output.
+                    visibleEmission = sourceAlpha > 0.0 && sourceAlpha >= _AlphaCutoff
+                        ? TerrainAdaptiveEmission(input.sourceType, sourceUv, 0.0, transportGain).rgb / sourceAlpha
+                        : 0.0;
+                    #else
+                    visibleEmission = TerrainSourceEmission(float4(texColor.rgb, 1.0)).rgb;
+                    #endif
+                    litRGB += visibleEmission * emissionStrength * _SurfaceEmissionStrength;
+                }
+                #endif
                 return half4(litRGB, finalAlpha);
             }
             ENDHLSL
@@ -477,6 +513,7 @@ Shader "Universal Render Pipeline/Custom/Terrain"
             #pragma target 4.5
             #pragma vertex TerrainLightingFieldVert
             #pragma fragment MaterialFieldFrag
+            #pragma multi_compile_local_fragment _ KERN_EMISSION_FIXED KERN_EMISSION_ADAPTIVE
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Assets/Shaders/PixelArtFiltering.hlsl"
@@ -508,6 +545,10 @@ Shader "Universal Render Pipeline/Custom/Terrain"
             {
                 // До любых ветвлений и clip: см. TerrainPixelArtWidthTexels.
                 float2 carrierPixelWidth = fwidth(input.packedData.yz);
+                float2 cellDx = ddx(input.packedData.yz);
+                float2 cellDy = ddy(input.packedData.yz);
+                float2 uvDx = ddx(input.uv);
+                float2 uvDy = ddy(input.uv);
                 MaterialFieldOutput output;
                 if (_KernLightingFieldDiagnosticStage == 1)
                 {
@@ -588,15 +629,70 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                     surfaceAlbedo,
                     geometryTileUv,
                     input.lightContourDecal.w);
-                float3 glowAlbedo = surfaceAlbedo;
+                float4 sourceEmission = 0.0;
+                #if defined(KERN_EMISSION_ADAPTIVE)
+                if (glow > 0.0)
+                {
+                    TerrainTileUvResult emissionTile = ResolveTerrainTileUV(
+                        geometryTileUv, input.packedData.yz, input.subAtlasRect, input.tileSizeUV,
+                        input.worldPos, input.animData, input.packedData, 0.0, atlasTexelSize.xy);
+                    if (emissionTile.isValid)
+                    {
+                        float2 sourceUv = (emissionTile.finalUV - input.subAtlasRect.xy) /
+                            (input.subAtlasRect.zw * float2(1.0, input.tileSizeUV.z));
+                        float gain;
+                        float lod = log2(max(1.0, max(carrierPixelWidth.x, carrierPixelWidth.y) * 32.0));
+                        sourceEmission = TerrainAdaptiveEmission(input.sourceType, sourceUv, lod, gain);
+                        sourceEmission.rgb *= gain;
+                    }
+                }
+                #elif defined(KERN_EMISSION_FIXED)
+                if (glow > 0.0)
+                {
+                    // Integrate source pixels only for emissive cells and only
+                    // when the retained material/glow field is rebuilt. At the
+                    // default 2 field pixels/cell this is 16x16 taps per field
+                    // texel (1024/cell), rather than losing sub-texel crystals.
+                    int2 taps = max(int2(1, 1), (int2)ceil(carrierPixelWidth * 32.0 - 0.0001));
+                    [loop]
+                    for (int y = 0; y < taps.y; y++)
+                    {
+                        [loop]
+                        for (int x = 0; x < taps.x; x++)
+                        {
+                            float2 offset = (float2(x, y) + 0.5) / float2(taps) - 0.5;
+                            float2 samplePosition = input.packedData.yz + cellDx * offset.x + cellDy * offset.y;
+                            float2 sampleUv = input.uv + uvDx * offset.x + uvDy * offset.y;
+                            // World sheets consume samplePosition directly;
+                            // do not invert the displaced polygon for an unused UV.
+                            if (((uint)round(input.worldPos.z) & KERN_TERRAIN_COLUMN_WORLD_TEXTURE_ANCHOR) == 0u)
+                            {
+                                sampleUv = TerrainResolveGeometryTileUV(
+                                    sampleUv, samplePosition, input.geometryCornersX, input.geometryCornersY,
+                                    input.uvBits, input.packedData.x);
+                            }
+                            TerrainTileUvResult emissionTile = ResolveTerrainTileUV(
+                                sampleUv, samplePosition, input.subAtlasRect, input.tileSizeUV,
+                                input.worldPos, input.animData, input.packedData, 0.0, atlasTexelSize.xy);
+                            if (emissionTile.isValid)
+                            {
+                                float4 sampleTexel = TerrainSampleAtlas(albedoAtlasSlot, sampler_PointClamp,
+                                    ClampTerrainTileUV(emissionTile.finalUV, emissionTile));
+                                sourceEmission += TerrainSourceEmission(sampleTexel);
+                            }
+                        }
+                    }
+                    sourceEmission /= (float)(taps.x * taps.y);
+                }
+                #else
+                sourceEmission = float4(surfaceAlbedo, 1.0);
+                #endif
                 surfaceAlbedo *= TerrainRimBevel(surface);
 
                 // Фон вносит альбедо и свечение, как любой видимый слой;
                 // массы у него нет (isPhysicalMass — только передний план).
                 output.material = half4(surfaceAlbedo, occupancy);
-                output.glow = half4(
-                    glowAlbedo * glow * cellCoverage,
-                    glow * cellCoverage);
+                output.glow = sourceEmission * glow * cellCoverage;
                 return output;
             }
             ENDHLSL

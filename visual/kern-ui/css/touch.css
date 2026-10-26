@@ -1,7 +1,7 @@
 /* Сенсорные формы: телефон и планшет, только альбом.
-   Состав — целиком ПК: ни один элемент не скрывается, меняются только места.
+   Данные и действия ПК доступны также на сенсорном экране.
    Раскладка по большим пальцам, как в мобильных играх:
-   левый низ — стик; правый низ — крупная «Копать» и дуга действий вокруг неё;
+   левый низ — стик; правый низ — крупная «Копать» и компактная сетка действий;
    между ними — хотбар и ряд «Бег · программатор · навыки»;
    верх — сведения (игрок слева, миникарта и четыре кнопки справа, полоса чата посередине).
    Редкое (карта, помощь, консоль, здания, респаун, настройки) — в меню ☰.
@@ -15,18 +15,14 @@
 
 .frame.touch {
   --edge: 6px; --tt: 44px; --pad: 120px; --mm: 96px; --col: 176px;
-  --dig: 76px; --act: 60px; --arc: 122px; --peek-h: 44px;
+  --dig: 76px; --act: 60px; --peek-h: 44px;
   --margin: 6px; --gap: 4px; --row: 44px;
   --t-small: 11px; --t-body: 13px; --t-strong: 14px; --t-title: 18px;
   font-size: var(--t-body);
 }
-.frame.touch.short { --pad: 104px; }
-/* Низкий телефон: строки панелей плотнее, чтобы колонка игрока кончалась над стиком */
-.frame.touch.short :is(.crystals li, .wallet dd) { line-height: 14px; }
-.frame.touch.short .cargo { padding-bottom: 4px; }
 .frame.touch.tablet {
   --tt: 52px; --pad: 168px; --mm: 150px; --col: 220px;
-  --dig: 100px; --act: 64px; --arc: 136px; --peek-h: 52px;
+  --dig: 100px; --act: 64px; --peek-h: 52px;
   --t-small: 12px; --t-body: 14px; --t-strong: 16px; --t-title: 20px;
 }
 /* Производные места */
@@ -42,7 +38,8 @@
 /* HUD — в безопасной области; мир — во весь экран под вырезами */
 .frame.touch .hud { inset: var(--st) var(--sr) var(--sb) var(--sl); }
 .frame.touch .dialog-layer { padding: calc(var(--st) + 6px) calc(var(--sr) + 6px) calc(var(--sb) + 6px) calc(var(--sl) + 6px); }
-.frame.touch .hud-body { transform: none !important; }
+.frame.touch .hud-body { transform: none !important; translate: none; }
+.frame.touch .hud[data-chat] .col-top { max-width: none; }
 .frame.touch .col-top, .frame.touch .col-bottom, .frame.touch .top-right, .frame.touch .player-row { position: static; }
 .frame.touch .sysbar { display: none; }
 .frame.touch .icon-btn { width: var(--tt); height: var(--tt); }
@@ -62,6 +59,7 @@
 .frame.touch .hp .meter { height: 10px; border-radius: 3px; }
 .frame.touch .hp-value { line-height: 16px; font-size: var(--t-small); min-width: 0; }
 .frame.touch .wallet { gap: 0; }
+.frame.touch .wallet dt { font-size: 11px; }
 .frame.touch .wallet dd { font-size: var(--t-small); line-height: 16px; }
 .frame.touch .geo { grid-column: 1 / 4; margin-top: 2px; padding-top: 3px; font-size: var(--t-small); line-height: 14px; }
 .frame.touch .geo svg { width: 14px; height: 14px; }
@@ -73,7 +71,7 @@
 .frame.touch .cargo-head span, .frame.touch .cargo-head strong { font-size: var(--t-small); }
 .frame.touch .cargo-head .icon-btn { grid-column: 4; grid-row: 1 / span 2; align-self: start; margin: -6px 0 0; }
 .frame.touch .cargo .meter { grid-column: 3; grid-row: 1; margin: 0; }
-.frame.touch .crystals { grid-column: 1 / 4; grid-row: 2; align-self: start; margin: 0; row-gap: 0; }
+.frame.touch .crystals { grid-column: 1 / 4; grid-row: 2; align-self: start; margin: 0; gap: 0; }
 .frame.touch .crystals li { font-size: var(--t-small); line-height: 16px; white-space: nowrap; }
 .frame.touch .crystals img { width: 14px; height: 14px; }
 .frame.touch.tablet .crystals li { line-height: 20px; }
@@ -83,7 +81,9 @@
 .frame.touch .minimap { position: absolute; top: var(--edge); right: var(--edge); width: calc(var(--mm) + 10px); height: calc(var(--mm) + 10px); padding: 4px; }
 .frame.touch .coords { left: 8px; top: 8px; padding: 0 4px; font-size: var(--t-small); }
 .frame.touch .touch-sys { position: absolute; top: var(--edge); right: calc(var(--edge) + var(--mm) + 10px + 6px); display: grid; grid-template-columns: repeat(2, var(--tt)); gap: 4px; }
-.frame.touch .touch-sys > * { width: var(--tt); height: var(--tt); padding: 0; }
+.frame.touch .touch-sys > * { width: var(--tt); height: var(--tt); padding: 2px 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.frame.touch .touch-sys span { font-size: 11px; line-height: 12px; color: #b3bdc4; }
+.frame.touch .touch-sys svg { width: 17px; height: 17px; }
 .frame.touch .bonus { position: static; }
 
 /* ── Верхняя полоса между ними: состояние, строки чата, миссия и состояния ── */
@@ -133,36 +133,44 @@
 .frame.touch .prog-run { width: var(--tt); height: var(--tt); }
 .frame.touch.tablet .prog-open { width: auto; padding: 0 12px; gap: 8px; }
 .frame.touch.tablet .prog-open span { display: block; font-size: var(--t-body); }
-.frame.touch .mini-skills { position: static; flex-direction: row; gap: 4px; }
+.frame.touch .mini-skills {
+  position: absolute; right: calc(var(--edge) + var(--dig) + 2 * var(--tt) + 34px); bottom: var(--edge);
+  grid-template-columns: repeat(4, var(--tt)); gap: 4px;
+}
+.frame.touch.tablet .mini-skills {
+  right: calc(var(--edge) + 6px);
+  bottom: calc(var(--edge) + 2 * var(--tt) + 28px);
+}
 .frame.touch .mini-skill { width: var(--tt); height: var(--tt); }
 .frame.touch .mini-skill .ico { inset: 6px 10px 6px 2px; }
 .frame.touch .mini-skill .bar { right: 4px; bottom: 6px; }
 .frame.touch .mini-skill .up { left: 18px; top: -6px; }
 
-/* ── Правый низ: «Копать» и дуга — Строить, Авто, Лечение, Геология ── */
+/* ── Правый низ: «Копать» и сетка — Строить, Авто, Лечение, Геология ── */
 .frame.touch .dock { position: absolute; right: calc(var(--edge) + 6px); bottom: calc(var(--edge) + 6px); }
-.act-arc { position: relative; width: var(--dig); height: var(--dig); }
-.act-arc .tbtn--dig { width: var(--dig); height: var(--dig); border-radius: 50%; padding: 0; font-size: var(--t-strong);
+.act-arc { position: relative; width: calc(var(--dig) + 2 * var(--tt) + 20px); height: calc(2 * var(--tt) + 8px); }
+.act-arc .tbtn--dig { position: absolute; right: 0; bottom: 0; width: var(--dig); height: var(--dig); border-radius: 50%; padding: 0; font-size: var(--t-strong);
   background: var(--signal); border-color: var(--signal); color: var(--on-signal); box-shadow: 0 2px 10px rgba(0,0,0,.45); }
-.act-arc > :is(.act, #autodig) { position: absolute; left: 50%; top: 50%; width: var(--act); height: var(--act); min-width: 0;
-  margin: calc(var(--act) / -2) 0 0 calc(var(--act) / -2); padding: 0; border-radius: 50%;
+.act-arc > :is(.act, #autodig) { position: absolute; left: 0; top: 0; width: var(--tt); height: var(--tt); min-width: 0;
+  margin: 0; padding: 0; border-radius: var(--radius);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   background: var(--graphite); border: 1px solid var(--seam-strong); color: var(--bone); box-shadow: 0 2px 8px rgba(0,0,0,.4);
-  transform: rotate(var(--a)) translateX(calc(-1 * var(--arc))) rotate(calc(-1 * var(--a))); }
-#touchBuild { --a: 0deg; }
-.act-arc #autodig { --a: 30deg; font-size: inherit; }
-#touchHeal { --a: 60deg; }
-#touchGeo { --a: 90deg; }
+}
+.act-arc #touchBuild { top: calc(var(--tt) + 8px); }
+.act-arc #autodig { left: calc(var(--tt) + 6px); font-size: inherit; }
+.act-arc #touchHeal { left: 0; }
+.act-arc #touchGeo { left: calc(var(--tt) + 6px); top: calc(var(--tt) + 8px); }
 .act-arc #autodig :is(.lbl, .dot, kbd) { display: none; }
 .act-arc :is(.ico-only, img) { display: block; width: 20px; height: 20px; flex: none; image-rendering: pixelated; border-radius: 2px; }
 .frame.touch.tablet .act-arc :is(.ico-only, img) { width: 26px; height: 26px; }
-.frame.touch .cap { display: block; font-size: 10px; line-height: 11px; font-weight: 600; color: var(--ash); }
+.frame.touch .cap { display: block; font-size: 11px; line-height: 12px; font-weight: 600; color: #b3bdc4; }
+.frame.touch #touchGeo .cap { font-size: 10px; }
 .frame.touch.tablet .cap { font-size: 11px; line-height: 12px; }
 .frame.touch :is(.act, #autodig, .build, .fast-move)[aria-pressed="true"] { border-color: var(--signal); background: #2a2414; }
 .frame.touch :is(.act, #autodig, .build, .fast-move)[aria-pressed="true"] .cap { color: var(--signal); }
 
 /* Веер типов блоков — над дугой, пока выбирается тип */
-.build-fan { position: absolute; right: 0; bottom: calc(var(--dig) / 2 + var(--arc) + var(--act) / 2 + 8px); display: flex; gap: 4px; padding: 4px; }
+.build-fan { position: absolute; right: 0; bottom: calc(2 * var(--tt) + 16px); display: flex; gap: 4px; padding: 4px; }
 .build-fan[hidden] { display: none; }
 .build-fan .build { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: var(--act); height: var(--act); padding: 0;
   box-shadow: inset 0 -3px 0 var(--c); }
@@ -249,7 +257,7 @@
 .frame.touch.tablet .menu-main { width: min(52%, 580px); gap: 16px; }
 .frame.touch .menu-title { font-size: 22px; }
 .frame.touch.tablet .menu-title { font-size: 32px; }
-.frame.touch .menu-lead { font-size: var(--t-small); }
+.frame.touch .menu-lead { font-size: 13px; }
 .frame.touch.tablet .menu-lead { font-size: var(--t-body); }
 .frame.touch .menu-actions, .frame.touch .descent-progress, .frame.touch .phases { width: 100%; margin-top: 0; }
 .frame.touch .btn--hero { height: 52px; font-size: var(--t-strong); flex: none; }
@@ -258,9 +266,13 @@
 .frame.touch .phases { gap: 2px; font-size: var(--t-small); }
 .frame.touch.tablet .phases { gap: 8px; font-size: var(--t-body); }
 .frame.touch .descent-progress { gap: 4px; }
+.frame.touch .descent .menu-title { font-size: 24px; }
+.frame.touch .descent-explain { font-size: 13px; min-height: 0; }
+.frame.touch .descent { gap: 8px; }
+.frame.touch .phases { font-size: 12px; }
 .frame.touch .descent .btn--wide { width: 200px; margin-top: 0; }
 .frame.touch .menu-rail { right: calc(var(--sr) + 24px); top: calc(56px + var(--st)); bottom: calc(56px + var(--sb)); transform: none; justify-content: center; gap: 6px; }
-.frame.touch .rail-btn { width: var(--tt); height: var(--tt); flex: none; }
+.frame.touch .rail-btn { width: 140px; height: var(--tt); flex: none; padding: 0 10px; }
 .frame.touch .rail-btn img { width: 20px; height: 20px; }
 .frame.touch .rail-sep { margin: 0 8px; flex: none; }
 .frame.touch .menu-foot { left: var(--sl); right: var(--sr); bottom: var(--sb); height: 52px; padding: 0 24px; gap: 16px; font-size: 10px; }
@@ -278,6 +290,21 @@
 .frame.touch .upd-box { padding: 8px 12px; }
 /* Телефон: шесть кнопок меню не входят в высоту — вторая колонка встаёт левее */
 .frame.touch.phone .menu-rail { flex-wrap: wrap-reverse; align-content: flex-start; justify-content: flex-start; column-gap: 8px; }
+.frame.touch.phone .menu-main { width: calc(100% - var(--sl) - var(--sr) - 306px); }
+.frame.touch.phone .menu-rail { display: grid; grid-template-columns: repeat(2, 110px); grid-template-rows: repeat(3, var(--tt)); gap: 8px; align-content: center; }
+.frame.touch.phone .menu-rail .rail-sep { display: none; }
+.frame.touch.phone .menu-rail .rail-btn { width: 110px; padding: 0 7px; gap: 6px; }
+.frame.touch.phone .menu-rail .control-label { font-size: 11px; }
+.frame.touch.phone .menu-rail .rail-btn img { width: 18px; height: 18px; }
+.frame.touch.phone .menu-rail [title="Настройки"] { grid-column: 1; grid-row: 1; }
+.frame.touch.phone .menu-rail #railHealth { grid-column: 1; grid-row: 2; }
+.frame.touch.phone .menu-rail #railHealth .control-label { white-space: normal; }
+.frame.touch.phone .menu-rail [title="Выход из игры"] { grid-column: 1; grid-row: 3; }
+.frame.touch.phone .menu-rail [title="Discord"] { grid-column: 2; grid-row: 1; }
+.frame.touch.phone .menu-rail [title="Telegram"] { grid-column: 2; grid-row: 2; }
+.frame.touch.phone .menu-rail [title="ВКонтакте"] { grid-column: 2; grid-row: 3; }
+.frame.touch.phone .menu-main.descent { width: min(70%, 460px); }
+.frame.touch.phone[data-screen="descent"] .menu-rail { display: none; }
 /* Телефон: четыре строки шага «Доступность» помещаются без прокрутки */
 .frame.touch.phone .field { padding: 4px 0; }
 .frame.touch.phone .onb-head { padding: 8px 20px; }
@@ -290,6 +317,7 @@
 .pause-sys button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: auto; height: 64px;
   border: 1px solid var(--seam); border-radius: var(--radius); background: var(--plate); color: var(--bone); font-size: var(--t-small); }
 .pause-sys button::after { content: attr(title); }
+.pause-sys .control-label { display: none; }
 .pause-sys .tbtn { padding: 0; }
 
 /* Окно инвентаря на пальце: во всю безопасную область; на телефоне описание — колонкой справа поуже */
@@ -308,6 +336,3 @@
 .frame.touch.phone .pause h2 { grid-column: 1 / -1; }
 .frame.touch.phone .pause .pause-sys { grid-column: 1; grid-row: 2 / span 3; }
 .frame.touch.phone .pause > .btn { grid-column: 2; margin: 0; }
-/* Низкий телефон: веер ниже, чтобы не задевать миникарту */
-.frame.touch.short .build-fan { bottom: calc(var(--dig) / 2 + var(--arc) + var(--act) / 2 + 4px); }
-.frame.touch.short .build-fan .build { height: 48px; }

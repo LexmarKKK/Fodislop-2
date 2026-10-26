@@ -113,6 +113,36 @@ float3 KernTerrainDebugSurfaceColor(
     return float3(1.0, 0.0, 0.8);
 }
 
+// Independent integer reference for a static, cell-anchored sheet. This
+// diagnostic does not call the production UV resolver or its modulo helper.
+bool KernTerrainStaticBackgroundAddressMismatch(
+    float4 worldPos, float4 sheetRect, float4 tileSize, float2 actualTileOffset)
+{
+    uint column = (uint)round(worldPos.z);
+    if (tileSize.z > 1.5 ||
+        (column & KERN_TERRAIN_COLUMN_WORLD_TEXTURE_ANCHOR) != 0u ||
+        any(tileSize.xy <= 0.0) || any(sheetRect.zw <= 0.0))
+    {
+        return false;
+    }
+
+    int2 count = (int2)round(sheetRect.zw / tileSize.xy);
+    if (any(count <= 0))
+    {
+        return false;
+    }
+
+    int2 cell = (int2)round(worldPos.xy);
+    int2 quotient = cell / count;
+    int2 remainder = cell - quotient * count;
+    remainder += int2(remainder.x < 0 ? count.x : 0, remainder.y < 0 ? count.y : 0);
+    int expectedX = worldPos.w > 0.5
+        ? (int)(column & KERN_TERRAIN_COLUMN_MASK) : remainder.x;
+    int2 expected = int2(clamp(expectedX, 0, count.x - 1), count.y - 1 - remainder.y);
+    int2 actual = (int2)round(actualTileOffset / tileSize.xy);
+    return any(actual != expected);
+}
+
 float3 KernTerrainUniqueTileColor(
     float atlasIndex,
     float4 subAtlasRect,

@@ -1,6 +1,9 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Kern.Core;
+using Kern.Core.Bootstrap.WorldLighting;
+using Kern.Core.Interfaces.WorldLighting;
 using Kern.World.Terrain;
 using UnityEngine;
 using NUnit.Framework;

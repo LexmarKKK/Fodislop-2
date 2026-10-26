@@ -22,6 +22,9 @@ struct TerrainVertexInput
     float4 positionOS   : POSITION;
 };
 
+// worldPos — постоянный адрес клетки и упакованные флаги, не позиция
+// фрагмента. Все проходы передают его с nointerpolation: интерполяционная
+// погрешность перед floor/modulo может выбрать соседний тайл листа.
 // Разбор вершины. Объявляет `cell` — проходу она нужна и после макроса.
 #define TERRAIN_RESOLVE_CELL_VERTEX(input, output) \
     TerrainCellVertex cell = LoadTerrainCellVertex( \
@@ -31,6 +34,7 @@ struct TerrainVertexInput
     output.subAtlasRect = cell.subAtlasRect; \
     output.tileSizeUV = cell.tileSizeUV; \
     output.worldPos = cell.worldPos; \
+    output.sourceType = cell.sourceType; \
     output.animData = cell.animData; \
     output.packedData = cell.packedData; \
     output.lightContourDecal = cell.lightContourDecal; \

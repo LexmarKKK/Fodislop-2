@@ -36,7 +36,6 @@
   </div>
   <div class="stand-group" role="group" aria-label="Устройство">
     <span class="stand-label">Устройство</span>
-    <button type="button" data-device="se">iPhone SE</button>
     <button type="button" data-device="promax">iPhone 15 Pro Max</button>
     <button type="button" data-device="pixel8">Pixel 8</button>
     <button type="button" data-device="ipadmini">iPad mini</button>
@@ -92,7 +91,7 @@
                 <h1 class="nick">ШАХТЁР-774</h1>
                 <span class="level" id="level">ур.47</span>
               </header>
-              <div class="hp" title="Прочность">
+              <div class="hp" title="Прочность робота">
                 <div class="meter"><i id="hpFill"></i></div>
                 <span class="hp-value" id="hpValue">113HP</span>
               </div>
@@ -185,9 +184,9 @@
       <div class="pad touch-only" id="pad" title="Движение"><i class="pad-ring"></i><i class="pad-knob" id="padKnob"></i></div>
       <nav class="touch-sys touch-only" aria-label="Управление">
         <button type="button" class="tbtn" title="Карта мира"><svg><use href="#i-map"/></svg></button>
-        <button type="button" class="tbtn" id="touchChat" aria-pressed="false" title="Глобальный"><svg><use href="#i-chat"/></svg></button>
-        <button type="button" class="tbtn" id="touchSay" aria-pressed="false" title="Сказать">…</button>
-        <button type="button" class="tbtn" id="touchMenu" title="Пауза"><svg><use href="#i-menu"/></svg></button>
+        <button type="button" class="tbtn" id="touchChat" aria-pressed="false" title="Открыть чат"><svg><use href="#i-chat"/></svg><span>Чат</span></button>
+        <button type="button" class="tbtn" id="touchSay" aria-pressed="false" title="Сказать рядом"><svg><use href="#i-chat"/></svg><span>Рядом</span></button>
+        <button type="button" class="tbtn" id="touchMenu" title="Меню"><svg><use href="#i-menu"/></svg><span>Меню</span></button>
       </nav>
       <div class="dock touch-only">
         <!-- Веер типов блоков: открывается кнопкой «Строить» -->
@@ -372,7 +371,8 @@
     </div>
 
     <div class="menu-main descent" id="descent" hidden>
-      <h1 class="menu-title">Загрузка</h1>
+      <h1 class="menu-title">Входим в шахту</h1>
+      <p class="descent-explain" id="descentExplain" aria-live="polite">Устанавливаем соединение с сервером.</p>
       <div class="descent-progress">
         <div class="meter meter--wide"><i id="descentFill"></i></div>
         <div class="descent-meta"><span id="descentPhase">Подключение к серверу</span><span id="descentCount">1 / 5</span></div>

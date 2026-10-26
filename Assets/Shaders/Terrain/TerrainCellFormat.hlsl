@@ -225,6 +225,7 @@ struct TerrainCellVertex
     float4 geometryCornersY;
     float uvBits;
     float atlasIndex;         // < 0 — квад не рисуется
+    uint sourceType;          // source image key for the emission cache
     float layer;              // 0 фон, 1 передний план
 };
 

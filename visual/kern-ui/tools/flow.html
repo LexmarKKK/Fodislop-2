@@ -41,16 +41,12 @@ f.onload = async () => {
   d.querySelector('[data-update="1"]').click();
   check(!visible($('descendBtn')) && visible($('updateBlock')), 'обязательное обновление заменяет спуск');
   check(!d.getElementById('serverBtn'), 'выбора сервера нет');
-  check(!d.querySelector('.rail-badge').hidden, 'на кнопке «Обновление» значок');
   $('updateBtn').click();
   check(visible($('updateDialog')), 'окно обновления открывается кнопкой на месте спуска');
   $('updConfirm').click();
   await until(() => visible($('descendBtn')), 'обновление завершается');
   check($('versionLabel').textContent === '0.9.0' && $('updateDialog').hidden, 'после обновления версия 0.9.0, окно закрыто');
-  check(d.querySelector('.rail-badge').hidden, 'значок обновления снят');
-  $('railUpdate').click();
-  check(visible($('updateDialog')) && $('updConfirm').disabled, 'кнопка «Обновление» открывает окно, загрузка недоступна');
-  $('updateDialog').querySelector('[data-close]').click();
+  check(!visible($('updateBlock')), 'после обновления блок обновления скрыт');
 
   $('descendBtn').click();
   check(screen() === 'descent' && visible($('descent')), 'спуск начался');

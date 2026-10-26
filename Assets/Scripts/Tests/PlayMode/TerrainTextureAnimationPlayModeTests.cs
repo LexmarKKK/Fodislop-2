@@ -3,6 +3,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Kern.World;
+using Kern.Core.Interfaces.WorldLighting;
 using Kern.World.Common.Rendering;
 using Kern.World.Terrain;
 using NUnit.Framework;
@@ -10,6 +11,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.TestTools;
+using CellType = MinesServer.Data.CellType;
 
 namespace Kern.Tests.PlayMode;
 
@@ -39,6 +41,9 @@ public sealed class TerrainTextureAnimationPlayModeTests
     private float _previousTimeScale;
     private bool _worldLightingKeywordWasEnabled;
     private Texture2D _readback = null!;
+#if UNITY_EDITOR
+    private bool _previousAllowAsyncCompilation;
+#endif
     private Camera? _renderCamera;
     private MeshFilter? _renderMesh;
     private MeshRenderer? _renderRenderer;
@@ -46,6 +51,10 @@ public sealed class TerrainTextureAnimationPlayModeTests
     [UnitySetUp]
     public IEnumerator SetUp()
     {
+#if UNITY_EDITOR
+        _previousAllowAsyncCompilation = UnityEditor.ShaderUtil.allowAsyncCompilation;
+        UnityEditor.ShaderUtil.allowAsyncCompilation = false;
+#endif
         _previousGlobalVectors = new Vector4[_vectorGlobalIds.Length];
         for (int index = 0; index < _vectorGlobalIds.Length; index++)
         {
@@ -68,6 +77,9 @@ public sealed class TerrainTextureAnimationPlayModeTests
     [UnityTearDown]
     public IEnumerator TearDown()
     {
+#if UNITY_EDITOR
+        UnityEditor.ShaderUtil.allowAsyncCompilation = _previousAllowAsyncCompilation;
+#endif
         Time.timeScale = _previousTimeScale;
         if (_worldLightingKeywordWasEnabled)
         {
@@ -151,7 +163,7 @@ public sealed class TerrainTextureAnimationPlayModeTests
             new TerrainCellIdVertex(1, 1, 1, 2),
             new TerrainCellIdVertex(1, 1, 1, 3),
         }, 0, 0, 4);
-        mesh.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+        mesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0, calculateBounds: false);
         _cellData = new TerrainCellBuffers();
         _cellData.EnsureCapacity(3, 3);
         _cellData.SetType(0, TerrainCellData.PackType(new TerrainTypeFields(
@@ -297,7 +309,7 @@ public sealed class TerrainTextureAnimationPlayModeTests
                 TileGroupId: 0),
             originX: 0,
             worldHeight: 1);
-        RenderTexture target = Own(new RenderTexture(32, 32, 0, RenderTextureFormat.ARGB32)
+        RenderTexture target = Own(new RenderTexture(32, 32, 24, RenderTextureFormat.ARGB32)
         {
             name = "TerrainAnimationRegressionTarget",
             filterMode = FilterMode.Point,
@@ -311,8 +323,11 @@ public sealed class TerrainTextureAnimationPlayModeTests
         int pass = material.FindPass("Universal2D");
         Assert.That(pass, Is.GreaterThanOrEqualTo(0), "Production terrain shader has no Universal2D pass.");
 
-        var observedRedFrame = false;
-        var observedBlueFrame = false;
+        // Establish the production camera/pass before timing animation. Shader
+        // initialization must not consume the entire observation interval.
+        Color firstFrame = RenderAndReadCenter(mesh, material, pass, target);
+        var observedRedFrame = firstFrame.r > firstFrame.b * 2f && firstFrame.r > 0.2f;
+        var observedBlueFrame = firstFrame.b > firstFrame.r * 2f && firstFrame.b > 0.2f;
         long deadline = System.Diagnostics.Stopwatch.GetTimestamp() +
             (long)(AnimationCycleSeconds * System.Diagnostics.Stopwatch.Frequency);
 
@@ -370,7 +385,7 @@ public sealed class TerrainTextureAnimationPlayModeTests
             originX: 4,
             worldHeight: 5);
 
-        RenderTexture target = Own(new RenderTexture(32, 32, 0, RenderTextureFormat.ARGB32)
+        RenderTexture target = Own(new RenderTexture(32, 32, 24, RenderTextureFormat.ARGB32)
         {
             name = "TerrainMoltenAnimationRegressionTarget",
             filterMode = FilterMode.Point,
@@ -399,6 +414,883 @@ public sealed class TerrainTextureAnimationPlayModeTests
 
         Assert.That(changed, Is.True,
             "Lava's production terrain pass stayed static. Check the molten profile in mesh animation data and its time-based shader branch.");
+    }
+
+    [UnityTest]
+    public IEnumerator ProductionBackgroundSheet_KeepsAllTilesAcrossOriginChanges()
+    {
+        const int SheetCells = 10;
+        const int TilePixels = 32;
+        const int GridCells = SheetCells + 2;
+        const int WorldHeight = 65535;
+        const int TargetPixels = SheetCells * TilePixels;
+        Shader shader = Shader.Find(TerrainShaderName);
+        Assert.That(shader, Is.Not.Null);
+        Assert.That(shader.isSupported, Is.True);
+        Material material = Own(new Material(shader));
+        Texture2D atlas = Own(RuntimeTextureFactory.CreateRGBA32NoMip(
+            TargetPixels, TargetPixels, "BackgroundAddressOracle", RuntimeTextureColorSpace.Linear,
+            FilterMode.Point, TextureWrapMode.Clamp));
+        var atlasPixels = new Color32[TargetPixels * TargetPixels];
+        for (int y = 0; y < TargetPixels; y++)
+        {
+            for (int x = 0; x < TargetPixels; x++)
+            {
+                atlasPixels[y * TargetPixels + x] = new Color32(
+                    (byte)(16 + x / TilePixels * 20), (byte)(16 + y / TilePixels * 20), 128, 255);
+            }
+        }
+
+        atlas.SetPixels32(atlasPixels);
+        atlas.Apply(false, false);
+        material.SetTexture("_TerrainAtlas0", atlas);
+        material.SetTexture("_TerrainDecalAtlas", CreateSolidTexture(Color.clear));
+        material.SetTexture("_TerrainDecalRockAtlas", CreateSolidTexture(Color.clear));
+        material.SetFloat("_GroundDecalStrength", 0f);
+        material.SetFloat("_RockDecalStrength", 0f);
+        material.SetFloat("_TerrainRimEnabled", 0f);
+        var type = (MinesServer.Data.CellType)32;
+        _cellData = new TerrainCellBuffers();
+        _cellData.EnsureCapacity(GridCells, GridCells);
+        _cellData.SetType(type, TerrainCellData.PackType(new TerrainTypeFields(
+            Type: type, Block: Block(CellSurfaceEffect.Plain, 0f), Slot: 0,
+            AtlasRect: new Vector4(0f, 0f, 1f, 1f), TileSize: 1f / SheetCells,
+            FrameCount: 1, FrameHeightTiles: SheetCells, OpaqueOwn: true, OpaqueAny: true,
+            HasTileGroup: false, TileGroupId: 0)));
+        using var carrier = new TerrainCellIdMesh();
+        carrier.EnsureSize(GridCells, GridCells, 2f, GridCells, GridCells);
+        Mesh mesh = carrier.Mesh!;
+        mesh.bounds = new Bounds(new Vector3(12f, 12f, 0f), new Vector3(24f, 24f, 2f));
+        GameObject meshObject = Own(new GameObject("Background sheet production mesh"));
+        meshObject.layer = 31;
+        meshObject.AddComponent<MeshFilter>().sharedMesh = mesh;
+        meshObject.AddComponent<MeshRenderer>().sharedMaterial = material;
+        GameObject cameraObject = Own(new GameObject("Background sheet production camera"));
+        Camera camera = cameraObject.AddComponent<Camera>();
+        camera.enabled = false;
+        camera.orthographic = true;
+        camera.orthographicSize = SheetCells;
+        camera.aspect = 1f;
+        camera.transform.position = new Vector3(12f, 12f, -10f);
+        camera.cullingMask = 1 << 31;
+        camera.clearFlags = CameraClearFlags.SolidColor;
+        camera.backgroundColor = Color.black;
+        camera.GetUniversalAdditionalCameraData().renderPostProcessing = false;
+        RenderTexture target = Own(new RenderTexture(TargetPixels, TargetPixels, 24, RenderTextureFormat.ARGBHalf));
+        Assert.That(target.Create(), Is.True);
+        camera.targetTexture = target;
+        Texture2D readback = Own(RuntimeTextureFactory.CreateRGBAHalfNoMip(
+            TargetPixels, TargetPixels, "BackgroundSheetReadback", RuntimeTextureColorSpace.Linear,
+            FilterMode.Point, TextureWrapMode.Clamp));
+        foreach (Vector2Int origin in new[]
+        {
+            Vector2Int.zero, new Vector2Int(1184, 902), new Vector2Int(40000, 40000),
+            new Vector2Int(65520, 60000), new Vector2Int(1184, 902),
+        })
+        {
+            for (int y = 0; y < GridCells; y++)
+            {
+                for (int x = 0; x < GridCells; x++)
+                {
+                    _cellData.SetCell(origin.x + x, origin.y + y, TerrainCellData.PackCell(type));
+                }
+            }
+
+            _cellData.MarkAllDirty();
+            _cellData.Apply();
+            _cellData.BindGlobals(2f, origin.x, origin.y, 65535, WorldHeight, TerrainCellFormat.DistortionStyleOff);
+            Shader.SetGlobalVector(TerrainCellBuffers.ViewOffsetId, Vector4.zero);
+            RenderPipeline.SubmitRenderRequest(camera, new UniversalRenderPipeline.SingleCameraRequest { destination = target });
+            RenderTexture previous = RenderTexture.active;
+            try
+            {
+                RenderTexture.active = target;
+                readback.ReadPixels(new Rect(0, 0, TargetPixels, TargetPixels), 0, 0);
+                readback.Apply(false, false);
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+            }
+
+            System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.temporaryCachePath,
+                $"kern-background-origin-{origin.x}-{origin.y}.png"), readback.EncodeToPNG());
+            // Oracle uses integer world coordinates and authored atlas bytes, never shader helpers.
+            for (int y = 4; y < TargetPixels; y += 8)
+            {
+                for (int x = 4; x < TargetPixels; x += 8)
+                {
+                    int column = (origin.x + 1 + x / TilePixels) % SheetCells;
+                    int serverY = WorldHeight - 1 - (origin.y + 1 + y / TilePixels);
+                    int row = SheetCells - 1 - serverY % SheetCells;
+                    Color sample = readback.GetPixel(x, y);
+                    Assert.That(sample.b, Is.GreaterThan(0.1f), $"Background missing at {origin}, pixel {x},{y}.");
+                    Assert.That(sample.r / sample.b, Is.EqualTo((16 + column * 20) / 128f).Within(0.025f),
+                        $"Wrong atlas column at {origin}, pixel {x},{y}.");
+                    Assert.That(sample.g / sample.b, Is.EqualTo((16 + row * 20) / 128f).Within(0.025f),
+                        $"Wrong atlas row at {origin}, pixel {x},{y}.");
+                }
+            }
+
+            Shader.SetGlobalInteger(s_terrainDebugViewId, (int)TerrainDebugView.BackgroundTileIdentity);
+            RenderPipeline.SubmitRenderRequest(camera, new UniversalRenderPipeline.SingleCameraRequest { destination = target });
+            previous = RenderTexture.active;
+            try
+            {
+                RenderTexture.active = target;
+                readback.ReadPixels(new Rect(0, 0, TargetPixels, TargetPixels), 0, 0);
+                readback.Apply(false, false);
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+            }
+
+            System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.temporaryCachePath,
+                $"kern-background-debug-{origin.x}-{origin.y}.png"), readback.EncodeToPNG());
+            for (int y = 0; y < SheetCells; y++)
+            {
+                for (int x = 0; x < SheetCells; x++)
+                {
+                    int column = (origin.x + 1 + x) % SheetCells;
+                    int serverY = WorldHeight - 1 - (origin.y + 1 + y);
+                    int row = SheetCells - 1 - serverY % SheetCells;
+                    int identity = (row << 7) + column + 1;
+                    Color sample = readback.GetPixel(x * TilePixels + 16, y * TilePixels + 16);
+                    Assert.That(sample.r, Is.EqualTo((identity & 63) / 63f).Within(0.002f),
+                        $"Diagnostic red channel mismatch at {origin}, cell {x},{y}.");
+                    Assert.That(sample.g, Is.EqualTo(((identity >> 6) & 63) / 63f).Within(0.002f));
+                    Assert.That(sample.b, Is.EqualTo(((identity >> 12) & 63) / 63f).Within(0.002f));
+                }
+            }
+
+            Shader.SetGlobalInteger(s_terrainDebugViewId, 0);
+            yield return null;
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator ProductionAmbientOcclusion_UsesReducedContactRadius()
+    {
+        Material material = Own(new Material(Shader.Find(TerrainShaderName)));
+        material.SetTexture("_TerrainAtlas0", CreateSolidTexture(Color.white, 32));
+        var type = (MinesServer.Data.CellType)1;
+        _cellData = new TerrainCellBuffers();
+        _cellData.EnsureCapacity(3, 3);
+        _cellData.SetType(type, TerrainCellData.PackType(new TerrainTypeFields(
+            Type: type,
+            Block: new BlockDefinition(
+                DrawLayer: CellDrawLayer.Foreground, Outline: CellOutline.Rigid,
+                TextureAnchor: CellTextureAnchor.Cell, AnimationType: MinesServer.Data.CellAnimationType.None,
+                AnimationSpeed: 0f, SurfaceEffect: CellSurfaceEffect.Plain, SurfaceEffectPalette: 0,
+                DecalAtlas: CellDecalAtlas.None, RimMass: 1, Glow: 0f, MapColor: default),
+            Slot: 0, AtlasRect: new Vector4(0, 0, 1, 1), TileSize: 1f,
+            FrameCount: 1, FrameHeightTiles: 1f, OpaqueOwn: true, OpaqueAny: true,
+            HasTileGroup: false, TileGroupId: 0)));
+        _cellData.SetCell(1, 1, TerrainCellData.PackCell(type));
+        _cellData.MarkAllDirty();
+        _cellData.Apply();
+        _cellData.BindGlobals(1f, 0, 0, 3, 3, TerrainCellFormat.DistortionStyleOff);
+        using var carrier = new TerrainCellIdMesh();
+        carrier.EnsureSize(3, 3, 1f);
+        RenderTexture target = Own(new RenderTexture(96, 96, 0, RenderTextureFormat.R8, RenderTextureReadWrite.Linear));
+        Assert.That(target.Create(), Is.True);
+        Texture2D readback = Own(RuntimeTextureFactory.CreateRGBA32NoMip(
+            96, 96, "ReducedContactRadius", RuntimeTextureColorSpace.Linear,
+            FilterMode.Point, TextureWrapMode.Clamp));
+        var manager = new TerrainMeshManager();
+        using (var commands = new CommandBuffer())
+        {
+            TerrainSurfaceShaderGlobals.ApplyShaderGlobals();
+            commands.SetRenderTarget(target);
+            commands.ClearRenderTarget(false, true, Color.clear);
+            manager.RenderLightingAmbientOcclusionField(commands, target, new Vector4(0, 0, 3, 3),
+                Matrix4x4.identity, new[] { material }, carrier.Mesh, Vector4.zero);
+            Graphics.ExecuteCommandBuffer(commands);
+        }
+
+        RenderTexture previous = RenderTexture.active;
+        try
+        {
+            RenderTexture.active = target;
+            readback.ReadPixels(new Rect(0, 0, 96, 96), 0, 0);
+            readback.Apply(false, false);
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+        }
+
+        System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.temporaryCachePath,
+            "kern-ao-radius-060.png"), readback.EncodeToPNG());
+        // Independent authored radius and cubic smoothstep oracle, in cell units.
+        for (int x = 64; x < 96; x++)
+        {
+            float distance = (x + 0.5f) / 32f - 2f;
+            float fraction = Mathf.Clamp01(distance / 0.60f);
+            float expected = 1f - fraction * fraction * (3f - 2f * fraction);
+            Assert.That(readback.GetPixel(x, 48).r, Is.EqualTo(expected).Within(2f / 255f),
+                $"Contact radius mismatch at pixel {x}.");
+        }
+
+        yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator ProductionEmission_PreservesSmallGreenDetailsBeforeFieldReduction()
+    {
+        Material material = Own(new Material(Shader.Find(TerrainShaderName)));
+        TerrainEmissionDebugState.Apply(material, TerrainEmissionMethod.FixedThreshold);
+        Texture2D source = Own(RuntimeTextureFactory.CreateRGBA32NoMip(
+            32, 32, "SparseGreenEmission", RuntimeTextureColorSpace.Linear,
+            FilterMode.Point, TextureWrapMode.Clamp));
+        var pixels = new Color32[32 * 32];
+        for (int y = 0; y < 32; y++)
+        {
+            for (int x = 0; x < 32; x++)
+            {
+                bool crystal = x % 16 >= 4 && x % 16 < 8 && y % 16 >= 4 && y % 16 < 8;
+                pixels[y * 32 + x] = crystal ? new Color32(0, 255, 0, 255) : new Color32(0, 0, 32, 255);
+            }
+        }
+
+        source.SetPixels32(pixels);
+        source.Apply(false, false);
+        material.SetTexture("_TerrainAtlas0", source);
+        material.SetTexture("_TerrainDecalAtlas", CreateSolidTexture(Color.clear));
+        material.SetTexture("_TerrainDecalRockAtlas", CreateSolidTexture(Color.clear));
+        material.SetFloat("_GroundDecalStrength", 0f);
+        material.SetFloat("_RockDecalStrength", 0f);
+        material.SetFloat("_EmissionBrightnessStart", 0.25f);
+        material.SetFloat("_EmissionBrightnessEnd", 0.60f);
+        material.SetFloat("_SurfaceEmissionStrength", 2f);
+        TerrainTypeFields EmissionType(CellSurfaceEffect effect) => new(
+            Type: (MinesServer.Data.CellType)1,
+            Block: new BlockDefinition(
+                DrawLayer: CellDrawLayer.Background, Outline: CellOutline.Pliant,
+                TextureAnchor: CellTextureAnchor.Cell, AnimationType: MinesServer.Data.CellAnimationType.None,
+                AnimationSpeed: 0f, SurfaceEffect: effect, SurfaceEffectPalette: 0,
+                DecalAtlas: CellDecalAtlas.None, RimMass: 0, Glow: 1f, MapColor: default),
+            Slot: 0, AtlasRect: new Vector4(0, 0, 1, 1), TileSize: 1f,
+            FrameCount: 1, FrameHeightTiles: 1f, OpaqueOwn: true, OpaqueAny: true,
+            HasTileGroup: false, TileGroupId: 0);
+        UploadSingleCell(EmissionType(CellSurfaceEffect.Faceted), 0, 1);
+        Mesh mesh = Own(CreateTerrainAnimationQuad());
+        RenderTexture materialField = Own(new RenderTexture(2, 2, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear));
+        RenderTexture glowField = Own(new RenderTexture(2, 2, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear));
+        Assert.That(materialField.Create(), Is.True);
+        Assert.That(glowField.Create(), Is.True);
+        using (var commands = new CommandBuffer())
+        {
+            Debug.Log("[EmissionTest] Recording material/glow field.");
+            new TerrainMeshManager().RenderLightingMaterialFields(commands, materialField, glowField,
+                new Vector4(0, 0, 2, 2), Matrix4x4.identity, new[] { material }, mesh, Vector4.zero);
+            Graphics.ExecuteCommandBuffer(commands);
+        }
+
+        Debug.Log("[EmissionTest] Field submitted; reading coefficients.");
+        Texture2D fieldPixels = Own(RuntimeTextureFactory.CreateRGBAHalfNoMip(
+            2, 2, "SparseGreenEmissionFieldReadback", RuntimeTextureColorSpace.Linear,
+            FilterMode.Point, TextureWrapMode.Clamp));
+        RenderTexture previous = RenderTexture.active;
+        try
+        {
+            RenderTexture.active = glowField;
+            fieldPixels.ReadPixels(new Rect(0, 0, 2, 2), 0, 0);
+            fieldPixels.Apply(false, false);
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+        }
+
+        foreach (Color sample in fieldPixels.GetPixels())
+        {
+            // Each 16x16 footprint contains sixteen authored green texels,
+            // deliberately away from its centre. The blue host is below the
+            // linear brightness threshold: averaging source color first fails.
+            Assert.That(sample.g, Is.EqualTo(16f / 256f).Within(0.002f));
+            Assert.That(sample.r, Is.LessThan(0.002f));
+            Assert.That(sample.b, Is.LessThan(0.002f));
+        }
+
+        // All saturated primaries, RGB mixtures and white use the same mask;
+        // no channel or material-name whitelist is permitted.
+        Color32[] details =
+        {
+            new(255, 0, 0, 255), new(0, 255, 0, 255), new(0, 0, 255, 255),
+            new(255, 255, 0, 255), new(0, 255, 255, 255), new(255, 0, 255, 255),
+            new(255, 255, 255, 255),
+        };
+        foreach (CellSurfaceEffect effect in new[]
+        {
+            CellSurfaceEffect.Plain, CellSurfaceEffect.Molten, CellSurfaceEffect.Faceted, CellSurfaceEffect.Prismatic,
+        })
+        {
+            _cellData.SetType((CellType)1, TerrainCellData.PackType(EmissionType(effect)));
+            _cellData.Apply();
+            foreach (Color32 detail in details)
+            {
+                FillDetails(detail);
+                ReadEmissionField();
+                foreach (Color sample in fieldPixels.GetPixels())
+                {
+                    Assert.That(sample.r, Is.EqualTo(detail.r / 255f / 16f).Within(0.002f));
+                    Assert.That(sample.g, Is.EqualTo(detail.g / 255f / 16f).Within(0.002f));
+                    Assert.That(sample.b, Is.EqualTo(detail.b / 255f / 16f).Within(0.002f));
+                }
+            }
+        }
+        TerrainEmissionDebugState.Apply(material, TerrainEmissionMethod.Original);
+        foreach (CellSurfaceEffect effect in new[] { CellSurfaceEffect.Plain, CellSurfaceEffect.Molten })
+        {
+            _cellData.SetType((CellType)1, TerrainCellData.PackType(EmissionType(effect)));
+            _cellData.Apply();
+            FillDetails(new Color32(0, 255, 0, 255));
+            ReadEmissionField();
+            foreach (Color sample in fieldPixels.GetPixels())
+            {
+                Assert.That(sample.b, Is.EqualTo(32f / 255f).Within(0.002f),
+                    "Non-crystal materials retain their existing dark source emission.");
+                Assert.That(sample.g, Is.LessThan(0.002f));
+                Assert.That(sample.a, Is.EqualTo(1f).Within(0.002f));
+            }
+        }
+        _cellData.SetType((CellType)1, TerrainCellData.PackType(EmissionType(CellSurfaceEffect.Faceted)));
+        _cellData.Apply();
+        FillDetails(new Color32(0, 255, 0, 255));
+
+        void FillDetails(Color32 detail)
+        {
+            for (int y = 0; y < 32; y++)
+            {
+                for (int x = 0; x < 32; x++)
+                {
+                    bool crystal = x % 16 >= 4 && x % 16 < 8 && y % 16 >= 4 && y % 16 < 8;
+                    pixels[y * 32 + x] = crystal ? detail : new Color32(0, 0, 32, 255);
+                }
+            }
+            source.SetPixels32(pixels);
+            source.Apply(false, false);
+        }
+
+        void ReadEmissionField()
+        {
+            using var commands = new CommandBuffer();
+            new TerrainMeshManager().RenderLightingMaterialFields(commands, materialField, glowField,
+                new Vector4(0, 0, 2, 2), Matrix4x4.identity, new[] { material }, mesh, Vector4.zero);
+            Graphics.ExecuteCommandBuffer(commands);
+            RenderTexture saved = RenderTexture.active;
+            try
+            {
+                RenderTexture.active = glowField;
+                fieldPixels.ReadPixels(new Rect(0, 0, 2, 2), 0, 0);
+                fieldPixels.Apply(false, false);
+            }
+            finally
+            {
+                RenderTexture.active = saved;
+            }
+        }
+
+        TerrainEmissionDebugState.Apply(material, TerrainEmissionMethod.FixedThreshold);
+        Debug.Log("[EmissionTest] Coefficient oracle passed; rendering self emission.");
+        int scaleId = Shader.PropertyToID("_WorldGlowScale");
+        float previousScale = Shader.GetGlobalFloat(scaleId);
+        string[] globals = { "_WorldLightTexture", "_WorldAmbientOcclusionTexture" };
+        Texture?[] previousTextures = { Shader.GetGlobalTexture(globals[0]), Shader.GetGlobalTexture(globals[1]) };
+        Vector4 previousRect = Shader.GetGlobalVector("_WorldLightRect");
+        Vector4 previousSize = Shader.GetGlobalVector("_WorldLightTextureSize");
+        try
+        {
+            Shader.SetGlobalFloat(scaleId, 12f);
+            Shader.SetGlobalTexture(globals[0], Texture2D.blackTexture);
+            Shader.SetGlobalTexture(globals[1], Texture2D.blackTexture);
+            Shader.SetGlobalVector("_WorldLightRect", new Vector4(0, 0, 2, 2));
+            Shader.SetGlobalVector("_WorldLightTextureSize", Vector4.one);
+            Shader.EnableKeyword("KERN_WORLD_LIGHTING");
+            RenderTexture target = Own(new RenderTexture(64, 64, 24, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear));
+            Assert.That(target.Create(), Is.True);
+            _readback = Own(RuntimeTextureFactory.CreateRGBAHalfNoMip(
+                1, 1, "EmissionCentre", RuntimeTextureColorSpace.Linear, FilterMode.Point, TextureWrapMode.Clamp));
+            RenderAndReadCenter(mesh, material, material.FindPass("Universal2D"), target);
+            Texture2D screenPixels = Own(RuntimeTextureFactory.CreateRGBAHalfNoMip(
+                64, 64, "SparseGreenSelfEmission", RuntimeTextureColorSpace.Linear, FilterMode.Point, TextureWrapMode.Clamp));
+            previous = RenderTexture.active;
+            try
+            {
+                RenderTexture.active = target;
+                screenPixels.ReadPixels(new Rect(0, 0, 64, 64), 0, 0);
+                screenPixels.Apply(false, false);
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+            }
+
+            System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.temporaryCachePath,
+                "kern-sparse-green-self-emission.png"), screenPixels.EncodeToPNG());
+            Debug.Log($"[EmissionTest] Visible keyword={material.IsKeywordEnabled(TerrainEmissionDebugState.FixedKeyword)}, strength={material.GetFloat("_SurfaceEmissionStrength")}, peak={System.Linq.Enumerable.Max(System.Linq.Enumerable.Select(screenPixels.GetPixels(), c => c.maxColorComponent))}");
+            Debug.Log($"[EmissionTest] Column12: {string.Join(",", System.Linq.Enumerable.Select(System.Linq.Enumerable.Range(0, 64), y => screenPixels.GetPixel(12, y).g > 0.5f ? y.ToString() : ""))}");
+            // Source texel (6,6) lies inside the authored 4..7 detail patch.
+            // The 2x camera scale maps its center to pixel (13,13).
+            Color green = screenPixels.GetPixel(13, 13);
+            Color blue = screenPixels.GetPixel(30, 30);
+            Assert.That(green.g, Is.EqualTo(2f).Within(0.02f),
+                "Visible emission must use its surface radiance, independently of transport gain 12.");
+            Assert.That(green.b, Is.LessThan(0.01f));
+            Assert.That(blue.maxColorComponent, Is.LessThan(0.01f), "The dark blue host must not self-emit.");
+            System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.temporaryCachePath,
+                "kern-sparse-green-self-emission.png"), screenPixels.EncodeToPNG());
+            FillDetails(new Color32(0, 255, 0, 128));
+            AdaptiveTerrainEmissionData alphaData = AdaptiveTerrainEmissionData.Build(source.GetPixels(), 32, 32, 0.05f);
+            var alphaHeaders = new Vector4[256 * AdaptiveTerrainEmissionData.LevelCount];
+            var alphaSamples = new List<Color>();
+            alphaData.Append(1, alphaSamples, alphaHeaders);
+            using var headerBuffer = new ComputeBuffer(alphaHeaders.Length, 16);
+            using var sampleBuffer = new ComputeBuffer(alphaSamples.Count, 16);
+            headerBuffer.SetData(alphaHeaders);
+            sampleBuffer.SetData(alphaSamples);
+            material.SetBuffer("_TerrainEmissionHeaders", headerBuffer);
+            material.SetBuffer("_TerrainEmissionSamples", sampleBuffer);
+            foreach (TerrainEmissionMethod method in new[] { TerrainEmissionMethod.FixedThreshold, TerrainEmissionMethod.AdaptiveTexture })
+            {
+                TerrainEmissionDebugState.Apply(material, method);
+                RenderAndReadCenter(mesh, material, material.FindPass("Universal2D"), target);
+                previous = RenderTexture.active;
+                try
+                {
+                    RenderTexture.active = target;
+                    screenPixels.ReadPixels(new Rect(0, 0, 64, 64), 0, 0);
+                    screenPixels.Apply(false, false);
+                }
+                finally
+                {
+                    RenderTexture.active = previous;
+                }
+                Assert.That(screenPixels.GetPixel(13, 13).g, Is.EqualTo(2f * 128f / 255f).Within(0.02f),
+                    $"{method}: source alpha must be applied once, not squared by the cache and surface blend.");
+            }
+            TerrainEmissionDebugState.Apply(material, TerrainEmissionMethod.Original);
+            foreach (CellSurfaceEffect effect in new[] { CellSurfaceEffect.Plain, CellSurfaceEffect.Molten })
+            {
+                _cellData.SetType((CellType)1, TerrainCellData.PackType(EmissionType(effect)));
+                _cellData.Apply();
+                RenderAndReadCenter(mesh, material, material.FindPass("Universal2D"), target);
+                previous = RenderTexture.active;
+                try
+                {
+                    RenderTexture.active = target;
+                    screenPixels.ReadPixels(new Rect(0, 0, 64, 64), 0, 0);
+                    screenPixels.Apply(false, false);
+                }
+                finally
+                {
+                    RenderTexture.active = previous;
+                }
+                Assert.That(screenPixels.GetPixel(12, 12).maxColorComponent, Is.LessThan(0.01f),
+                    "The experiment must not add a new visible emission term to other material models.");
+            }
+        }
+        finally
+        {
+            Shader.SetGlobalFloat(scaleId, previousScale);
+            Shader.SetGlobalTexture(globals[0], previousTextures[0]);
+            Shader.SetGlobalTexture(globals[1], previousTextures[1]);
+            Shader.SetGlobalVector("_WorldLightRect", previousRect);
+            Shader.SetGlobalVector("_WorldLightTextureSize", previousSize);
+            Shader.DisableKeyword("KERN_WORLD_LIGHTING");
+        }
+
+        yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator ProductionAdaptiveEmission_UsesPackedSourceAndSwitchesWithoutReanalysis()
+    {
+        Material material = Own(new Material(Shader.Find(TerrainShaderName)));
+        Texture2D atlas = Own(RuntimeTextureFactory.CreateRGBA32NoMip(96, 96, "PackedEmissionSource",
+            RuntimeTextureColorSpace.Linear, FilterMode.Point, TextureWrapMode.Clamp));
+        Color32[] detailColors =
+        {
+            new(0, 255, 0, 255), new(0, 0, 255, 255),
+            new(255, 0, 0, 255), new(255, 255, 255, 255),
+        };
+        var pixels = new Color32[96 * 96];
+        System.Array.Fill(pixels, new Color32(255, 0, 0, 255));
+        for (int y = 0; y < 32; y++)
+        {
+            for (int x = 0; x < 32; x++)
+            {
+                bool detail = x % 16 >= 4 && x % 16 < 8 && y % 16 >= 4 && y % 16 < 8;
+                pixels[(y + 32) * 96 + x + 32] = detail ? detailColors[(y / 16) * 2 + x / 16] : new Color32(0, 0, 32, 255);
+            }
+        }
+        atlas.SetPixels32(pixels);
+        atlas.Apply(false, false);
+        Vector4 rect = new(1f / 3f, 1f / 3f, 1f / 3f, 1f / 3f);
+        var textures = new EmissionTextureFixture(atlas, rect);
+        using var cache = new AdaptiveTerrainEmissionCache();
+        cache.EnsureSources(textures.GetAllAtlases(), textures);
+        long deadline = System.Diagnostics.Stopwatch.GetTimestamp() + 15 * System.Diagnostics.Stopwatch.Frequency;
+        do
+        {
+            cache.Poll();
+            Assert.That(cache.Error, Is.Null);
+            yield return null;
+        }
+        while (cache.PendingCount > 0 && System.Diagnostics.Stopwatch.GetTimestamp() < deadline);
+        Assert.That(cache.PendingCount, Is.Zero, "Adaptive source preparation did not complete.");
+        Assert.That(cache.PreparedCount, Is.EqualTo(1));
+        Assert.That(cache.Bind(material), Is.True);
+        Assert.That(cache.SourceDispatchCount, Is.EqualTo(1));
+        Assert.That(cache.SourceTexelCount, Is.EqualTo(32 * 32));
+        material.SetTexture("_TerrainAtlas0", atlas);
+        material.SetTexture("_TerrainDecalAtlas", CreateSolidTexture(Color.clear));
+        material.SetTexture("_TerrainDecalRockAtlas", CreateSolidTexture(Color.clear));
+        material.SetFloat("_GroundDecalStrength", 0f);
+        material.SetFloat("_RockDecalStrength", 0f);
+        UploadSingleCell(new TerrainTypeFields(
+            Type: MinesServer.Data.CellType.Green,
+            Block: new BlockDefinition(DrawLayer: CellDrawLayer.Background, Outline: CellOutline.Pliant,
+                TextureAnchor: CellTextureAnchor.Cell, AnimationType: MinesServer.Data.CellAnimationType.None,
+                AnimationSpeed: 0f, SurfaceEffect: CellSurfaceEffect.Plain, SurfaceEffectPalette: 0,
+                DecalAtlas: CellDecalAtlas.None, RimMass: 0, Glow: 1, MapColor: default),
+            Slot: 0, AtlasRect: rect, TileSize: 1f / 3f, FrameCount: 1, FrameHeightTiles: 1,
+            OpaqueOwn: true, OpaqueAny: true, HasTileGroup: false, TileGroupId: 0), 0, 1);
+        Mesh mesh = Own(CreateTerrainAnimationQuad());
+        RenderTexture field = Own(new RenderTexture(2, 2, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear));
+        RenderTexture emission = Own(new RenderTexture(2, 2, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear));
+        Assert.That(field.Create(), Is.True);
+        Assert.That(emission.Create(), Is.True);
+        Texture2D readback = Own(RuntimeTextureFactory.CreateRGBAHalfNoMip(2, 2, "AdaptiveEmissionReadback",
+            RuntimeTextureColorSpace.Linear, FilterMode.Point, TextureWrapMode.Clamp));
+        foreach (TerrainEmissionMethod method in new[]
+        {
+            TerrainEmissionMethod.Original, TerrainEmissionMethod.FixedThreshold,
+            TerrainEmissionMethod.AdaptiveTexture, TerrainEmissionMethod.Original,
+        })
+        {
+            TerrainEmissionDebugState.Apply(material, method);
+            using (var commands = new CommandBuffer())
+            {
+                new TerrainMeshManager().RenderLightingMaterialFields(commands, field, emission,
+                    new Vector4(0, 0, 2, 2), Matrix4x4.identity, new[] { material }, mesh, Vector4.zero);
+                Graphics.ExecuteCommandBuffer(commands);
+            }
+            RenderTexture previous = RenderTexture.active;
+            try
+            {
+                RenderTexture.active = emission;
+                readback.ReadPixels(new Rect(0, 0, 2, 2), 0, 0);
+                readback.Apply(false, false);
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+            }
+            AsyncGPUReadbackRequest request = AsyncGPUReadback.Request(emission, 0, TextureFormat.RGBAFloat);
+            request.WaitForCompletion();
+            Assert.That(request.hasError, Is.False);
+            var raw = request.GetData<Color>();
+            for (int y = 0; y < 2; y++)
+            {
+                for (int x = 0; x < 2; x++)
+                {
+                    Color sample = raw[LightingFieldOrientation.MemoryRow(y, 2) * 2 + x];
+                    Color32 detail = detailColors[y * 2 + x];
+                    if (method == TerrainEmissionMethod.Original)
+                    {
+                        Assert.That(sample.b, Is.EqualTo(32f / 255f).Within(0.002f));
+                        Assert.That(sample.g, Is.LessThan(0.0001f));
+                    }
+                    else if (method == TerrainEmissionMethod.FixedThreshold)
+                    {
+                        Assert.That(sample.r, Is.EqualTo(detail.r / 255f / 16f).Within(0.002f));
+                        Assert.That(sample.g, Is.EqualTo(detail.g / 255f / 16f).Within(0.002f));
+                        Assert.That(sample.b, Is.EqualTo(detail.b / 255f / 16f).Within(0.002f));
+                    }
+                    else
+                    {
+                        double oldEnergy = 0.5 / 16 + 0.0722 * (32.0 / 255) * 15 / 16;
+                        float expectedGain = (float)(oldEnergy / (0.5 / 16));
+                        Assert.That(sample.r, Is.EqualTo(detail.r / 255f / 16f * expectedGain).Within(0.0002f));
+                        Assert.That(sample.g, Is.EqualTo(detail.g / 255f / 16f * expectedGain).Within(0.0002f));
+                        Assert.That(sample.b, Is.EqualTo(detail.b / 255f / 16f * expectedGain).Within(0.0002f));
+                    }
+                }
+            }
+            Assert.That(cache.PreparedCount, Is.EqualTo(1), "Mode switches must reuse the prepared pyramid.");
+            Assert.That(cache.Poll(), Is.False);
+            Assert.That(cache.SourceDispatchCount, Is.EqualTo(1));
+        }
+        int previousSampleCount = cache.PublishedSampleCount;
+        cache.Invalidate(CellType.Green);
+        Assert.That(cache.PreparedCount, Is.Zero);
+        cache.EnsureSources(textures.GetAllAtlases(), textures);
+        deadline = System.Diagnostics.Stopwatch.GetTimestamp() + 15 * System.Diagnostics.Stopwatch.Frequency;
+        do
+        {
+            cache.Poll();
+            Assert.That(cache.Error, Is.Null);
+            yield return null;
+        }
+        while (cache.PendingCount > 0 && System.Diagnostics.Stopwatch.GetTimestamp() < deadline);
+        Assert.That(cache.PendingCount, Is.Zero);
+        Assert.That(cache.Bind(material), Is.True);
+        Assert.That(cache.SourceDispatchCount, Is.EqualTo(2), "Only the changed source is extracted again.");
+        Assert.That(cache.PreparedCount, Is.EqualTo(1));
+        Assert.That(cache.PublishedSampleCount, Is.EqualTo(previousSampleCount * 2),
+            "Changed data appends to the owned GPU publication; existing ranges remain valid.");
+        Assert.That(cache.Poll(), Is.False, "Unchanged input must not prepare or republish emission.");
+    }
+
+    [UnityTest]
+    public IEnumerator ProductionCachedMethods_SeparateSmallDetailBroadHighlightAndHostHue()
+    {
+        Texture2D source = Own(RuntimeTextureFactory.CreateRGBA32NoMip(32, 32, "DistinctEmissionFeatures",
+            RuntimeTextureColorSpace.Linear, FilterMode.Point, TextureWrapMode.Clamp));
+        var pixels = new Color32[32 * 32];
+        for (int y = 0; y < 32; y++)
+        {
+            for (int x = 0; x < 32; x++)
+            {
+                bool broad = x % 16 >= 8;
+                bool detail = x % 16 >= 2 && x % 16 < 6 && y % 16 >= 2 && y % 16 < 6;
+                pixels[y * 32 + x] = detail ? new Color32(0, 255, 0, 255)
+                    : broad ? new Color32(0, 0, 255, 255) : new Color32(0, 0, 51, 255);
+            }
+        }
+        source.SetPixels32(pixels);
+        source.Apply(false, false);
+        var textures = new EmissionTextureFixture(source, new Vector4(0, 0, 1, 1));
+        Material material = Own(new Material(Shader.Find(TerrainShaderName)));
+        material.SetTexture("_TerrainAtlas0", source);
+        material.SetTexture("_TerrainDecalAtlas", CreateSolidTexture(Color.clear));
+        material.SetTexture("_TerrainDecalRockAtlas", CreateSolidTexture(Color.clear));
+        material.SetFloat("_GroundDecalStrength", 0f);
+        material.SetFloat("_RockDecalStrength", 0f);
+        UploadSingleCell(new TerrainTypeFields(CellType.Green,
+            new BlockDefinition(DrawLayer: CellDrawLayer.Background, Outline: CellOutline.Pliant,
+                TextureAnchor: CellTextureAnchor.Cell, AnimationType: MinesServer.Data.CellAnimationType.None,
+                AnimationSpeed: 0f, SurfaceEffect: CellSurfaceEffect.Plain, SurfaceEffectPalette: 0,
+                DecalAtlas: CellDecalAtlas.None, RimMass: 0, Glow: 1f, MapColor: default), 0, new Vector4(0, 0, 1, 1), 1f, 1, 1f, true, true, false, 0), 0, 1);
+        Mesh mesh = Own(CreateTerrainAnimationQuad());
+        RenderTexture field = Own(new RenderTexture(2, 2, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear));
+        RenderTexture glow = Own(new RenderTexture(2, 2, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear));
+        Assert.That(field.Create() && glow.Create(), Is.True);
+        foreach (TerrainEmissionMethod method in new[]
+        {
+            TerrainEmissionMethod.AdaptiveTexture, TerrainEmissionMethod.LocalDetail, TerrainEmissionMethod.ChromaSeparation,
+        })
+        {
+            using var cache = new AdaptiveTerrainEmissionCache(method);
+            cache.EnsureSources(textures.GetAllAtlases(), textures);
+            long deadline = System.Diagnostics.Stopwatch.GetTimestamp() + 15 * System.Diagnostics.Stopwatch.Frequency;
+            do
+            {
+                cache.Poll();
+                Assert.That(cache.Error, Is.Null);
+                yield return null;
+            }
+            while (cache.PendingCount > 0 && System.Diagnostics.Stopwatch.GetTimestamp() < deadline);
+            Assert.That(cache.PendingCount, Is.Zero);
+            Assert.That(cache.Bind(material), Is.True);
+            TerrainEmissionDebugState.Apply(material, method);
+            using (var commands = new CommandBuffer())
+            {
+                new TerrainMeshManager().RenderLightingMaterialFields(commands, field, glow,
+                    new Vector4(0, 0, 2, 2), Matrix4x4.identity, new[] { material }, mesh, Vector4.zero);
+                Graphics.ExecuteCommandBuffer(commands);
+            }
+            AsyncGPUReadbackRequest readback = AsyncGPUReadback.Request(glow, 0, TextureFormat.RGBAFloat);
+            readback.WaitForCompletion();
+            Assert.That(readback.hasError, Is.False);
+            double detailWeight = method == TerrainEmissionMethod.LocalDetail ? 0.9 : 1.0;
+            double blueWeight = method == TerrainEmissionMethod.LocalDetail ? 0.5
+                : method == TerrainEmissionMethod.ChromaSeparation ? 0 : 1;
+            double originalEnergy = 0.0625 * 0.7152 + (0.5 + 0.4375 * 0.2) * 0.0722;
+            double maskedEnergy = 0.0625 * detailWeight * 0.7152 + 0.5 * blueWeight * 0.0722;
+            double gain = originalEnergy / maskedEnergy;
+            foreach (Color sample in readback.GetData<Color>())
+            {
+                Assert.That(sample.r, Is.LessThan(0.0001f));
+                Assert.That(sample.g, Is.EqualTo(0.0625 * detailWeight * gain).Within(0.001), method.ToString());
+                Assert.That(sample.b, Is.EqualTo(0.5 * blueWeight * gain).Within(0.001), method.ToString());
+            }
+            Assert.That(TerrainEmissionDebugState.ReadMaterial(material), Is.EqualTo(method));
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator ProductionRendererSwitch_UpdatesVisibleMaterialWithoutGeometryBuild()
+    {
+        TerrainEmissionDebugState.Reset();
+        var root = Own(new GameObject("Emission switching retained view"));
+        root.SetActive(false);
+        TerrainRenderer renderer = root.AddComponent<TerrainRenderer>();
+        const System.Reflection.BindingFlags Fields = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        var window = (TerrainWindow)typeof(TerrainRenderer).GetField("_window", Fields)!.GetValue(renderer)!;
+        var materials = (TerrainMaterialManager)typeof(TerrainBuildPresentation).GetField("_materials", Fields)!
+            .GetValue(window.Driver.Presentation)!;
+        Texture2D atlas = CreateSolidTexture(Color.green, 32);
+        var textures = new EmissionTextureFixture(atlas, new Vector4(0, 0, 1, 1));
+        using var telemetry = new Kern.Core.FrameTelemetry();
+        typeof(TerrainRenderer).GetField("_textureService", Fields)!.SetValue(renderer, textures);
+        typeof(TerrainRenderer).GetField("_telemetry", Fields)!.SetValue(renderer, telemetry);
+        typeof(TerrainRenderer).GetField("_terrainLightingExchange", Fields)!.SetValue(renderer,
+            new Kern.Core.Bootstrap.WorldLighting.TerrainLightingExchange());
+        MeshRenderer visible = root.GetComponent<MeshRenderer>();
+        typeof(TerrainRenderer).GetField("_meshRenderer", Fields)!.SetValue(renderer, visible);
+        materials.InitializeShader();
+        materials.EnsureMaterials(textures.GetAllAtlases(), 1, 1,
+            new EmissionClientConfigFixture(), new TerrainCellCache());
+        visible.sharedMaterials = materials.CellMaterials;
+        Material original = visible.sharedMaterial;
+        try
+        {
+            GameObject host = Own(new GameObject("Emission selector mouse input"));
+            TerrainEmissionDebugCapture capture = host.AddComponent<TerrainEmissionDebugCapture>();
+            capture.InitializeWindow(renderer);
+            RenderTexture target = Own(new RenderTexture(800, 600, 24, RenderTextureFormat.ARGB32));
+            Assert.That(target.Create(), Is.True);
+            // Independently selected from the inspected production UI capture:
+            // Fixed row spans screen points y156..180 at the capture scale.
+            capture.RenderOffscreen(target, new Vector2(100, 168));
+            Texture2D mouseCapture = Own(RuntimeTextureFactory.CreateRGBA32NoMip(800, 600, "EmissionMouseCapture",
+                RuntimeTextureColorSpace.Linear, FilterMode.Point, TextureWrapMode.Clamp));
+            RenderTexture savedTarget = RenderTexture.active;
+            RenderTexture.active = target;
+            mouseCapture.ReadPixels(new Rect(0, 0, 800, 600), 0, 0);
+            mouseCapture.Apply(false, false);
+            RenderTexture.active = savedTarget;
+            System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.temporaryCachePath,
+                "kern-emission-mouse-input.png"), mouseCapture.EncodeToPNG());
+            Assert.That(TerrainEmissionDebugState.Requested, Is.EqualTo(TerrainEmissionMethod.FixedThreshold),
+                "The real GUILayout mouse-up must reach TerrainRenderer.SetEmissionMethod.");
+            Assert.That(renderer.VisibleEmissionMethod, Is.EqualTo(TerrainEmissionMethod.FixedThreshold));
+            foreach (TerrainEmissionMethod method in new[]
+            {
+                TerrainEmissionMethod.FixedThreshold, TerrainEmissionMethod.Original,
+                TerrainEmissionMethod.AdaptiveTexture, TerrainEmissionMethod.LocalDetail,
+                TerrainEmissionMethod.ChromaSeparation, TerrainEmissionMethod.FixedThreshold,
+                TerrainEmissionMethod.Original,
+            })
+            {
+                renderer.SetEmissionMethod(method);
+                long deadline = System.Diagnostics.Stopwatch.GetTimestamp() + 15 * System.Diagnostics.Stopwatch.Frequency;
+                while (renderer.VisibleEmissionMethod != method && System.Diagnostics.Stopwatch.GetTimestamp() < deadline)
+                {
+                    // Exercise the actual renderer's frame entry. Storage stays
+                    // absent, so no geometry scheduling/publication can help it.
+                    typeof(TerrainRenderer).GetMethod("LateUpdate", Fields)!.Invoke(renderer, null);
+                    yield return null;
+                }
+                Assert.That(renderer.VisibleEmissionMethod, Is.EqualTo(method), TerrainEmissionDebugState.Status);
+                Assert.That(visible.sharedMaterial, Is.SameAs(original));
+                Assert.That(window.HasCPUBuildInFlight, Is.False);
+                Assert.That(window.CellsCommitted, Is.False);
+            }
+        }
+        finally
+        {
+            materials.CleanupMaterials();
+            TerrainEmissionDebugState.Reset();
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator ProductionMaterialPublication_AppliesRequestedEmissionMethodOnRetainedAtlas()
+    {
+        TerrainEmissionDebugState.Reset();
+        Texture2D atlas = CreateSolidTexture(Color.green, 32);
+        var textures = new EmissionTextureFixture(atlas, new Vector4(0, 0, 1, 1));
+        var materials = new TerrainMaterialManager();
+        materials.InitializeShader();
+        try
+        {
+            Assert.That(materials.EnsureMaterials(textures.GetAllAtlases(), 1, 1,
+                new EmissionClientConfigFixture(), new TerrainCellCache()), Is.True);
+            Material material = materials.CellMaterials[0];
+            foreach (TerrainEmissionMethod method in new[]
+            {
+                TerrainEmissionMethod.Original, TerrainEmissionMethod.FixedThreshold,
+                TerrainEmissionMethod.AdaptiveTexture, TerrainEmissionMethod.LocalDetail,
+                TerrainEmissionMethod.ChromaSeparation, TerrainEmissionMethod.Original,
+                TerrainEmissionMethod.FixedThreshold,
+            })
+            {
+                TerrainEmissionDebugState.Request(method);
+                // A retained atlas does not recreate materials. Every requested
+                // change must still reach the regular material publication.
+                materials.BindAtlasTextures(textures.GetAllAtlases(), textures);
+                long deadline = System.Diagnostics.Stopwatch.GetTimestamp() + 15 * System.Diagnostics.Stopwatch.Frequency;
+                while (TerrainEmissionDebugState.Active != method && System.Diagnostics.Stopwatch.GetTimestamp() < deadline)
+                {
+                    if (materials.PollEmissionPreparation())
+                    {
+                        materials.BindAtlasTextures(textures.GetAllAtlases(), textures);
+                    }
+                    yield return null;
+                }
+                Assert.That(TerrainEmissionDebugState.Active, Is.EqualTo(method), TerrainEmissionDebugState.Status);
+                Assert.That(materials.CellMaterials[0], Is.SameAs(material));
+                Assert.That(material.IsKeywordEnabled(TerrainEmissionDebugState.FixedKeyword),
+                    Is.EqualTo(method == TerrainEmissionMethod.FixedThreshold));
+                Assert.That(material.IsKeywordEnabled(TerrainEmissionDebugState.AdaptiveKeyword),
+                    Is.EqualTo(TerrainEmissionDebugState.UsesCachedSource(method)));
+            }
+        }
+        finally
+        {
+            materials.CleanupMaterials();
+            TerrainEmissionDebugState.Reset();
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator ProductionEmissionDebugWindow_DisplaysAllMethods()
+    {
+        TerrainEmissionDebugState.Reset();
+        GameObject cameraObject = Own(new GameObject("Emission debug UI camera"));
+        Camera camera = cameraObject.AddComponent<Camera>();
+        camera.clearFlags = CameraClearFlags.SolidColor;
+        camera.backgroundColor = new Color(0.03f, 0.04f, 0.05f);
+        camera.cullingMask = 0;
+        camera.GetUniversalAdditionalCameraData().renderPostProcessing = false;
+        GameObject host = Own(new GameObject("Emission debug UI capture"));
+        TerrainEmissionDebugCapture capture = host.AddComponent<TerrainEmissionDebugCapture>();
+        capture.InitializeWindow();
+        RenderTexture target = Own(new RenderTexture(800, 600, 24, RenderTextureFormat.ARGB32));
+        Assert.That(target.Create(), Is.True);
+        capture.RenderOffscreen(target);
+        Assert.That(capture.Repaints, Is.GreaterThan(0));
+        Texture2D screenshot = Own(RuntimeTextureFactory.CreateRGBA32NoMip(800, 600, "EmissionDebugWindow",
+            RuntimeTextureColorSpace.Linear, FilterMode.Point, TextureWrapMode.Clamp));
+        RenderTexture previous = RenderTexture.active;
+        try
+        {
+            RenderTexture.active = target;
+            screenshot.ReadPixels(new Rect(0, 0, 800, 600), 0, 0);
+            screenshot.Apply(false, false);
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+        }
+        System.IO.File.WriteAllBytes(System.IO.Path.Combine(Application.temporaryCachePath,
+            "kern-emission-debug-methods.png"), screenshot.EncodeToPNG());
+        int contentPixels = 0;
+        Color corner = screenshot.GetPixel(0, 0);
+        foreach (Color pixel in screenshot.GetPixels())
+        {
+            if (Mathf.Abs(pixel.r - corner.r) + Mathf.Abs(pixel.g - corner.g) + Mathf.Abs(pixel.b - corner.b) > 0.05f)
+            {
+                contentPixels++;
+            }
+        }
+        Assert.That(contentPixels, Is.GreaterThan(1000), "The capture must contain rendered controls, not an empty clear.");
+        yield return null;
     }
 
     // Одна клетка переднего плана типа 1 через рабочий формат и рабочую
@@ -474,10 +1366,9 @@ public sealed class TerrainTextureAnimationPlayModeTests
             new TerrainCellIdVertex(0, 0, 0, 2),
             new TerrainCellIdVertex(0, 0, 0, 3),
         }, 0, 0, 4);
-        mesh.triangles = new[] {
-0, 1, 2, 0, 2, 3
- };
-        mesh.RecalculateBounds();
+        mesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0, calculateBounds: false);
+        // POSITION carries half-precision cell addresses, not Float3 geometry.
+        mesh.bounds = new Bounds(new Vector3(1f, 1f, 0f), new Vector3(2f, 2f, 1f));
         return mesh;
     }
 
@@ -506,6 +1397,13 @@ public sealed class TerrainTextureAnimationPlayModeTests
         // GPU-generated positions cover the cell even though the carrier stores addresses.
         mesh.bounds = new Bounds(new Vector3(1f, 1f, 0f), new Vector3(2f, 2f, 1f));
         _renderCamera.targetTexture = target;
+#if UNITY_EDITOR
+        // Numerical readback requires the selected production variant, never
+        // an asynchronous compiler placeholder on the first rendered frame.
+        UnityEditor.ShaderUtil.CompilePass(material, pass, forceSync: true);
+        Assert.That(UnityEditor.ShaderUtil.IsPassCompiled(material, pass), Is.True);
+        Assert.That(UnityEditor.ShaderUtil.ShaderHasError(material.shader), Is.False);
+#endif
         RenderPipeline.SubmitRenderRequest(_renderCamera, new UniversalRenderPipeline.SingleCameraRequest
         {
             destination = target,
