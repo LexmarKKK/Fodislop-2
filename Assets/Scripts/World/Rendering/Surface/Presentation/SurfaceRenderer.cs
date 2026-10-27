@@ -30,15 +30,12 @@ namespace Kern.World
         private const string TransitObjectName = "SurfaceTransit";
         private const string PerspectiveObjectName = "SurfacePerspective";
         private const string HorizonObjectName = "SurfaceHorizon";
-        private const string RedRockObjectName = "SurfaceRedrock";
 
         [Header("Local Assets")]
         [SerializeField]
         private Texture2D? _transitTexture;
         [SerializeField]
         private Texture2D? _perspectiveTexture;
-        [SerializeField]
-        private Texture2D? _redRockTexture;
 
         [Header("Rendering")]
         [SerializeField]
@@ -63,13 +60,10 @@ namespace Kern.World
         private Camera? _mainCamera;
         private Mesh? _transitMesh;
         private Mesh? _perspectiveMesh;
-        private Mesh? _redRockMesh;
         private Mesh? _horizonMesh;
         private Mesh? _transitLightingMesh;
-        private Mesh? _redRockLightingMesh;
         private Material? _transitMaterial;
         private Material? _perspectiveMaterial;
-        private Material? _redRockMaterial;
         private Material? _horizonMaterial;
         private MeshRenderer? _transitRenderer;
         private MeshRenderer? _perspectiveRenderer;
@@ -77,8 +71,6 @@ namespace Kern.World
         private ulong _lightingGeometryRevision = 1;
         private int _lastWorldWidth = int.MinValue;
         private int _lastWorldHeight = int.MinValue;
-        private Rect _cachedCoverageRect;
-        private bool _hasCachedCoverage;
         private Vector4 _lastLightingMeshRect;
         private int _lastLightingMeshWorldWidth = int.MinValue;
         private int _lastLightingMeshWorldHeight = int.MinValue;
@@ -105,9 +97,6 @@ namespace Kern.World
             Material perspectiveMaterial = _perspectiveMaterial ??
                 throw new InvalidOperationException(
                     "SurfaceRenderer perspective material is not initialized.");
-            Material redRockMaterial = _redRockMaterial ??
-                throw new InvalidOperationException(
-                    "SurfaceRenderer redrock material is not initialized.");
 
             _materialManager.ApplyMaterialConfig(
                 transitMaterial,
@@ -119,25 +108,18 @@ namespace Kern.World
                 config.Terrain.PerspectiveGlowColor,
                 config.Terrain.PerspectiveGlowStrength,
                 occupancy: 0f);
-            _materialManager.ApplyMaterialConfig(
-                redRockMaterial,
-                Color.clear,
-                glowStrength: 0f,
-                occupancy: 1f);
             _lightingGeometryRevision++;
             Debug.Log($"[SurfaceRenderer] ApplyClientConfig: revision={_lightingGeometryRevision}");
         }
 
         public void SetLocalAssets(
             Texture2D? transitTexture,
-            Texture2D? perspectiveTexture,
-            Texture2D? redRockTexture)
+            Texture2D? perspectiveTexture)
         {
             if (_initialized)
             {
                 if (_transitTexture == transitTexture &&
-                    _perspectiveTexture == perspectiveTexture &&
-                    _redRockTexture == redRockTexture)
+                    _perspectiveTexture == perspectiveTexture)
                 {
                     return;
                 }
@@ -148,7 +130,6 @@ namespace Kern.World
 
             _transitTexture = transitTexture;
             _perspectiveTexture = perspectiveTexture;
-            _redRockTexture = redRockTexture;
 
             if (_mapManager != null && _mapManager.IsWorldInitialized)
             {
@@ -178,8 +159,7 @@ namespace Kern.World
             string shaderPassName)
         {
             if (!_initialized || _transitLightingMesh == null ||
-                _redRockLightingMesh == null ||
-                _transitMaterial == null || _redRockMaterial == null)
+                _transitMaterial == null)
             {
                 throw new InvalidOperationException(
                     "Surface lighting fields cannot be rendered before surface initialization.");
@@ -197,11 +177,6 @@ namespace Kern.World
                     worldRect.y,
                     worldRect.x + worldRect.z,
                     worldRect.y + worldRect.w);
-                _geometry.UpdateBoundaryMesh(
-                    _redRockLightingMesh,
-                    lightingRect,
-                    worldWidth,
-                    worldHeight);
                 _geometry.UpdateTransitMesh(
                     _transitLightingMesh,
                     lightingRect,
@@ -212,11 +187,6 @@ namespace Kern.World
                 _hasLightingMeshes = true;
             }
 
-            SurfaceLightingFieldDraw.DrawLightingField(
-                commandBuffer,
-                _redRockLightingMesh,
-                _redRockMaterial,
-                shaderPassName);
             SurfaceLightingFieldDraw.DrawLightingField(
                 commandBuffer,
                 _transitLightingMesh,
@@ -249,7 +219,6 @@ namespace Kern.World
 
         private void OnWorldInitialized()
         {
-            _hasCachedCoverage = false;
             _hasLightingMeshes = false;
             _lastWorldWidth = 0;
             _lastWorldHeight = 0;
@@ -304,19 +273,7 @@ namespace Kern.World
                 surfaceY,
                 -0.02f);
 
-            Rect visibleRect = SurfaceGeometryBuilder.GetVisibleRect(mainCamera);
-            if (_lastWorldWidth == _mapManager.WorldWidth &&
-                _lastWorldHeight == _mapManager.WorldHeight &&
-                _hasCachedCoverage &&
-                SurfaceGeometryBuilder.Contains(_cachedCoverageRect, visibleRect))
-            {
-                return;
-            }
-
-            RebuildVisibleGeometry(
-                _mapManager.WorldWidth,
-                _mapManager.WorldHeight,
-                visibleRect);
+            ApplyWorldSize(_mapManager.WorldWidth, _mapManager.WorldHeight);
         }
 
         protected void OnDisable()
@@ -334,20 +291,16 @@ namespace Kern.World
             UnregisterLightingContributor();
             SurfaceResourceLifetime.DestroyOwned(_transitMesh);
             SurfaceResourceLifetime.DestroyOwned(_perspectiveMesh);
-            SurfaceResourceLifetime.DestroyOwned(_redRockMesh);
             SurfaceResourceLifetime.DestroyOwned(_horizonMesh);
             SurfaceResourceLifetime.DestroyOwned(_transitLightingMesh);
-            SurfaceResourceLifetime.DestroyOwned(_redRockLightingMesh);
             SurfaceResourceLifetime.DestroyOwned(_transitMaterial);
             SurfaceResourceLifetime.DestroyOwned(_perspectiveMaterial);
-            SurfaceResourceLifetime.DestroyOwned(_redRockMaterial);
             SurfaceResourceLifetime.DestroyOwned(_horizonMaterial);
 
             if (!Application.isPlaying)
             {
                 DestroyOwnedChild(TransitObjectName);
                 DestroyOwnedChild(PerspectiveObjectName);
-                DestroyOwnedChild(RedRockObjectName);
                 DestroyOwnedChild(HorizonObjectName);
             }
         }
@@ -359,14 +312,13 @@ namespace Kern.World
                 return true;
             }
 
-            if (_transitTexture == null || _perspectiveTexture == null || _redRockTexture == null)
+            if (_transitTexture == null || _perspectiveTexture == null)
             {
                 return false;
             }
 
             Texture2D transitTexture = _transitTexture;
             Texture2D perspectiveTexture = _perspectiveTexture;
-            Texture2D redRockTexture = _redRockTexture;
             ClientConfig? clientConfig = _clientConfigManager?.Config;
             if (clientConfig == null || _mapManager == null || _mapManager.WorldWidth <= 0 || _mapManager.WorldHeight <= 0)
             {
@@ -385,12 +337,6 @@ namespace Kern.World
                 baseMapTileCount: Vector2.one, worldSize: worldSize,
                 kind: SurfaceMaterialManager.SurfaceKind.Perspective, materialName: "World Surface Perspective");
 
-            _redRockMaterial = _materialManager.CreateSurfaceMaterial(
-                redRockTexture, Color.clear, glowStrength: 0f, occupancy: 1f,
-                baseMapTileCount: _materialManager.GetTerrainSheetTileCount(redRockTexture),
-                worldSize: worldSize, kind: SurfaceMaterialManager.SurfaceKind.RedRock,
-                materialName: "World Surface Redrock");
-
             _horizonMaterial = _materialManager.CreateSurfaceMaterial(
                 perspectiveTexture, Color.clear, glowStrength: 0f, occupancy: 0f,
                 baseMapTileCount: Vector2.one, worldSize: worldSize,
@@ -400,13 +346,11 @@ namespace Kern.World
 
             _transitMesh = SurfaceMeshFactory.CreateDynamic("World Surface Transit Mesh");
             _perspectiveMesh = SurfaceMeshFactory.CreateDynamic("World Surface Perspective Mesh");
-            _redRockMesh = SurfaceMeshFactory.CreateDynamic("World Surface Redrock Mesh");
             _horizonMesh = SurfaceMeshFactory.CreateDynamic("World Surface Horizon Mesh");
             _geometry.UpdateHorizonMesh(_horizonMesh);
             _geometry.InitializePerspectiveMesh(_perspectiveMesh);
             _geometry.InitializeTransitMesh(_transitMesh);
             _transitLightingMesh = SurfaceMeshFactory.CreateDynamic("World Surface Transit Lighting Mesh");
-            _redRockLightingMesh = SurfaceMeshFactory.CreateDynamic("World Surface Redrock Lighting Mesh");
 
             _transitRenderer = BindBandObject(
                 TransitObjectName,
@@ -418,11 +362,6 @@ namespace Kern.World
                 _perspectiveMesh,
                 _perspectiveMaterial,
                 _perspectiveSortingOrder);
-            BindBandObject(
-                RedRockObjectName,
-                _redRockMesh,
-                _redRockMaterial,
-                _transitSortingOrder);
             _horizonRenderer = BindBandObject(
                 HorizonObjectName,
                 _horizonMesh,
@@ -435,10 +374,7 @@ namespace Kern.World
             return true;
         }
 
-        private void RebuildVisibleGeometry(
-            int worldWidth,
-            int worldHeight,
-            Rect visibleRect)
+        private void ApplyWorldSize(int worldWidth, int worldHeight)
         {
             if (worldWidth <= 0 || worldHeight <= 0)
             {
@@ -446,25 +382,20 @@ namespace Kern.World
                     $"SurfaceRenderer received invalid world dimensions {worldWidth}x{worldHeight}.");
             }
 
-            Rect coverageRect = SurfaceGeometryBuilder.BuildCoverageRect(visibleRect);
-
-            _geometry.UpdateBoundaryMesh(_redRockMesh!, coverageRect, worldWidth, worldHeight);
-
-            if (_lastWorldWidth != worldWidth || _lastWorldHeight != worldHeight)
+            if (_lastWorldWidth == worldWidth && _lastWorldHeight == worldHeight)
             {
-                _materialManager.SetMaterialWorldSize(
-                    _transitMaterial,
-                    _perspectiveMaterial,
-                    _redRockMaterial, _horizonMaterial,
-                    worldWidth,
-                    worldHeight);
-                _lightingGeometryRevision++;
+                return;
             }
 
+            _materialManager.SetMaterialWorldSize(
+                _transitMaterial,
+                _perspectiveMaterial,
+                _horizonMaterial,
+                worldWidth,
+                worldHeight);
+            _lightingGeometryRevision++;
             _lastWorldWidth = worldWidth;
             _lastWorldHeight = worldHeight;
-            _cachedCoverageRect = coverageRect;
-            _hasCachedCoverage = true;
         }
 
         private MeshRenderer BindBandObject(

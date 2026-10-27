@@ -108,12 +108,11 @@ public sealed class SurfaceMaterialManager
     public void SetMaterialWorldSize(
         Material? transitMaterial,
         Material? perspectiveMaterial,
-        Material? redRockMaterial,
         Material? horizonMaterial,
         int worldWidth,
         int worldHeight)
     {
-        if (transitMaterial == null || perspectiveMaterial == null || redRockMaterial == null || horizonMaterial == null)
+        if (transitMaterial == null || perspectiveMaterial == null || horizonMaterial == null)
         {
             throw new InvalidOperationException("SurfaceRenderer materials must be initialized.");
         }
@@ -121,7 +120,6 @@ public sealed class SurfaceMaterialManager
         Vector4 worldSize = new(worldWidth, worldHeight, 0f, 0f);
         transitMaterial.SetVector(s_worldSizeId, worldSize);
         perspectiveMaterial.SetVector(s_worldSizeId, worldSize);
-        redRockMaterial.SetVector(s_worldSizeId, worldSize);
         horizonMaterial.SetVector(s_worldSizeId, worldSize);
     }
 

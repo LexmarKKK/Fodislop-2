@@ -122,7 +122,7 @@ public static class TerrainCellMaskCalculator
         CachedCellData bottom,
         CachedCellData right)
     {
-        if (data.RimMass == 0)
+        if (data.ReliefGroup == 0)
         {
             return 0;
         }
@@ -153,7 +153,7 @@ public static class TerrainCellMaskCalculator
 
     // Соседи одной ненулевой массы — одно тело без каймы; масса 0 каймы не имеет.
     private static bool SameRimSurface(in CachedCellData first, in CachedCellData second) =>
-        second.RimMass != 0 && first.RimMass == second.RimMass;
+        second.ReliefGroup != 0 && first.ReliefGroup == second.ReliefGroup;
 
     internal static void CalculateRimMasks(
         in CachedCellData data,
@@ -170,7 +170,7 @@ public static class TerrainCellMaskCalculator
     {
         rimMask = 0;
         rimCornerMask = 0;
-        if (data.RimMass == 0)
+        if (data.ReliefGroup == 0)
         {
             return;
         }
@@ -225,7 +225,7 @@ public static class TerrainCellMaskCalculator
         CachedCellData bottomLeft,
         CachedCellData bottomRight)
     {
-        if (data.RimMass == 0)
+        if (data.ReliefGroup == 0)
         {
             return 0;
         }

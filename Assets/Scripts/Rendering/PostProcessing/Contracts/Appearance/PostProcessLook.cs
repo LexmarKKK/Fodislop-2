@@ -7,6 +7,14 @@ namespace Kern.Rendering.PostProcessing;
 
 public static class PostProcessLook
 {
+    public static class Fisheye
+    {
+        // Signed radial distortion; zero leaves the frame unchanged.
+        public const float Strength = 0.001f;
+        // World-space half-height at which Strength is measured, in cells.
+        public const float ReferenceHalfHeightCells = 14f;
+    }
+
     public static class Effects
     {
         public const bool Bloom = false;

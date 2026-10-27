@@ -504,6 +504,19 @@ namespace Kern.Game.Player.Movement
                 return;
             }
 
+            // Поворот к грани мира не должен ждать кулдауна шага или бура:
+            // шага за границу всё равно не будет, но робот обязан смотреть
+            // на видимую RedRock-клетку.
+            if (_mapDataProvider != null &&
+                !PlayerMovementValidator.IsWithinWorldBounds(
+                    Position + PlayerDirectionMapping.MovementToDeltaServer(direction),
+                    _mapDataProvider.WorldWidth,
+                    _mapDataProvider.WorldHeight))
+            {
+                TryRotate(direction);
+                return;
+            }
+
             // The authoritative dig cooldown gates movement as well as
             // repeated digging. Without this check auto-dig used the
             // current terrain cell's movement delay and could send a

@@ -21,6 +21,7 @@ public enum CellDrawLayer : byte
     Foreground = 0,
     Background = 1,
     Underlay = 2,
+    WorldEdge = 3,
 }
 
 // Откуда клетка берёт координаты текстуры; номера — KERN_TERRAIN_TEXTURE_ANCHOR_*.

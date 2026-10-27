@@ -136,26 +136,23 @@ public sealed class TerrainTestWorld
                 CellType.BuildingDoor => CellConfigProperties.Passable,
                 _ => CellConfigProperties.DropsShadow,
             };
-            CellDistortionType distortion = type switch
+            CellOutlineKind outline = type switch
             {
-                CellType.Rock => CellDistortionType.Cause,
-                CellType.BuildingWall or CellType.BuildingDoor => CellDistortionType.Block,
-                _ => CellDistortionType.Neutral,
+                CellType.Rock => CellOutlineKind.Wavy,
+                CellType.BuildingWall or CellType.BuildingDoor => CellOutlineKind.Rigid,
+                _ => CellOutlineKind.Pliant,
             };
-            byte rimMass = type switch
+            byte reliefGroup = type switch
             {
                 CellType.Rock => 1,
                 CellType.RedRock => 4,
                 _ => 0,
             };
-            return new CellConfigurationPacket(
+            return CellPacket.Create(
                 properties,
-                distortion,
-                CellAnimationType.None,
-                AnimationSpeed: 0,
-                FrameOffset: 0,
-                Color: unchecked((int)0xFF204060),
-                rimMass);
+                mapColor: unchecked((int)0xFF204060),
+                reliefGroup: reliefGroup,
+                outline: outline);
         }
 
         public float GetMoveCooldown(CellType cellType) => 0f;

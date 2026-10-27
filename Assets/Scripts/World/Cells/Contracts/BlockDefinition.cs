@@ -17,10 +17,10 @@ public readonly record struct BlockDefinition(
     CellOutline Outline,
     // Откуда координаты текстуры: своя на клетку или общая по миру.
     CellTextureAnchor TextureAnchor,
-    // Вид анимации текстуры: мигание, мерцание, радуга.
-    CellAnimationType AnimationType,
-    // Скорость анимации: кадров ленты в секунду, темп анимации и поверхности.
-    float AnimationSpeed,
+    // Вид шейдерной анимации цвета: мигание, мерцание, радуга.
+    CellAnimationType ShaderAnimation,
+    // Кадров ленты текстуры в секунду.
+    float FrameAnimationSpeed,
     // Эффект поверхности: расплав, грани, радужный кристалл.
     CellSurfaceEffect SurfaceEffect,
     // Палитра радужного эффекта поверхности.
@@ -29,9 +29,9 @@ public readonly record struct BlockDefinition(
     CellDecalAtlas DecalAtlas,
     // Масса для тёмной каймы по краю: 0 — без каймы; соседи одной ненулевой
     // массы — одно тело, между ними каймы нет.
-    byte RimMass,
-    // Сила свечения 0..1; 0 — не светится.
-    float Glow,
+    byte ReliefGroup,
+    // Светится ли клетка.
+    bool Emission,
     // Цвет клетки на карте.
     Color32 MapColor)
 {

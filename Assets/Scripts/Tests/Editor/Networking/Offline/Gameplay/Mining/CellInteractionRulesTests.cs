@@ -13,13 +13,12 @@ public sealed class CellInteractionRulesTests
 {
     [TestCase(CellConfigProperties.None, true)]
     [TestCase(CellConfigProperties.Passable, false)]
-    [TestCase(CellConfigProperties.Glowing, true)]
-    [TestCase(CellConfigProperties.Glowing | CellConfigProperties.Passable, false)]
+    [TestCase(CellConfigProperties.Blending, true)]
+    [TestCase(CellConfigProperties.Blending | CellConfigProperties.Passable, false)]
     [TestCase((CellConfigProperties)254, true)]
     public void OfflineExcavation_DependsOnlyOnPassability(CellConfigProperties properties, bool expected)
     {
-        var config = new CellConfigurationPacket(properties, CellDistortionType.Block,
-            CellAnimationType.None, 0, 0, 0, 0);
+        var config = CellPacket.Create(properties);
         Assert.That(CellInteractionRules.CanMine(config), Is.EqualTo(expected));
     }
 }

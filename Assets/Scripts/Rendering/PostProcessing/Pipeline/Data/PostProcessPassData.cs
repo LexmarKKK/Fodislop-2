@@ -20,6 +20,7 @@ internal sealed class PostProcessPassData
     public Vector4 WorldGridRect;
     public Vector4 DisplayWorldToViewportUv = new(1, 1, 0, 0);
     public float DisplayViewportAspect;
+    public float FisheyeStrength;
     public ComputeShader PostProcessCS = null!;
     public bool HDROutput;
     public ColorGamut HDRGamut;

@@ -78,10 +78,10 @@ public sealed class SurfaceRendererDecompositionContractTests
                     0f, 0f, Vector2.one, new Vector2(512f, 256f),
                     (SurfaceMaterialManager.SurfaceKind)index, "World size contract");
             }
-            manager.SetMaterialWorldSize(materials[1], materials[2], materials[0], materials[3], 640, 128);
-            foreach (Material material in materials)
+            manager.SetMaterialWorldSize(materials[1], materials[2], materials[3], 640, 128);
+            for (int index = 1; index < materials.Length; index++)
             {
-                Assert.That(material.GetVector("_WorldSize"), Is.EqualTo(new Vector4(640f, 128f, 0f, 0f)));
+                Assert.That(materials[index].GetVector("_WorldSize"), Is.EqualTo(new Vector4(640f, 128f, 0f, 0f)));
             }
         }
         finally

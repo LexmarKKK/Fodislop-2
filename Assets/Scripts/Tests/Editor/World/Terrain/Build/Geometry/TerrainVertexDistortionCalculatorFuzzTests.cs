@@ -55,11 +55,11 @@ public class TerrainVertexDistortionCalculatorFuzzTests
     [TestCase(100, 10, 100, 100)]
     [TestCase(10, 0, 100, 100)]
     [TestCase(10, 100, 100, 100)]
-    public void ComputeOffset_OnWorldEdge_ReturnsZero(int worldX, int worldY, int w, int h)
+    public void ComputeOffset_OnWorldEdge_IsNotForcedToZero(int worldX, int worldY, int w, int h)
     {
         var c = new CachedCellData { Outline = CellOutline.Wavy };
         TerrainVertexOffset offset = TerrainVertexDistortionCalculator.ComputeOffset(c, c, c, c, worldX, worldY, w, h);
-        Assert.That(offset, Is.EqualTo(TerrainVertexOffset.Zero));
+        Assert.That(offset, Is.Not.EqualTo(TerrainVertexOffset.Zero));
     }
 
     // Внутренний узел массива получает детерминированный свободный jitter.

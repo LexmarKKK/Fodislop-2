@@ -23,6 +23,11 @@ int TerrainRing(int value, int size)
 
 uint TerrainLoadCell(int gridX, int unityY)
 {
+    if (_TerrainForceUnloaded > 0.5)
+    {
+        return 0u;
+    }
+
     int width = (int)round(_TerrainCellGridSize.x);
     int height = (int)round(_TerrainCellGridSize.y);
     uint index = (uint)(TerrainRing(unityY, height) * width + TerrainRing(gridX, width));
@@ -52,7 +57,7 @@ float4 TerrainTypeAtlasPixels(TerrainTypeRow row)
         (row.atlasWH >> KERN_TERRAIN_TYPE_PIXEL_HIGH_SHIFT) & KERN_TERRAIN_TYPE_PIXEL_MASK);
 }
 float TerrainTypeFrameCount(TerrainTypeRow row) { return (float)(row.atlasXY >> KERN_TERRAIN_TYPE_BYTE_SHIFT); }
-uint TerrainTypeRimMass(TerrainTypeRow row) { return row.atlasWH >> KERN_TERRAIN_TYPE_BYTE_SHIFT; }
+uint TerrainTypeReliefGroup(TerrainTypeRow row) { return row.atlasWH >> KERN_TERRAIN_TYPE_BYTE_SHIFT; }
 
 // speedGlowTile
 uint TerrainTypeTileGroupCode(TerrainTypeRow row) { return row.speedGlowTile >> KERN_TERRAIN_TYPE_BYTE_SHIFT; }
@@ -70,7 +75,7 @@ uint TerrainTypeSurfaceEffect(TerrainTypeRow row) { return TerrainField(row.look
 uint TerrainTypeSurfaceEffectPalette(TerrainTypeRow row) { return TerrainField(row.look, KERN_TERRAIN_TYPE_SURFACE_EFFECT_PALETTE_SHIFT, KERN_TERRAIN_TYPE_SURFACE_EFFECT_PALETTE_MASK); }
 uint TerrainTypeDecalAtlas(TerrainTypeRow row) { return TerrainField(row.look, KERN_TERRAIN_TYPE_DECAL_ATLAS_SHIFT, KERN_TERRAIN_TYPE_DECAL_ATLAS_MASK); }
 
-float TerrainTypeAnimationSpeed(TerrainTypeRow row) { return f16tof32(row.speedGlowTile & KERN_TERRAIN_TYPE_ANIMATION_SPEED_MASK); }
+float TerrainTypeFrameSpeed(TerrainTypeRow row) { return f16tof32(row.speedGlowTile & KERN_TERRAIN_TYPE_FRAME_SPEED_MASK); }
 uint TerrainTypeGlowByte(TerrainTypeRow row) { return TerrainField(row.speedGlowTile, KERN_TERRAIN_TYPE_GLOW_SHIFT, KERN_TERRAIN_TYPE_GLOW_MASK); }
 float TerrainTypeGlow(TerrainTypeRow row) { return (float)TerrainTypeGlowByte(row) * (1.0 / 255.0); }
 
@@ -165,8 +170,8 @@ uint TerrainBuildingWallVariant(uint descriptor, uint cornerSideMask)
 // массы — одно тело без каймы; масса 0 каймы не имеет.
 bool TerrainSameRim(TerrainTypeRow own, TerrainTypeRow other)
 {
-    uint otherMass = TerrainTypeRimMass(other);
-    return otherMass != 0u && TerrainTypeRimMass(own) == otherMass;
+    uint otherMass = TerrainTypeReliefGroup(other);
+    return otherMass != 0u && TerrainTypeReliefGroup(own) == otherMass;
 }
 
 // Как TerrainForegroundOcclusion.IsOpaqueMassCell (до переноса в шейдер):
@@ -319,10 +324,7 @@ int2 TerrainNode(int nodeX, int nodeY, TerrainTypeRow ftl, TerrainTypeRow ftr, T
 {
     int worldX = nodeX - 1;
     int worldY = nodeY - 1;
-    int worldWidth = (int)round(_TerrainCellOrigin.w);
-    int worldHeight = (int)round(_TerrainCellOrigin.z);
-    if (_TerrainDistortionEnabled == 0 ||
-        worldX <= 0 || worldX >= worldWidth || worldY <= 0 || worldY >= worldHeight)
+    if (_TerrainDistortionEnabled == 0)
     {
         return int2(0, 0);
     }
@@ -441,10 +443,19 @@ TerrainCellVertex LoadTerrainCellVertex(
     v.layer = layer;
     v.atlasIndex = -1.0;
 
-    // Незагруженная клетка не рисует ни одного слоя.
+    // Незагруженная клетка рисуется как заглушка Unloaded.
     uint cell = TerrainLoadCell(gridX, unityY);
     uint foregroundType = TerrainCellType(cell);
-    if (foregroundType == 0u)
+
+    // Верхняя граница мира — отдельная сцена, а не клетки RedRock.
+    if (foregroundType == 0u && unityY >= (int)round(_TerrainCellOrigin.z))
+    {
+        return v;
+    }
+
+    // An unloaded cell has no background layer. Its foreground placeholder
+    // is handled below; resolving an underfill here paints through missing data.
+    if (foregroundType == 0u && !foreground)
     {
         return v;
     }
@@ -470,7 +481,8 @@ TerrainCellVertex LoadTerrainCellVertex(
         ? (foregroundIsBackground ? 0u : foregroundType)
         : TerrainResolveUnderfill(foregroundType, foregroundRow, neighbours, neighbourRows);
 
-    if (layerType == 0u)
+    bool unloaded = foreground && foregroundType == 0u;
+    if (layerType == 0u && !unloaded)
     {
         return v;
     }
@@ -587,7 +599,7 @@ TerrainCellVertex LoadTerrainCellVertex(
         tiling ? 1.0 : 0.0);
     v.animData = float4(
         (float)TerrainTypeAnimationType(row),
-        TerrainTypeAnimationSpeed(row),
+        TerrainTypeFrameSpeed(row),
         TerrainAnimationPhase(row, TerrainTypeHasAtlasRect(row), gridX, serverY),
         (float)TerrainTypeSurfaceEffect(row));
 
@@ -606,7 +618,7 @@ TerrainCellVertex LoadTerrainCellVertex(
     if (foreground)
     {
         contour = TerrainTypeRound(row) ? KERN_TERRAIN_ROUNDABLE_CONTOUR_FLAG : 0u;
-        if (TerrainTypeRimMass(row) != 0u)
+        if (TerrainTypeReliefGroup(row) != 0u)
         {
             bool top = TerrainSameRim(row, neighbourRows[KERN_TERRAIN_TOP]);
             bool left = TerrainSameRim(row, neighbourRows[KERN_TERRAIN_LEFT]);
@@ -627,7 +639,7 @@ TerrainCellVertex LoadTerrainCellVertex(
     // передний план.
     uint lightingFlags = foregroundSides |
         (TerrainTypeGlows(row) ? KERN_TERRAIN_GLOW_FLAG : 0u) |
-        (foreground && !TerrainTypeIsBackground(row) ? KERN_TERRAIN_PHYSICAL_MASS_FLAG : 0u);
+        (foregroundType != 0u && foreground && !TerrainTypeIsBackground(row) ? KERN_TERRAIN_PHYSICAL_MASS_FLAG : 0u);
     uint decalAtlas = TerrainTypeDecalAtlas(row);
     uint decalRule = decalAtlas == KERN_TERRAIN_DECAL_ATLAS_GROUND ? (uint)_TerrainGroundDecalRule
         : decalAtlas == KERN_TERRAIN_DECAL_ATLAS_ROCK ? (uint)_TerrainRockDecalRule

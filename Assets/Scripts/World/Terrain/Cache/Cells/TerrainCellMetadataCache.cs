@@ -127,7 +127,7 @@ public sealed class TerrainCellMetadataCache : ITerrainMetadataLookup
         var meta = new CellMetadata
         {
             // Вид — из cells.json, как в строке типа.
-            RimMass = block.RimMass,
+            ReliefGroup = block.ReliefGroup,
             Outline = block.Outline,
             HasTileGroup = mm.TryGetTileGroup(type, out int gid),
             TileGroupId = gid,
@@ -159,7 +159,7 @@ public sealed class TerrainCellMetadataCache : ITerrainMetadataLookup
         {
             State = TerrainCellState.Loaded,
             Type = type,
-            RimMass = meta.RimMass,
+            ReliefGroup = meta.ReliefGroup,
             Outline = meta.Outline,
             HasTileGroup = meta.HasTileGroup,
             TileGroupId = meta.TileGroupId,

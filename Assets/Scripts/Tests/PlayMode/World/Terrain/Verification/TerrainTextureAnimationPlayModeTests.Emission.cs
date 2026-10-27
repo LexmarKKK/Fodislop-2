@@ -51,11 +51,11 @@ public sealed partial class TerrainTextureAnimationPlayModeTests
                 _cellData?.Dispose();
                 UploadSingleCell(new TerrainTypeFields(
                     Type: CellType.Green,
-                    Block: new BlockDefinition(DrawLayer: CellDrawLayer.Background, Glow: 1f,
+                    Block: new BlockDefinition(DrawLayer: CellDrawLayer.Background, Emission: true,
                         Outline: CellOutline.Pliant, TextureAnchor: CellTextureAnchor.Cell,
-                        AnimationType: effect == CellSurfaceEffect.Plain ? CellAnimationType.Blinking : CellAnimationType.None,
-                        AnimationSpeed: 10f, SurfaceEffect: effect, SurfaceEffectPalette: 1,
-                        DecalAtlas: CellDecalAtlas.None, RimMass: 0, MapColor: default),
+                        ShaderAnimation: effect == CellSurfaceEffect.Plain ? CellAnimationType.Blinking : CellAnimationType.None,
+                        FrameAnimationSpeed: 10f, SurfaceEffect: effect, SurfaceEffectPalette: 1,
+                        DecalAtlas: CellDecalAtlas.None, ReliefGroup: 0, MapColor: default),
                     Slot: 0, AtlasRect: new Vector4(0, 0, 1, 1), TileSize: 1f,
                     FrameCount: 1, FrameHeightTiles: 1f, OpaqueOwn: true, OpaqueAny: true,
                     HasTileGroup: false, TileGroupId: 0), 0, 1);

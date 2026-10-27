@@ -257,7 +257,7 @@ public sealed class TerrainCellEquivalenceHarnessTests
             metadata = new CellMetadata
             {
                 // Вид — из cells.json, как в TerrainCellMetadataCache.
-                RimMass = BlockRegistry.Get(type).RimMass,
+                ReliefGroup = BlockRegistry.Get(type).ReliefGroup,
                 Outline = BlockRegistry.Get(type).Outline,
                 HasTileGroup = hash % 4 == 1 || type is CellType.BuildingWall or CellType.BuildingCorner or CellType.BuildingDoor,
                 TileGroupId = (int)(hash % 3),
@@ -279,7 +279,7 @@ public sealed class TerrainCellEquivalenceHarnessTests
             {
                 State = state,
                 Type = type,
-                RimMass = m.RimMass,
+                ReliefGroup = m.ReliefGroup,
                 Outline = m.Outline,
                 HasTileGroup = m.HasTileGroup,
                 TileGroupId = m.TileGroupId,

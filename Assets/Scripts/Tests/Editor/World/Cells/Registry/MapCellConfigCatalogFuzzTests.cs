@@ -89,24 +89,6 @@ public class MapCellConfigCatalogFuzzTests
     }
 
     [Test]
-    public void AnimatedConfig_ZeroAnimationSpeed_Throws()
-    {
-        var catalog = new MapCellConfigCatalog();
-        var configs = new[] { MakeConfig(CellType.Empty, CellAnimationType.Blinking, 0) };
-        Assert.Throws<InvalidDataException>(() => catalog.LoadConfigurations(configs, null));
-    }
-
-    [Test]
-    public void GetAnimationFrameHeight_FrameOffsetTimesCellSize()
-    {
-        var catalog = new MapCellConfigCatalog();
-        catalog.LoadConfigurations(Configs(
-            (CellType.Empty, new CellConfigurationPacket(CellConfigProperties.None, CellDistortionType.Neutral, CellAnimationType.Blinking, 5, 3, 0, 0))), null);
-        int frameHeight = catalog.GetAnimationFrameHeight(CellType.Empty);
-        Assert.That(frameHeight, Is.EqualTo(3 * 32));
-    }
-
-    [Test]
     public void GetCellMinimapColor_ColorZero_FallsBackToDefault()
     {
         var catalog = new MapCellConfigCatalog();
@@ -122,8 +104,8 @@ public class MapCellConfigCatalogFuzzTests
         var catalog = new MapCellConfigCatalog();
         const int argb = unchecked((int)0xFF804020);
         var configs = Configs(
-            (CellType.Empty, new CellConfigurationPacket(CellConfigProperties.None, CellDistortionType.Neutral, CellAnimationType.None, 0, 0, argb, 0)));
-        configs[5] = new CellConfigurationPacket(CellConfigProperties.None, CellDistortionType.Neutral, CellAnimationType.None, 0, 0, argb, 0);
+            (CellType.Empty, CellPacket.Create(mapColor: argb)));
+        configs[5] = CellPacket.Create(mapColor: argb);
         catalog.LoadConfigurations(configs, null);
 
         // (CellType)5 в палитре не описан, поэтому серверный цвет читается.
@@ -134,16 +116,9 @@ public class MapCellConfigCatalogFuzzTests
         Assert.That(c.a, Is.EqualTo(1f));
     }
 
-    private static CellConfigurationPacket MakeConfig(CellType type, CellAnimationType anim, byte animSpeed)
+    private static CellConfigurationPacket MakeConfig(CellType type, CellAnimationType anim, float frameSpeed)
     {
-        return new CellConfigurationPacket(
-            CellConfigProperties.None,
-            CellDistortionType.Neutral,
-            anim,
-            animSpeed,
-            0,
-            0,
-            0);
+        return CellPacket.Create(shaderAnimation: anim, frameAnimationSpeed: frameSpeed);
     }
 
     private static CellConfigurationPacket[] Configs(

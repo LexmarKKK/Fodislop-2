@@ -170,16 +170,16 @@ internal static class TerrainQuadBuilder
         // Серверная группа определяет наличие фаски. Без проверки группа 0
         // получает rimCode=1 и рисует фаску по всем четырём сторонам.
         bool hasRim = !isBackground &&
-            ccd.RimMass != 0;
+            ccd.ReliefGroup != 0;
         // Масса для света — передний план-блок.
         bool isPhysicalMass = !isBackground && block.DrawLayer == CellDrawLayer.Foreground;
-        byte glow = TerrainCellData.GlowByte(block.Glow);
+        byte glow = block.Emission ? (byte)255 : (byte)0;
         TerrainLightingData lightingData = TerrainLightingData.Pack(
             foregroundSides,
             glow != 0,
             hasRoundedPhysicalContour,
             isPhysicalMass,
-            TerrainCellData.GlowOf(glow),
+            block.Emission ? 1f : 0f,
             rimMask,
             hasRim,
             rimCornerMask);
@@ -208,8 +208,8 @@ internal static class TerrainQuadBuilder
 
         // Анимация и поверхность — свои поля; скорость — из half строки.
         Vector4 animDataVec = new(
-            (float)block.AnimationType,
-            TerrainCellData.HalfValue(TerrainCellData.HalfBits(block.AnimationSpeed)),
+            (float)block.ShaderAnimation,
+            TerrainCellData.HalfValue(TerrainCellData.HalfBits(block.FrameAnimationSpeed)),
             animOffset,
             (float)block.SurfaceEffect);
         Vector4 tileSizeVec = new Vector4(type.TileSize, type.TileSize, (float)type.FrameCount, type.FrameHeightTiles);
@@ -319,7 +319,7 @@ internal static class TerrainQuadBuilder
             return block.SurfaceEffectPalette;
         }
 
-        if (block.AnimationType == CellAnimationType.Blinking)
+        if (block.ShaderAnimation == CellAnimationType.Blinking)
         {
             uint seed = HashCell(gridX, serverY);
             return (seed % 6283) / 1000f;

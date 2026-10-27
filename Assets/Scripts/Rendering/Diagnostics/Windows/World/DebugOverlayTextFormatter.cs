@@ -89,14 +89,14 @@ internal static class DebugOverlayTextFormatter
                     {
                         var config = mapManager.GetCellConfig(cellType);
                         BlockDefinition block = BlockRegistry.Get(cellType);
-                        bool passable = ((CellConfigProperties)config.Properties).HasFlag(CellConfigProperties.Passable);
+                        bool passable = ((CellConfigProperties)config.Flags).HasFlag(CellConfigProperties.Passable);
 
                         sb.Append("\n<b>Клетка под курсором  ·  ")
                           .Append(cell.x).Append(", ").Append(cell.y).Append("</b>\n")
                           .Append("kern:").Append(cellType.ToString().ToLowerInvariant()).Append(" (#").Append((int)cellType).Append(")\n")
                           .Append("Проходимая: ").Append(passable ? "да" : "нет")
                           .Append("\nСлой: ").Append(block.DrawLayer)
-                          .Append("  ·  Группа каймы: ").Append(block.RimMass).Append("\n");
+                          .Append("  ·  Группа рельефа: ").Append(block.ReliefGroup).Append("\n");
                     }
                 }
             }

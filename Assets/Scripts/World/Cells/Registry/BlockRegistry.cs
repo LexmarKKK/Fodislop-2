@@ -83,18 +83,14 @@ public sealed class BlockRegistry : IBlockRegistry
                 DrawLayer: ParseEnum<CellDrawLayer>(raw.DrawLayer, cellName, "drawLayer"),
                 Outline: ParseEnum<CellOutline>(raw.Outline, cellName, "outline"),
                 TextureAnchor: ParseEnum<CellTextureAnchor>(raw.TextureAnchor, cellName, "textureAnchor"),
-                AnimationType: ParseEnum<CellAnimationType>(raw.AnimationType, cellName, "animationType"),
-                AnimationSpeed: Required(raw.AnimationSpeed, cellName, "animationSpeed"),
+                ShaderAnimation: ParseEnum<CellAnimationType>(raw.ShaderAnimation, cellName, "shaderAnimation"),
+                FrameAnimationSpeed: Required(raw.FrameAnimationSpeed, cellName, "frameAnimationSpeed"),
                 SurfaceEffect: ParseEnum<CellSurfaceEffect>(raw.SurfaceEffect, cellName, "surfaceEffect"),
                 SurfaceEffectPalette: Required(raw.SurfaceEffectPalette, cellName, "surfaceEffectPalette"),
                 DecalAtlas: ParseEnum<CellDecalAtlas>(raw.DecalAtlas, cellName, "decalAtlas"),
-                RimMass: Required(raw.RimMass, cellName, "rimMass"),
-                Glow: Required(raw.Glow, cellName, "glow"),
+                ReliefGroup: Required(raw.ReliefGroup, cellName, "reliefGroup"),
+                Emission: Required(raw.Emission, cellName, "emission"),
                 MapColor: ParseColor(raw.MapColor, cellName, "mapColor"));
-            if (def.Glow is < 0f or > 1f)
-            {
-                throw new InvalidDataException($"Cell '{cellName}': glow {def.Glow} is outside 0..1.");
-            }
 
             result[cellType] = def;
             s_blockArray[(byte)cellType] = def;
@@ -230,9 +226,9 @@ public sealed class BlockRegistry : IBlockRegistry
 
         public string? TextureAnchor { get; set; }
 
-        public string? AnimationType { get; set; }
+        public string? ShaderAnimation { get; set; }
 
-        public float? AnimationSpeed { get; set; }
+        public float? FrameAnimationSpeed { get; set; }
 
         public string? SurfaceEffect { get; set; }
 
@@ -240,9 +236,9 @@ public sealed class BlockRegistry : IBlockRegistry
 
         public string? DecalAtlas { get; set; }
 
-        public byte? RimMass { get; set; }
+        public byte? ReliefGroup { get; set; }
 
-        public float? Glow { get; set; }
+        public bool? Emission { get; set; }
 
         public string? MapColor { get; set; }
     }

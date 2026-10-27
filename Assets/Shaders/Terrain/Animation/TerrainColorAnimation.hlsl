@@ -16,6 +16,13 @@
 #include "Assets/Shaders/Terrain/Animation/TerrainAnimationProfile.hlsl"
 #include "Assets/Shaders/Terrain/Geometry/TerrainContour.hlsl"
 
+static const float KERN_TERRAIN_PRISMATIC_ANIMATION_SPEED = 50.0;
+static const float KERN_TERRAIN_FACETED_ANIMATION_SPEED = 0.06;
+static const float KERN_TERRAIN_MOLTEN_ANIMATION_SPEED = 10.0;
+static const float KERN_TERRAIN_BLINKING_ANIMATION_SPEED = 10.0;
+static const float KERN_TERRAIN_SHIMMER_ANIMATION_SPEED = 10.0;
+static const float KERN_TERRAIN_RAINBOW_ANIMATION_SPEED = 10.0;
+
 // Анимация цвета клетки террейна для видимого пасса.
 //
 // Освещение намеренно не включает этот файл: его material field хранит
@@ -121,7 +128,6 @@ float3 AnimateTerrainColor(
     float2 surfacePosition,
     int cellAnimationType,
     int cellSurfaceEffect,
-    float animationSpeed,
     float animationOffset,
     float3 flowSample,
     float3 shimmerColor,
@@ -134,10 +140,10 @@ float3 AnimateTerrainColor(
     {
 #if defined(UNITY_COLORSPACE_GAMMA)
         result = EvaluatePrismaticCrystal(
-            baseColor, flowSample, animationOffset, _Time.y * animationSpeed * _PrismaticPhaseSpeed);
+            baseColor, flowSample, animationOffset, _Time.y * KERN_TERRAIN_PRISMATIC_ANIMATION_SPEED * _PrismaticPhaseSpeed);
 #else
         result = SRGBToLinear(EvaluatePrismaticCrystal(
-            LinearToSRGB(baseColor), flowSample, animationOffset, _Time.y * animationSpeed * _PrismaticPhaseSpeed));
+            LinearToSRGB(baseColor), flowSample, animationOffset, _Time.y * KERN_TERRAIN_PRISMATIC_ANIMATION_SPEED * _PrismaticPhaseSpeed));
 #endif
     }
     else if (cellSurfaceEffect == (int)KERN_TERRAIN_SURFACE_EFFECT_FACETED)
@@ -148,7 +154,7 @@ float3 AnimateTerrainColor(
             localUV,
             luminanceSource,
             cellSurfaceEffect,
-            animationSpeed,
+            KERN_TERRAIN_FACETED_ANIMATION_SPEED,
             animationOffset);
         // Цвет блика — альбедо текселя, высветленное к белому.
         float3 glintColor = lerp(luminanceSource, 1.0.xxx, _FacetedGlintMix);
@@ -159,7 +165,7 @@ float3 AnimateTerrainColor(
         // Stable world-anchored heat flow: adjacent Lava cells share one
         // continuous pattern, while only the visual albedo changes over time.
         float2 pixelPosition = (floor(surfacePosition * 32.0) + 0.5) / 32.0;
-        float phase = _Time.y * animationSpeed * 0.12;
+        float phase = _Time.y * KERN_TERRAIN_MOLTEN_ANIMATION_SPEED * 0.12;
         float broadFlow = sin(dot(pixelPosition, float2(1.9, -1.3)) + phase);
         float crossFlow = sin(dot(pixelPosition, float2(-1.1, 2.1)) - phase * 0.7);
         float heat = saturate(0.5 + broadFlow * 0.3 + crossFlow * 0.2);
@@ -171,7 +177,7 @@ float3 AnimateTerrainColor(
     else if (cellAnimationType == (int)KERN_TERRAIN_ANIMATION_TYPE_BLINKING)
     {
         float blinking = 0.5 + 0.5 * sin(
-            _Time.y * animationSpeed * blinkingSpeedScale + animationOffset);
+            _Time.y * KERN_TERRAIN_BLINKING_ANIMATION_SPEED * blinkingSpeedScale + animationOffset);
         result = baseColor * blinking;
     }
     else if (cellAnimationType == (int)KERN_TERRAIN_ANIMATION_TYPE_SHIMMER)
@@ -179,7 +185,7 @@ float3 AnimateTerrainColor(
         TerrainShimmerSignal signal = EvaluateTerrainShimmer(
             luminanceSource,
             flowSample,
-            animationSpeed,
+            KERN_TERRAIN_SHIMMER_ANIMATION_SPEED,
             shimmerSpeedScale);
         result = lerp(
             baseColor,
@@ -189,7 +195,7 @@ float3 AnimateTerrainColor(
     else if (cellAnimationType == (int)KERN_TERRAIN_ANIMATION_TYPE_RAINBOW)
     {
         float3 rainbowHSV = TerrainRGBToHSV(baseColor);
-        rainbowHSV.x = frac(rainbowHSV.x + _Time.y * (animationSpeed / _RainbowHueDivisor));
+        rainbowHSV.x = frac(rainbowHSV.x + _Time.y * (KERN_TERRAIN_RAINBOW_ANIMATION_SPEED / _RainbowHueDivisor));
         result = TerrainHSVToRGB(rainbowHSV);
     }
 

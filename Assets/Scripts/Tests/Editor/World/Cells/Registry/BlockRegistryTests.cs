@@ -50,8 +50,8 @@ public sealed class BlockRegistryTests
     {
         BlockDefinition lava = BlockRegistry.Get(CellType.Lava);
         Assert.That(lava.SurfaceEffect, Is.EqualTo(CellSurfaceEffect.Molten));
-        Assert.That(lava.AnimationSpeed, Is.EqualTo(10f));
-        Assert.That(lava.Glow, Is.EqualTo(1f));
+        Assert.That(lava.FrameAnimationSpeed, Is.EqualTo(10f));
+        Assert.That(lava.Emission, Is.True);
     }
 
     // Анимация текстуры и эффект поверхности — разные поля.
@@ -62,7 +62,7 @@ public sealed class BlockRegistryTests
     public void AnimationAndSurfaceEffectAreAuthored(CellType type, CellAnimationType animation, CellSurfaceEffect surface)
     {
         BlockDefinition block = BlockRegistry.Get(type);
-        Assert.That(block.AnimationType, Is.EqualTo(animation));
+        Assert.That(block.ShaderAnimation, Is.EqualTo(animation));
         Assert.That(block.SurfaceEffect, Is.EqualTo(surface));
     }
 

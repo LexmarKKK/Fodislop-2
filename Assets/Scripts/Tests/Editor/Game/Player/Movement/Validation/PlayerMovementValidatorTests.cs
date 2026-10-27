@@ -122,35 +122,35 @@ public class PlayerMovementValidatorTests
     [Test]
     public void IsPassable_EmptyCell_FollowsServerFlag()
     {
-        var nonPassableConfig = new CellConfigurationPacket(CellConfigProperties.None, (CellDistortionType)0, CellAnimationType.None, 0, 0, 0, 0);
+        var nonPassableConfig = CellPacket.Create();
         Assert.IsFalse(PlayerMovementValidator.IsPassable(CellType.Empty, nonPassableConfig));
     }
 
     [Test]
     public void IsPassable_UnloadedCell_ReturnsFalse()
     {
-        var passableConfig = new CellConfigurationPacket(CellConfigProperties.Passable, (CellDistortionType)0, CellAnimationType.None, 0, 0, 0, 0);
+        var passableConfig = CellPacket.Create(properties: CellConfigProperties.Passable);
         Assert.IsFalse(PlayerMovementValidator.IsPassable(CellType.Unloaded, passableConfig));
     }
 
     [Test]
     public void IsPassable_PregenerCell_ReturnsFalse()
     {
-        var passableConfig = new CellConfigurationPacket(CellConfigProperties.Passable, (CellDistortionType)0, CellAnimationType.None, 0, 0, 0, 0);
+        var passableConfig = CellPacket.Create(properties: CellConfigProperties.Passable);
         Assert.IsFalse(PlayerMovementValidator.IsPassable(CellType.Pregener, passableConfig));
     }
 
     [Test]
     public void IsPassable_ConfiguredPassable_ReturnsTrue()
     {
-        var passableConfig = new CellConfigurationPacket(CellConfigProperties.Passable, (CellDistortionType)0, CellAnimationType.None, 0, 0, 0, 0);
+        var passableConfig = CellPacket.Create(properties: CellConfigProperties.Passable);
         Assert.IsTrue(PlayerMovementValidator.IsPassable(CellType.BuildingDoor, passableConfig));
     }
 
     [Test]
     public void IsPassable_SolidTile_ReturnsFalse()
     {
-        var solidConfig = new CellConfigurationPacket(CellConfigProperties.None, (CellDistortionType)0, CellAnimationType.None, 0, 0, 0, 0);
+        var solidConfig = CellPacket.Create();
         Assert.IsFalse(PlayerMovementValidator.IsPassable(CellType.BuildingWall, solidConfig));
     }
 
@@ -306,8 +306,9 @@ public class PlayerMovementValidatorTests
         public bool IsStandaloneMode => false;
 
         public CellConfigurationPacket GetCellConfig(CellType type) =>
-            new(type == CellType.Empty ? CellConfigProperties.Passable : CellConfigProperties.None,
-                (CellDistortionType)0, CellAnimationType.None, 0, 0, 0, 0);
+            CellPacket.Create(properties: type == CellType.Empty
+                ? CellConfigProperties.Passable
+                : CellConfigProperties.None);
 
         public float GetMoveCooldown(CellType cellType) =>
             cellType == CellType.Empty ? _emptyCooldown : _normalCooldown;

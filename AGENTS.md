@@ -2,6 +2,9 @@
 
 Kern — 2D MMORPG sandbox on Unity 6 (`6000.6.0f1`), URP 2D 17.6, C# 12, UI Toolkit, UniTask, and `darkar25.fodina.*` packages.
 
+The user has the final word: an explicit instruction in the current message
+overrides conflicting project guidance, including Git and rollback restrictions.
+
 ## Specialized guides
 
 Specializations are implemented as skills and auto-load based on task triggers. If the task changes domain — explicitly load the corresponding skill before proceeding.

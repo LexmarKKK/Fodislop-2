@@ -112,25 +112,19 @@ public static class TerrainCellData
             (fields.OpaqueAny ? TerrainCellFormat.TypeOpaqueAny : 0u) |
             ((uint)block.TextureAnchor << TerrainCellFormat.TypeTextureAnchorShift) |
             ((uint)block.Outline << TerrainCellFormat.TypeOutlineShift) |
-            ((uint)block.AnimationType << TerrainCellFormat.TypeAnimationTypeShift) |
+            ((uint)block.ShaderAnimation << TerrainCellFormat.TypeAnimationTypeShift) |
             ((uint)block.SurfaceEffect << TerrainCellFormat.TypeSurfaceEffectShift) |
             ((uint)block.SurfaceEffectPalette << TerrainCellFormat.TypeSurfaceEffectPaletteShift) |
             ((uint)block.DecalAtlas << TerrainCellFormat.TypeDecalAtlasShift);
         uint tileGroup = (uint)(fields.HasTileGroup ? fields.TileGroupId + 1 : 0);
         return new TerrainTypeRow(
             (uint)x | ((uint)y << TerrainCellFormat.TypePixelHighShift) | ((uint)fields.FrameCount << TerrainCellFormat.TypeByteShift),
-            (uint)w | ((uint)h << TerrainCellFormat.TypePixelHighShift) | ((uint)block.RimMass << TerrainCellFormat.TypeByteShift),
+            (uint)w | ((uint)h << TerrainCellFormat.TypePixelHighShift) | ((uint)block.ReliefGroup << TerrainCellFormat.TypeByteShift),
             look,
-            HalfBits(block.AnimationSpeed) |
-                ((uint)GlowByte(block.Glow) << TerrainCellFormat.TypeGlowShift) |
+            HalfBits(block.FrameAnimationSpeed) |
+                ((block.Emission ? 255u : 0u) << TerrainCellFormat.TypeGlowShift) |
                 (tileGroup << TerrainCellFormat.TypeByteShift));
     }
-
-    // Свечение в строке — байт: 0..1 → 0..255; шейдер читает его как
-    // байт × (1/255), так же — GlowOf.
-    internal static byte GlowByte(float glow) => (byte)Mathf.RoundToInt(Mathf.Clamp01(glow) * 255f);
-
-    internal static float GlowOf(byte glow) => glow * (1f / 255f);
 
     // half с отброшенным хвостом мантиссы — так же, как вершина пишет half
     // (TerrainVertex.H); шейдер разворачивает его f16tof32.

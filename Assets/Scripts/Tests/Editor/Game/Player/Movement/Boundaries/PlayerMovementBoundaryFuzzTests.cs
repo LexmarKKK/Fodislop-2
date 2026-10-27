@@ -77,7 +77,7 @@ new(0, 0), new(1, 0), new(-1, 0), new(0, 1), new(0, -1)
         // Проходимость решает флаг сервера, у Empty исключения нет.
         bool p = PlayerMovementValidator.IsPassable(
             CellType.Empty,
-            new CellConfigurationPacket(CellConfigProperties.None, CellDistortionType.Neutral, CellAnimationType.None, 0, 0, 0, 0));
+            CellPacket.Create());
         Assert.IsFalse(p);
     }
 
@@ -92,7 +92,7 @@ CellType.Road, CellType.Gate, CellType.BuildingDoor
         {
             bool p = PlayerMovementValidator.IsPassable(
                 types[random.Next(types.Length)],
-                new CellConfigurationPacket(CellConfigProperties.Passable, CellDistortionType.Neutral, CellAnimationType.None, 0, 0, 0, 0));
+                CellPacket.Create(properties: CellConfigProperties.Passable));
             Assert.IsTrue(p, $"i={i}");
         }
     }
@@ -108,7 +108,7 @@ CellType.Rock, CellType.BuildingWall, CellType.Lava, CellType.Box
         {
             bool p = PlayerMovementValidator.IsPassable(
                 types[random.Next(types.Length)],
-                new CellConfigurationPacket(CellConfigProperties.None, CellDistortionType.Neutral, CellAnimationType.None, 0, 0, 0, 0));
+                CellPacket.Create());
             Assert.IsFalse(p, $"i={i}");
         }
     }

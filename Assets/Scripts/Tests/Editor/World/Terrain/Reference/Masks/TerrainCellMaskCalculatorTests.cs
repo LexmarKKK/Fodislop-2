@@ -42,9 +42,9 @@ public class TerrainCellMaskCalculatorTests
     [Test]
     public void CalculateRimMask_OnlyEqualNeighbors_SetBitmask()
     {
-        var center = new CachedCellData { RimMass = 5 };
-        var equal = new CachedCellData { RimMass = 5 };
-        var foreign = new CachedCellData { RimMass = 6 };
+        var center = new CachedCellData { ReliefGroup = 5 };
+        var equal = new CachedCellData { ReliefGroup = 5 };
+        var foreign = new CachedCellData { ReliefGroup = 6 };
 
         byte allEqual = TerrainCellMaskCalculator.CalculateRimMask(center, equal, equal, equal, equal);
         Assert.AreEqual(1 | 2 | 4 | 8, (int)allEqual);

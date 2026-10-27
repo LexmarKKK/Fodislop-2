@@ -313,7 +313,7 @@ internal sealed class DummyMovementResponder : IDisposable
         }
 
         bool isPassable = cellType == CellType.Empty ||
-            ((CellConfigProperties)cellConfig.Value.Properties)
+            ((CellConfigProperties)cellConfig.Value.Flags)
                 .HasFlag(CellConfigProperties.Passable);
         return isPassable || _ignoreCollision();
     }
@@ -378,7 +378,7 @@ internal sealed class DummyMovementResponder : IDisposable
         {
             CellConfigurationPacket? config = _worldState.GetCellConfig(cellType);
             if (config.HasValue &&
-                !((CellConfigProperties)config.Value.Properties).HasFlag(CellConfigProperties.Passable) &&
+                !((CellConfigProperties)config.Value.Flags).HasFlag(CellConfigProperties.Passable) &&
                 cellType != CellType.Empty)
             {
                 return 100;

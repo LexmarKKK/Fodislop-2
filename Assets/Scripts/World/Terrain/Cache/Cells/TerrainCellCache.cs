@@ -84,9 +84,14 @@ public class TerrainCellCache : ITerrainCellDataSource
     public CachedCellData GetCellData(int x, int y)
     {
         CellType type = GetCellType(x, y);
-        return type == CellType.Unloaded
-            ? UnloadedCellData
-            : _metadataCache.CreateCachedData(type, RequireMetadata(type));
+        if (type == CellType.Unloaded)
+        {
+            return _metadataCache.TryGet(type, out CellMetadata meta) && meta.IsTextureReady
+                ? _metadataCache.CreateCachedData(type, meta)
+                : UnloadedCellData;
+        }
+
+        return _metadataCache.CreateCachedData(type, RequireMetadata(type));
     }
 
     public CellType GetCellType(int x, int y)
@@ -196,10 +201,7 @@ public class TerrainCellCache : ITerrainCellDataSource
         _metadataCache.BeginPass();
         foreach (CellType cellType in cellTypes)
         {
-            if (cellType != CellType.Unloaded)
-            {
-                _metadataCache.GetMetadata(cellType, mapManager, textureService, atlases);
-            }
+            _metadataCache.GetMetadata(cellType, mapManager, textureService, atlases);
         }
     }
 
@@ -214,6 +216,7 @@ public class TerrainCellCache : ITerrainCellDataSource
         IReadOnlyList<IAtlasDescriptor> atlases)
     {
         _metadataCache.BeginPass();
+        Resolve(CellType.Unloaded);
         for (int type = 0; type < _seenTypes.Length; type++)
         {
             if (!_seenTypes[type])
@@ -228,10 +231,7 @@ public class TerrainCellCache : ITerrainCellDataSource
 
         void Resolve(CellType cellType)
         {
-            if (cellType != CellType.Unloaded)
-            {
-                _metadataCache.GetMetadata(cellType, mapData, textureService, atlases);
-            }
+            _metadataCache.GetMetadata(cellType, mapData, textureService, atlases);
         }
     }
 
@@ -387,12 +387,11 @@ public class TerrainCellCache : ITerrainCellDataSource
 
         if (gridX < 0 || gridX >= worldWidth || unityY < 0)
         {
-            // The infinite redrock shell is rendered by SurfaceRenderer's
-            // boundary shader. It is not terrain data and must never be
-            // converted into a server CellType: doing so asks the texture
-            // cache for RedRock metadata/animation outside the world and
-            // can fail when the server has not configured that cell type.
-            return CellType.Unloaded;
+            // Lower, left and right world edges are ordinary RedRock cells, so
+            // they use the same terrain shader, lighting and animation as the
+            // rest of the world. The upper edge stays outside terrain: it is
+            // the separate surface scene.
+            return CellType.RedRock;
         }
 
         int serverY = WorldCoordinateConverter.UnityToServerY(unityY, worldHeight);

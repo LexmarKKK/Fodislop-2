@@ -285,8 +285,6 @@ namespace Kern.World
 
         public Color32 GetCellMinimapColor32(CellType type) => _cellCatalog.GetCellMinimapColor32(type);
 
-        public int GetAnimationFrameHeight(CellType cellType) => _cellCatalog.GetAnimationFrameHeight(cellType);
-
         public string WorldCodeName => _worldCodeName;
         public ushort WorldWidth => _width;
         public ushort WorldHeight => _height;
@@ -369,9 +367,9 @@ namespace Kern.World
 
                             var config = GetCellConfig(cellType);
 
-                            if (config.Properties != 0)
+                            if (config.Flags != 0)
                             {
-                                bool isPassable = ((CellConfigProperties)config.Properties).HasFlag(CellConfigProperties.Passable);
+                                bool isPassable = ((CellConfigProperties)config.Flags).HasFlag(CellConfigProperties.Passable);
                                 if (!isPassable)
                                 {
                                     Gizmos.color = new Color(1, 0, 0, 0.15f);

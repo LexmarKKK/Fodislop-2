@@ -84,11 +84,8 @@ public static class TerrainVertexDistortionCalculator
         int worldWidth = int.MaxValue,
         int worldHeight = int.MaxValue)
     {
-        if (worldX <= 0 || worldX >= worldWidth || worldY <= 0 || worldY >= worldHeight)
-        {
-            return TerrainVertexOffset.Zero;
-        }
-
+        _ = worldWidth;
+        _ = worldHeight;
         int rx = RandXd(worldX, worldY) * DistortionStrengthUnits;
         int ry = RandYd(worldX, worldY) * DistortionStrengthUnits;
         return ComputeOffsetFromJitter(tl, tr, bl, br, worldY, rx, ry, FreeJitterCenterUnits);

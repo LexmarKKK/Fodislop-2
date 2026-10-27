@@ -100,6 +100,7 @@ internal static class PostProcessPassExecutor
         cmd.SetComputeVectorParam(data.PostProcessCS, "_DisplaySourceUv", sourceUv);
         cmd.SetComputeVectorParam(data.PostProcessCS, "_DisplayWorldToViewportUv", data.DisplayWorldToViewportUv);
         cmd.SetComputeFloatParam(data.PostProcessCS, "_DisplayViewportAspect", data.DisplayViewportAspect);
+        cmd.SetComputeFloatParam(data.PostProcessCS, "_FisheyeStrength", data.FisheyeStrength);
         cmd.SetComputeIntParam(data.PostProcessCS, "_DisplayLinearFilter", data.DisplayLinearFilter ? 1 : 0);
         cmd.SetComputeFloatParam(data.PostProcessCS, CompareSplitId, data.CompareSplit);
         cmd.SetComputeIntParam(data.PostProcessCS, CompareModeId, data.CompareMode);

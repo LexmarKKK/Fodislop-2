@@ -19,18 +19,18 @@ public class TerrainCellMaskCalculatorFuzzTests
     public void CalculateRimMask_AlwaysFitsInFourBits(int data, int neighbor)
     {
         byte mask = TerrainCellMaskCalculator.CalculateRimMask(
-            new CachedCellData { RimMass = (byte)data },
-            new CachedCellData { RimMass = (byte)neighbor },
-            new CachedCellData { RimMass = (byte)neighbor },
-            new CachedCellData { RimMass = (byte)neighbor },
-            new CachedCellData { RimMass = (byte)neighbor });
+            new CachedCellData { ReliefGroup = (byte)data },
+            new CachedCellData { ReliefGroup = (byte)neighbor },
+            new CachedCellData { ReliefGroup = (byte)neighbor },
+            new CachedCellData { ReliefGroup = (byte)neighbor },
+            new CachedCellData { ReliefGroup = (byte)neighbor });
         Assert.That(mask, Is.InRange(0, 15), $"data={data}, neighbor={neighbor}");
     }
 
     [Test]
     public void CalculateRimMask_SameGroup_ProducesFullMask()
     {
-        var c = new CachedCellData { RimMass = 5 };
+        var c = new CachedCellData { ReliefGroup = 5 };
         byte mask = TerrainCellMaskCalculator.CalculateRimMask(c, c, c, c, c);
         Assert.That(mask, Is.EqualTo(15));
     }
@@ -41,9 +41,9 @@ public class TerrainCellMaskCalculatorFuzzTests
     [Test]
     public void CalculateRimMask_ForeignNeighbors_ProduceZero()
     {
-        var center = new CachedCellData { RimMass = 5 };
-        var higher = new CachedCellData { RimMass = 7 };
-        var lower = new CachedCellData { RimMass = 3 };
+        var center = new CachedCellData { ReliefGroup = 5 };
+        var higher = new CachedCellData { ReliefGroup = 7 };
+        var lower = new CachedCellData { ReliefGroup = 3 };
         Assert.That(
             TerrainCellMaskCalculator.CalculateRimMask(center, higher, higher, higher, higher),
             Is.EqualTo(0));
@@ -57,8 +57,8 @@ public class TerrainCellMaskCalculatorFuzzTests
     [Test]
     public void CalculateRimMask_ForeignPairIsSymmetric()
     {
-        var crystal = new CachedCellData { RimMass = 3 };
-        var rock = new CachedCellData { RimMass = 5 };
+        var crystal = new CachedCellData { ReliefGroup = 3 };
+        var rock = new CachedCellData { ReliefGroup = 5 };
         byte fromCrystal = TerrainCellMaskCalculator.CalculateRimMask(
             crystal, rock, crystal, crystal, crystal);
         byte fromRock = TerrainCellMaskCalculator.CalculateRimMask(
@@ -70,9 +70,9 @@ public class TerrainCellMaskCalculatorFuzzTests
     // Клетка без каймы не обводится ничем: у неё нет семьи, и кайма по
     // всем четырём сторонам залила бы пол сеткой.
     [Test]
-    public void CalculateRimMask_NoRimMass_ProducesZero()
+    public void CalculateRimMask_NoReliefGroup_ProducesZero()
     {
-        var ground = new CachedCellData { RimMass = 0 };
+        var ground = new CachedCellData { ReliefGroup = 0 };
         Assert.That(
             TerrainCellMaskCalculator.CalculateRimMask(ground, ground, ground, ground, ground),
             Is.EqualTo(0));

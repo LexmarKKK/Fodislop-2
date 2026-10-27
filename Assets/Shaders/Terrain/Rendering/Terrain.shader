@@ -400,7 +400,6 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                     TerrainAnimationWorldPosition(input.worldPos, input.packedData),
                     cellAnimationType,
                     cellSurfaceEffect,
-                    input.animData.y,
                     input.animData.z,
                     flowSample,
                     _ShimmerColor.rgb,
@@ -428,7 +427,7 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                             terrainTileUv,
                             texColor.rgb,
                             cellSurfaceEffect,
-                            input.animData.y,
+                            KERN_TERRAIN_FACETED_ANIMATION_SPEED,
                             input.animData.z);
                         glintSignal = glintStrength / max(_FacetedGlintStrength, 0.0001);
                     }

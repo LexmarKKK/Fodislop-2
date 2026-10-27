@@ -21,7 +21,7 @@ public enum TerrainDebugView
     Layer = 4,
     Anchored = 5,
     CellLocal = 6,
-    RimMass = 7,
+    ReliefGroup = 7,
     WorldTextureAnchor = 8,
     AmbientOcclusion = 9,
     BackgroundTileIdentity = 10,
@@ -65,7 +65,7 @@ public static class TerrainDebugViewState
         TerrainDebugView.Layer => "Слой",
         TerrainDebugView.Anchored => "Смещённые клетки",
         TerrainDebugView.CellLocal => "Координата в клетке",
-        TerrainDebugView.RimMass => "Группа каймы",
+        TerrainDebugView.ReliefGroup => "Группа рельефа",
         TerrainDebugView.WorldTextureAnchor => "Текстура по миру",
         TerrainDebugView.AmbientOcclusion => "AO: вклад в террейн",
         TerrainDebugView.BackgroundTileIdentity => "Уникальные тайлы фона",
@@ -103,7 +103,7 @@ public static class TerrainDebugViewState
         TerrainDebugView.CellLocal =>
             "Красный — X внутри клетки, зелёный — Y. Цвет ограничен " +
             "видимым контуром клетки.",
-        TerrainDebugView.RimMass =>
+        TerrainDebugView.ReliefGroup =>
             "Оттенок — код каймы. Чёрно-синее — клетка без группы.",
         TerrainDebugView.WorldTextureAnchor =>
             "Бирюзовое — клетка адресует лист целиком по мировой координате; " +

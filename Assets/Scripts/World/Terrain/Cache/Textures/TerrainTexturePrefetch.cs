@@ -65,7 +65,7 @@ public sealed class TerrainTexturePrefetch
 
         for (int type = 0; type < _seen.Length; type++)
         {
-            if (_seen[type] && (CellType)type != CellType.Unloaded)
+            if (_seen[type])
             {
                 textureService.RequestTexture((CellType)type);
             }

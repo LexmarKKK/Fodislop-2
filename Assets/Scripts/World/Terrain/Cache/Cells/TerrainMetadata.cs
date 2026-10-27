@@ -16,7 +16,7 @@ public struct CachedCellData
 {
     public TerrainCellState State;
     public CellType Type;
-    public byte RimMass;
+    public byte ReliefGroup;
     public CellOutline Outline;
     public bool HasTileGroup;
     public int TileGroupId;
@@ -28,7 +28,7 @@ public struct CachedCellData
 
 public struct CellMetadata
 {
-    public byte RimMass;
+    public byte ReliefGroup;
     public CellOutline Outline;
     public bool HasTileGroup;
     public int TileGroupId;

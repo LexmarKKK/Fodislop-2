@@ -27,6 +27,7 @@ float _DisplayPeakRelative;
 float4 _DisplaySourceUv;
 float4 _DisplayWorldToViewportUv;
 float _DisplayViewportAspect;
+float _FisheyeStrength;
 // 0 when the world-grid final blit applies the vignette per screen pixel;
 // the mask is still computed here for the vignette debug view.
 int _DisplayApplyVignette;
@@ -185,7 +186,16 @@ void DisplayFinal(uint3 id : SV_DispatchThreadID)
 
     float2 worldUv = (id.xy + 0.5) * _ScreenSize.zw;
     float2 screenUv = worldUv * _DisplayWorldToViewportUv.xy + _DisplayWorldToViewportUv.zw;
-    float2 uv = worldUv * _DisplaySourceUv.xy + _DisplaySourceUv.zw;
+    // Warp on the world-pixel lattice, after terrain/entity filtering and before
+    // point presentation. Screen-space effects keep their original coordinates.
+    float2 centered = worldUv * 2.0 - 1.0;
+    // Positive distortion samples outside the frame unless the image is
+    // fitted first. Clamp sampling would stretch the outermost texel into
+    // visible stripes; fit the furthest corner inside the source instead.
+    float radialScale = (1.0 + dot(centered, centered) * _FisheyeStrength) /
+        (1.0 + 2.0 * max(_FisheyeStrength, 0.0));
+    float2 warpedUv = 0.5 + centered * (radialScale * 0.5);
+    float2 uv = warpedUv * _DisplaySourceUv.xy + _DisplaySourceUv.zw;
     float4 source = _DisplayLinearFilter != 0
         ? _InputTex.SampleLevel(sampler_LinearClamp, uv, 0)
         : _InputTex.SampleLevel(sampler_PointClamp, uv, 0);

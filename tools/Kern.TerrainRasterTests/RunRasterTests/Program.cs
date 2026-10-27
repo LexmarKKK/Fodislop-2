@@ -200,7 +200,7 @@ internal static class Program
                     (string before, string after) = mutation switch
                     {
                         "rim-merges-any-masses" => (
-                            "return otherMass != 0u && TerrainTypeRimMass(own) == otherMass;",
+                            "return otherMass != 0u && TerrainTypeReliefGroup(own) == otherMass;",
                             "return otherMass != 0u;"),
                         "background-ignores-occlusion" => (
                             "        if (occluded)\n        {\n            return v;\n        }",

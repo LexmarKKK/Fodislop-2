@@ -36,7 +36,7 @@ public class TerrainVertexDistortionCalculatorTests
     }
 
     [Test]
-    public void ComputeOffset_WorldBounds_ReturnsZero()
+    public void ComputeOffset_WorldBounds_IsNotForcedToZero()
     {
         var cause = new CachedCellData { Outline = CellOutline.Wavy };
 
@@ -45,10 +45,12 @@ public class TerrainVertexDistortionCalculatorTests
         TerrainVertexOffset minY = TerrainVertexDistortionCalculator.ComputeOffset(cause, cause, cause, cause, 10, 0, 100, 100);
         TerrainVertexOffset maxY = TerrainVertexDistortionCalculator.ComputeOffset(cause, cause, cause, cause, 10, 100, 100, 100);
 
-        Assert.AreEqual(TerrainVertexOffset.Zero, minX);
-        Assert.AreEqual(TerrainVertexOffset.Zero, maxX);
-        Assert.AreEqual(TerrainVertexOffset.Zero, minY);
-        Assert.AreEqual(TerrainVertexOffset.Zero, maxY);
+        Assert.That(
+            minX != TerrainVertexOffset.Zero ||
+            maxX != TerrainVertexOffset.Zero ||
+            minY != TerrainVertexOffset.Zero ||
+            maxY != TerrainVertexOffset.Zero,
+            Is.True);
     }
 
     [Test]

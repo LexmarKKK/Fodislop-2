@@ -76,7 +76,7 @@ internal sealed class DummyPathFinder
                 CellType cellType = getCell((ushort)nx, (ushort)ny);
 
                 CellConfigurationPacket? cellConfig = _getCellConfig(cellType);
-                bool isPassable = cellType == CellType.Empty || (cellConfig.HasValue && ((CellConfigProperties)cellConfig.Value.Properties).HasFlag(CellConfigProperties.Passable));
+                bool isPassable = cellType == CellType.Empty || (cellConfig.HasValue && ((CellConfigProperties)cellConfig.Value.Flags).HasFlag(CellConfigProperties.Passable));
                 if (!isPassable)
                 {
                     continue;

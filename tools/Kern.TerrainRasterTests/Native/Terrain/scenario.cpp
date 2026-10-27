@@ -682,6 +682,19 @@ static long checkWorld(const std::string& path)
         for (int corner = 0; corner < 4; ++corner)
         {
             TerrainCellVertex v = LoadTerrainCellVertex(float3{(float)x, (float)y, (float)layer}, corners[corner]);
+            // The production shader intentionally draws the unloaded-cell
+            // diagnostic on the foreground carrier, whereas the legacy CPU
+            // quad oracle has no quad for unloaded cells.
+            int worldX = originX + x, worldY = originY + y;
+            if (TerrainCellType(TerrainLoadCell(worldX, worldY)) == 0u && layer == 1)
+            {
+                expectAttribute(v.atlasIndex, 0.0f, where + ": unloaded carrier slot");
+                expectAttribute(v.subAtlasRect.z, 0.0f, where + ": unloaded carrier texture width");
+                expectAttribute(v.positionOS.x, x + corners[corner].x, where + ": unloaded carrier x");
+                expectAttribute(v.positionOS.y, y + corners[corner].y, where + ": unloaded carrier y");
+                ++compared;
+                continue;
+            }
             expectAttribute(v.atlasIndex, (float)atlas, where + ": atlas slot");
             if (atlas < 0) break;
             const float* e = expected[corner];

@@ -21,6 +21,7 @@ internal sealed class DummyAdminCommands
     private readonly DummyWorldSimulationState _worldState;
     private readonly IDummyClock _clock;
     private readonly ushort _playerBotId;
+    private bool _unloadedView;
     internal DummyAdminCommands(
     Action<ServerPacket> sendPacket,
     DummyPlayerSimulationState playerState,
@@ -82,6 +83,9 @@ internal sealed class DummyAdminCommands
             case "fill":
                 ApplyFillCommand(parts);
                 return true;
+            case "unloaded":
+                ToggleUnloadedView();
+                return true;
             default:
                 Reply($"Неизвестная команда «{parts[0]}». Список — /help");
                 return true;
@@ -98,6 +102,7 @@ internal sealed class DummyAdminCommands
         Reply(
             $"/fill [тип] — заполнить область {FillWidth}x{FillHeight} вокруг робота " +
             $"(без аргумента — {DefaultFillCell})");
+        Reply("/unloaded — включить/выключить отображение всех клеток как Unloaded");
     }
 
     private void PlayVfx(string[] parts)
@@ -165,6 +170,15 @@ internal sealed class DummyAdminCommands
         _worldState.QueueChunksAround(x, y, _sendPacket);
         _sendPacket(new ServerPacket(new TeleportPacket(x, y)));
         Reply($"Телепорт в ({x}, {y}).");
+    }
+
+    private void ToggleUnloadedView()
+    {
+        _unloadedView = !_unloadedView;
+        UnityEngine.Shader.SetGlobalFloat("_TerrainForceUnloaded", _unloadedView ? 1f : 0f);
+        Reply(_unloadedView
+            ? "Вид Unloaded включён."
+            : "Вид Unloaded выключен.");
     }
 
     private void ApplySetCommand(string[] parts)

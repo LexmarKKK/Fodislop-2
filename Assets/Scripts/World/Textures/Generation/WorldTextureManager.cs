@@ -155,8 +155,8 @@ namespace Kern.World
 
                 if (textureInfo.AnimationFrames > 1)
                 {
-                    // Скорость — animationSpeed из cells.json, как у шейдера террейна.
-                    float speed = BlockRegistry.Get(cellType).AnimationSpeed;
+                    // Скорость — frameAnimationSpeed из cells.json.
+                    float speed = BlockRegistry.Get(cellType).FrameAnimationSpeed;
                     frameIndex = (int)(Time.realtimeSinceStartup * speed) % textureInfo.AnimationFrames;
                     frameHeight = textureInfo.FrameSize;
                 }
@@ -349,16 +349,14 @@ namespace Kern.World
                 return;
             }
 
-            int frameHeight = _mapManager.GetAnimationFrameHeight(cellType);
-
-            // Серверный конфиг анимации пока не заполняется (сервер шлёт
-            // FrameOffset=0 для всех клеток), а вертикальные PNG-ленты клеток —
-            // например, Cells/Box.png с кадрами вращения — уже декодируются в
-            // вертикальную ленту кадров. Если конфиг молчит, а текстура — лента
-            // (высота кратна клетке и больше неё), выводим высоту кадра из
-            // самой текстуры: террейн крутит кадры без конфига.
-            if (frameHeight <= 0 &&
-                texture.width == _cellTextureSize &&
+            int frameHeight = 0;
+            if (texture.width == _cellTextureSize &&
+                texture.height > _cellTextureSize &&
+                texture.height % _cellTextureSize == 0)
+            {
+                frameHeight = _cellTextureSize;
+            }
+            else if (cellType == CellType.Unloaded &&
                 texture.height > _cellTextureSize &&
                 texture.height % _cellTextureSize == 0)
             {

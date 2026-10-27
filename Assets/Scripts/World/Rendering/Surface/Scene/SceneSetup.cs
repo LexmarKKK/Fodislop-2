@@ -81,11 +81,6 @@ namespace Kern.World
                     cancellationToken) ??
                     throw new InvalidOperationException(
                         "Required local surface texture 'perspective.png' could not be decoded.");
-                Texture2D redRockTexture = await textureStorage.GetTextureAsync(
-                    "Cells/RedRock.png",
-                    cancellationToken) ??
-                    throw new InvalidOperationException(
-                        "Required local surface texture 'Cells/RedRock.png' could not be decoded.");
                 cancellationToken.ThrowIfCancellationRequested();
 
                 RuntimeTextureFactory.ApplySampling(
@@ -100,10 +95,6 @@ namespace Kern.World
                 perspectiveTexture.wrapModeV = TextureWrapMode.Repeat;
                 transitTexture.wrapModeU = TextureWrapMode.Repeat;
                 perspectiveTexture.wrapModeU = TextureWrapMode.Repeat;
-                RuntimeTextureFactory.ApplySampling(
-                    redRockTexture,
-                    FilterMode.Point,
-                    TextureWrapMode.Clamp);
 
                 SurfaceRenderer surfaceRenderer =
                     _surfaceRenderer ??
@@ -111,8 +102,7 @@ namespace Kern.World
                         "SceneSetup requires the injected SurfaceRenderer.");
                 surfaceRenderer.SetLocalAssets(
                     transitTexture,
-                    perspectiveTexture,
-                    redRockTexture);
+                    perspectiveTexture);
                 _surfaceSetupFailureLogged = false;
                 _surfaceRendererSetupSucceeded = true;
             }

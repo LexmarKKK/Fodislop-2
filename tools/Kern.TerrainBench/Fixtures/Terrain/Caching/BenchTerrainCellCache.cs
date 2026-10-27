@@ -114,7 +114,7 @@ public class TerrainCellCache : ITerrainCellDataSource
                 ref CachedCellData cell = ref _cells[cx + 1, cy + 1];
                 cell.Type = CellType.Empty;
                 cell.Outline = 0;
-                cell.RimMass = 0;
+                cell.ReliefGroup = 0;
             }
         }
     }
@@ -131,7 +131,7 @@ public class TerrainCellCache : ITerrainCellDataSource
         {
             State = TerrainCellState.Loaded,
             Type = type,
-            RimMass = (byte)(solid ? 1 + (noise % 3) : 0),
+            ReliefGroup = (byte)(solid ? 1 + (noise % 3) : 0),
             Outline = solid && noise % 7 == 0 ? CellOutline.Wavy : 0,
             HasTileGroup = solid && noise % 5 == 0,
             TileGroupId = solid ? noise % 4 : 0,

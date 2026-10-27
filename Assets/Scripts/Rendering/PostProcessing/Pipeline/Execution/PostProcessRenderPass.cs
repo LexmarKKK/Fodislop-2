@@ -126,7 +126,8 @@ namespace Kern.Rendering.PostProcessing
             bool lutActive = !bypass && PostProcessRuntimeState.LUT != null;
             bool diagnosticsActive = PostProcessRuntimeState.DebugView != PostProcessDebugView.None ||
                 PostProcessRuntimeState.CompareMode != CompareMode.Off;
-            bool passNeeded = diagnosticsActive || vignetteActive || eigengrauActive || lutActive ||
+            bool fisheyeActive = !bypass && PostProcessLook.Fisheye.Strength != 0f;
+            bool passNeeded = diagnosticsActive || vignetteActive || eigengrauActive || lutActive || fisheyeActive ||
                 PostProcessRuntimeState.DiagnosticWorldImage != null;
             if (!passNeeded)
             {
@@ -161,6 +162,12 @@ namespace Kern.Rendering.PostProcessing
                     (float)grid.WorldWidth,
                     (float)grid.WorldHeight);
                 passData.DisplayViewportAspect = cameraData.camera.aspect;
+                // A fixed world-space lens has less visible curvature when the
+                // camera shows a smaller part of it. Radius is quadratic.
+                float lensScale = cameraData.camera.orthographicSize / PostProcessLook.Fisheye.ReferenceHalfHeightCells;
+                passData.FisheyeStrength = fisheyeActive
+                    ? PostProcessLook.Fisheye.Strength * lensScale * lensScale
+                    : 0f;
 
                 passData.DisplayLinearFilter = false;
                 passData.PostProcessCS = _postProcessCS;

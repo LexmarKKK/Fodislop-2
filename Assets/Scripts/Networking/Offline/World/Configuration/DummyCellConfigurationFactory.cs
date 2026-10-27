@@ -45,29 +45,19 @@ internal static class DummyCellConfigurationFactory
                 props |= CellConfigProperties.Passable;
             }
 
-            if (def.Glow > 0f)
-            {
-                props |= CellConfigProperties.Glowing;
-            }
-
-            configs[i] = new CellConfigurationPacket
-            {
-                Properties = props,
-                // Протокол делит контур на искажение: волнистый двигает узлы,
-                // гибкий нет, остальные держат.
-                Distortion = def.Outline switch
-                {
-                    CellOutline.Wavy => CellDistortionType.Cause,
-                    CellOutline.Pliant => CellDistortionType.Neutral,
-                    _ => CellDistortionType.Block,
-                },
-                // Анимации сервера — со сдвигом фазы в кадр.
-                Animation = def.AnimationType,
-                AnimationSpeed = (byte)def.AnimationSpeed,
-                FrameOffset = (byte)(def.AnimationType != CellAnimationType.None ? 1 : 0),
-                ReliefGroup = def.RimMass,
-                Color = DummyMapColors.Get(i),
-            };
+            configs[i] = new CellConfigurationPacket(
+                Flags: props,
+                DrawLayer: (CellRenderLayer)def.DrawLayer,
+                Outline: (CellOutlineKind)def.Outline,
+                TextureAnchor: (CellTextureAnchorKind)def.TextureAnchor,
+                SurfaceEffect: (CellSurfaceEffectKind)def.SurfaceEffect,
+                SurfaceEffectPalette: def.SurfaceEffectPalette,
+                ShaderAnimation: def.ShaderAnimation,
+                FrameAnimationSpeed: def.FrameAnimationSpeed,
+                DecalAtlas: (CellDecalAtlasKind)def.DecalAtlas,
+                ReliefGroup: def.ReliefGroup,
+                Emission: def.Emission,
+                MapColor: DummyMapColors.Get(i));
         }
 
         return configs;

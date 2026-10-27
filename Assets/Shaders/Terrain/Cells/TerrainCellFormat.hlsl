@@ -21,8 +21,8 @@
 //   на тип, 128 бит × 256 — строка TerrainTypeRow
 //     из cells.json (BlockDefinition, имена и порядок те же):
 //       drawLayer 1 (бит фона), outline 3, textureAnchor 1,
-//       animationType 2, animationSpeed 16, surfaceEffect 2, surfaceEffectPalette 3,
-//       decalAtlas 2, rimMass 8, glow 8
+//       animationType 2, frameAnimationSpeed 16, surfaceEffect 2, surfaceEffectPalette 3,
+//       decalAtlas 2, reliefGroup 8, glow 8
 //     из текстуры: slot 3, x, y, w, h кадра 4 × 12, frameCount 8,
 //       opaqueOwn 1, opaqueAny 1
 //     с сервера: tileGroup 8
@@ -58,7 +58,7 @@
 //     вариант стены      по соседним углам пака
 //     UV углов           из дескриптора
 //     стороны переднего плана 4 бита: какие соседи — передний план
-//     кайма              стороны с той же rimMass + вогнутые углы
+//     кайма              стороны с той же reliefGroup + вогнутые углы
 //     масса              передний план
 //     декаль             правило группы декали + хэш клетки
 //     фаза анимации      хэш клетки или палитра
@@ -80,11 +80,11 @@ static const uint KERN_TERRAIN_CELL_TYPE_MASK = 0xFFu;
 struct TerrainTypeRow
 {
     uint atlasXY;      // x:12 | y:12 | frameCount:8 — кадр в пикселях атласа
-    uint atlasWH;      // w:12 | h:12 | rimMass:8
+    uint atlasWH;      // w:12 | h:12 | reliefGroup:8
     uint look;         // slot:3 | background:1 | opaqueOwn:1 | opaqueAny:1 |
                        // textureAnchor:1 | outline:3 | animationType:2 | surfaceEffect:2 |
                        // surfaceEffectPalette:3 | decalAtlas:2 | :13
-    uint speedGlowTile; // animationSpeed:16 (half) | glow:8 (0..255 → 0..1) |
+    uint speedGlowTile; // frameAnimationSpeed:16 (half) | glow:8 (0..255 → 0..1) |
                         // tileGroup+1:8 (0 — нет группы)
 };
 
@@ -94,7 +94,7 @@ static const float KERN_TERRAIN_CELL_TEXELS = 32.0;
 // atlasXY, atlasWH
 static const uint KERN_TERRAIN_TYPE_PIXEL_MASK = 0xFFFu;
 static const uint KERN_TERRAIN_TYPE_PIXEL_HIGH_SHIFT = 12u;
-static const uint KERN_TERRAIN_TYPE_BYTE_SHIFT = 24u;   // frameCount, rimMass, tileGroup+1
+static const uint KERN_TERRAIN_TYPE_BYTE_SHIFT = 24u;   // frameCount, reliefGroup, tileGroup+1
 
 // look
 static const uint KERN_TERRAIN_TYPE_SLOT_MASK = 7u;
@@ -115,7 +115,7 @@ static const uint KERN_TERRAIN_TYPE_DECAL_ATLAS_SHIFT = 17u;
 static const uint KERN_TERRAIN_TYPE_DECAL_ATLAS_MASK = 3u;
 
 // speedGlowTile
-static const uint KERN_TERRAIN_TYPE_ANIMATION_SPEED_MASK = 0xFFFFu;
+static const uint KERN_TERRAIN_TYPE_FRAME_SPEED_MASK = 0xFFFFu;
 static const uint KERN_TERRAIN_TYPE_GLOW_SHIFT = 16u;
 static const uint KERN_TERRAIN_TYPE_GLOW_MASK = 0xFFu;
 
@@ -212,7 +212,7 @@ struct TerrainCellVertex
     float4 subAtlasRect;      // TerrainTypeRow.atlasXY/atlasWH
     float4 tileSizeUV;        // tileSize, tileSize, frameCount, frameHeight
     float4 worldPos;          // gridX, serverY, PackedColumn, autotiling
-    float4 animData;          // animationType, animationSpeed, phase, surfaceEffect
+    float4 animData;          // animationType, frameAnimationSpeed, phase, surfaceEffect
     float4 packedData;        // anchored, carrierCorner.xy, reserved
     float4 lightContourDecal; // 0, LightingFlags + glow, Contour, DecalCode
     float4 geometryCornersX;
@@ -243,6 +243,9 @@ static const int KERN_TERRAIN_NEIGHBOUR_Y[8] = { 0, -1, -1, -1, 0, 1, 1, 1 };
 // x, y — размер кольца клеток (окно и кайма по клетке с каждой стороны);
 // z — размер клетки в мире.
 float4 _TerrainCellGridSize;
+
+// Debug view: 1 forces every cell to render as Unloaded without touching data.
+float _TerrainForceUnloaded;
 
 // x, y — мировая клетка локального (0, 0) окна; z, w — высота и ширина мира
 // в клетках. Клетки лежат по кольцевому адресу: координата по модулю кольца.

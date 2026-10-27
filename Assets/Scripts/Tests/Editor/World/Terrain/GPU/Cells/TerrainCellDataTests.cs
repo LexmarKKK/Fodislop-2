@@ -60,15 +60,15 @@ public sealed class TerrainCellDataTests
             Type: CellType.Rock,
             Block: new BlockDefinition(
                 DrawLayer: CellDrawLayer.Foreground,
-                Glow: 1f,
+                Emission: true,
                 Outline: CellOutline.Corner,
                 TextureAnchor: CellTextureAnchor.World,
-                AnimationType: CellAnimationType.Shimmer,
-                AnimationSpeed: 1.5f,
+                ShaderAnimation: CellAnimationType.Shimmer,
+                FrameAnimationSpeed: 1.5f,
                 SurfaceEffect: CellSurfaceEffect.Faceted,
                 SurfaceEffectPalette: 0,
                 DecalAtlas: CellDecalAtlas.Rock,
-                RimMass: 4,
+                ReliefGroup: 4,
                 MapColor: default),
             Slot: 2,
             AtlasRect: new Vector4(0.25f, 0.5f, 0.125f, 1f),
@@ -99,15 +99,15 @@ public sealed class TerrainCellDataTests
             Type: type,
             Block: new BlockDefinition(
                 DrawLayer: CellDrawLayer.Background,
-                Glow: 0f,
+                Emission: false,
                 Outline: CellOutline.Wall,
                 TextureAnchor: CellTextureAnchor.Cell,
-                AnimationType: CellAnimationType.None,
-                AnimationSpeed: 50f,
+                ShaderAnimation: CellAnimationType.None,
+                FrameAnimationSpeed: 50f,
                 SurfaceEffect: CellSurfaceEffect.Prismatic,
                 SurfaceEffectPalette: 5,
                 DecalAtlas: CellDecalAtlas.None,
-                RimMass: 0,
+                ReliefGroup: 0,
                 MapColor: default),
             Slot: 0,
             AtlasRect: Vector4.zero,
@@ -127,16 +127,6 @@ public sealed class TerrainCellDataTests
         // скорость 50 в half — 5240, свечения нет; номер тайлгруппы без
         // самой группы не пишется.
         Assert.That(row.SpeedGlowTile, Is.EqualTo(0x5240u));
-    }
-
-    // Свечение — байт: края точные, середина округляется к ближнему.
-    [TestCase(0f, (byte)0)]
-    [TestCase(1f, (byte)255)]
-    [TestCase(0.5f, (byte)128)]
-    public void GlowIsAByte(float glow, byte expected)
-    {
-        Assert.That(TerrainCellData.GlowByte(glow), Is.EqualTo(expected));
-        Assert.That(TerrainCellData.GlowOf(TerrainCellData.GlowByte(1f)), Is.EqualTo(1f));
     }
 
     [Test]

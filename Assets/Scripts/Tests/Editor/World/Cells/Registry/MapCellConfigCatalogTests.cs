@@ -17,20 +17,16 @@ using UnityEngine;
 public class MapCellConfigCatalogTests
 {
     private static CellConfigurationPacket CreateConfig(
-        CellAnimationType animation = CellAnimationType.None,
-        byte animationSpeed = 0,
-        byte frameOffset = 0,
+        CellAnimationType shaderAnimation = CellAnimationType.None,
+        float frameAnimationSpeed = 0f,
         int color = 0,
         ushort properties = 0)
     {
-        return new CellConfigurationPacket(
-            (MinesServer.Networking.Server.Packets.Connection.CellConfigProperties)properties,
-            (CellDistortionType)0,
-            animation,
-            animationSpeed,
-            frameOffset,
-            color,
-            0);
+        return CellPacket.Create(
+            properties: (MinesServer.Networking.Server.Packets.Connection.CellConfigProperties)properties,
+            shaderAnimation: shaderAnimation,
+            frameAnimationSpeed: frameAnimationSpeed,
+            mapColor: color);
     }
 
     [Test]
@@ -67,19 +63,6 @@ public class MapCellConfigCatalogTests
 
         Assert.Throws<InvalidDataException>(() => catalog.LoadConfigurations(null, null));
         Assert.Throws<InvalidDataException>(() => catalog.LoadConfigurations(Array.Empty<CellConfigurationPacket>(), null));
-    }
-
-    [Test]
-    public void LoadConfigurations_AnimatedTextureWithZeroSpeed_ThrowsInvalidDataException()
-    {
-        var catalog = new MapCellConfigCatalog();
-        var configs = new[]
-        {
-            CreateConfig(animation: CellAnimationType.Blinking, animationSpeed: 0),
-        };
-
-        var ex = Assert.Throws<InvalidDataException>(() => catalog.LoadConfigurations(configs, null));
-        StringAssert.Contains("AnimationSpeed=0", ex.Message);
     }
 
     [Test]
@@ -229,22 +212,6 @@ public class MapCellConfigCatalogTests
         Assert.AreEqual(expectedFallback.r, color.r, 0.001f);
         Assert.AreEqual(expectedFallback.g, color.g, 0.001f);
         Assert.AreEqual(expectedFallback.b, color.b, 0.001f);
-    }
-
-    [Test]
-    public void AnimationFrameHeight_QueriesCorrectly()
-    {
-        var catalog = new MapCellConfigCatalog();
-        var configs = new[]
-        {
-            CreateConfig(animation: CellAnimationType.None, animationSpeed: 0, frameOffset: 0),
-            CreateConfig(animation: CellAnimationType.Blinking, animationSpeed: 5, frameOffset: 3),
-        };
-
-        catalog.LoadConfigurations(configs, null);
-
-        Assert.AreEqual(0, catalog.GetAnimationFrameHeight((CellType)0));
-        Assert.AreEqual(3 * RenderingConstants.CELL_SIZE, catalog.GetAnimationFrameHeight((CellType)1));
     }
 
     [Test]

@@ -157,14 +157,9 @@ public sealed class TerrainCellMetadataCacheTests
         public Action? OnWorldDataLoaded { get; set; }
 
         public CellConfigurationPacket GetCellConfig(CellType type) =>
-            new(
-                CellConfigProperties.DropsShadow,
-                CellDistortionType.Neutral,
-                CellAnimationType.None,
-                AnimationSpeed: 0,
-                FrameOffset: 0,
-                Color: unchecked((int)0xFF204060),
-                ReliefGroup: 0);
+            CellPacket.Create(
+                properties: CellConfigProperties.DropsShadow,
+                mapColor: unchecked((int)0xFF204060));
 
         public float GetMoveCooldown(CellType cellType) => 0f;
 
