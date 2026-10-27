@@ -224,7 +224,8 @@
     $('progRun').classList.toggle('is-running', on);
     $('progRun').title = on ? 'Остановить программу' : 'Запустить программу';
     $('progRun').innerHTML = `<svg><use href="#i-${on ? 'stop' : 'play'}"/></svg>`;
-    $('progName').textContent = on ? name : 'Программатор';   // имя активной программы
+    // Подпись «Программатор» не меняется; имя запущенной программы — отдельной плашкой рядом
+    $('progName').textContent = on ? name : ''; $('progName').hidden = !on;
     document.querySelectorAll('.online em').forEach(em => em.textContent = on ? '(7)' : '(6)');
   }
   window.kernProg = { sync: setProg };
@@ -416,6 +417,18 @@
     const short = { 'Мои здания': 'Здания', 'Вернуться на респаун': 'Респаун' };
     sysOrig.list.forEach(b => { const l = b.querySelector?.('.control-label'), k = b.dataset?.sys; if (l && short[k]) l.textContent = compact ? short[k] : k === 'Вернуться на респаун' ? 'На респаун' : k; });
     [$('bonus'), $('miniSkills'), ...sysOrig.list].forEach(el => el.toggleAttribute('data-relocated', compact));
+    // ПК: миникарта — под рядом кнопок, инвентарь — в правый нижний угол, рост навыков — под строками состояния.
+    // На пальце места прежние: телефонная раскладка задана своими правилами
+    const mmBox = document.querySelector('.minimap'), inv = $('inventory'), skillsBox = $('miniSkills');
+    if (compact) {
+      document.querySelector('.col-bottom').append(mmBox);
+      $('itemHint').after(skillsBox);
+    } else {
+      document.querySelector('.sysbar').after(mmBox);
+      $('states').after(skillsBox);
+    }
+    $('hud').append(inv);                                       // место инвентаря задаёт раскладка: ПК — правый нижний угол, палец — над стиком
+    frame.classList.toggle('hud-pc', !compact);
     const mm = $('minimap'), side = compact ? (size === 'm' ? 136 : 104) * 2 : 0;
     mm.width = compact ? side : 264; mm.height = compact ? side : 264;
     // 2. Управление: устройство даёт его по умолчанию, пока на стенде не выбрано своё
@@ -652,7 +665,9 @@
 
   // Параметры адреса для снимков: ?aspect=1.6&state=busy&chat=1
   const q = new URLSearchParams(location.search);
-  window.kernWorld.ready.then(() => {
+  // Стенд — после загрузки всех скриптов: картинки из кэша грузятся раньше, чем выполнятся prog.js и остальные
+  const parsed = new Promise(r => document.readyState === 'loading' ? addEventListener('DOMContentLoaded', r) : r());
+  Promise.all([window.kernWorld.ready, parsed]).then(() => {
     setDevice(q.get('device') || 'd1080');
     if (q.get('input')) setInput(q.get('input'));
     renderPlayer(); renderCargo(); renderChat(); showMini('M');

@@ -35,6 +35,7 @@ definitions are:
 | `Kern.Bootstrap` | `Bootstrap` | Scene scopes, startup, scene transitions and domain wiring |
 | `Kern.AssetPipeline` | `AssetPipeline` | Runtime asset loading, caching, and animation decoding |
 | `Kern.Infrastructure` | `Infrastructure` | Audio and Effekseer infrastructure adapters |
+| `Kern.Effects` | `Effects` | Effect catalog/definitions, deterministic particle simulation, and sprite presentation contracts |
 | `Kern.Diagnostics` | `Diagnostics` | Runtime capture, telemetry, logging and world diagnostic primitives |
 | `Kern.Application` | `Game` | Game and player application behavior |
 | `Kern.Networking` | `Networking` | Transport, packet processing, and network-facing models |

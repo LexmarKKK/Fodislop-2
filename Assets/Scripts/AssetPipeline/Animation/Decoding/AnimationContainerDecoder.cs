@@ -29,6 +29,7 @@ public static class AnimationContainerDecoder
         public float Fps;
         public float PixelsPerUnit;
         public bool PixelsPerUnitFromFrameWidth;
+        public bool ComputeEmission;
     }
 
     [Serializable]
@@ -154,6 +155,9 @@ public static class AnimationContainerDecoder
 
         return normalized;
     }
+
+    public static bool HasFrameEmission(string filename) =>
+        s_layouts.Value.TryGetValue(NormalizeAnimationName(filename), out FrameLayoutEntry? layout) && layout.ComputeEmission;
 
     public static float ResolvePixelsPerUnit(string filename, int frameWidth)
     {

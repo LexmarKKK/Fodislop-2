@@ -228,9 +228,9 @@ DI изменений или регистраций. Поиск renderer feature
 <tr><td>Performance acceptance</td><td class="pending">INCOMPLETE. Не выполнено сопоставление before/after одинакового детерминированного workload; 30% p50 / p95 и 5 ms не заявлены.</td></tr></table>
 <h2>Диагностические повторения исходного пути</h2>
 <table><tr><th>Повторение / capture directory</th><th>Frame p50 / p95, ms</th><th>Доказательство</th></tr>
-<tr><td><a href="../../Logs/Diagnostics/Performance/frame_run_20260930_111512/">frame_run_20260930_111512</a></td><td>11.59 / 21.48</td><td><a href="../../Logs/Diagnostics/Performance/benchmark_20260930_111514.txt">Report</a>; 300 CPU FrameTiming observations, 3 оконных GPU observations.</td></tr>
-<tr><td><a href="../../Logs/Diagnostics/Performance/frame_run_20260930_111908/">frame_run_20260930_111908</a></td><td>15.53 / 35.87</td><td><a href="../../Logs/Diagnostics/Performance/benchmark_20260930_111910.txt">Report</a>; 300 CPU FrameTiming observations, 10 оконных GPU observations.</td></tr>
-<tr><td><a href="../../Logs/Diagnostics/Performance/frame_run_20260930_112309/">frame_run_20260930_112309</a></td><td>16.11 / 34.48</td><td><a href="../../Logs/Diagnostics/Performance/benchmark_20260930_112312.txt">Report</a>; 300 CPU FrameTiming observations, 5 оконных GPU observations.</td></tr></table>
+<tr><td><code>frame_run_20260930_111512</code></td><td>11.59 / 21.48</td><td><code>benchmark_20260930_111514.txt</code> (локальный capture, не включён в репозиторий); 300 CPU FrameTiming observations, 3 оконных GPU observations.</td></tr>
+<tr><td><code>frame_run_20260930_111908</code></td><td>15.53 / 35.87</td><td><code>benchmark_20260930_111910.txt</code> (локальный capture, не включён в репозиторий); 300 CPU FrameTiming observations, 10 оконных GPU observations.</td></tr>
+<tr><td><code>frame_run_20260930_112309</code></td><td>16.11 / 34.48</td><td><code>benchmark_20260930_112312.txt</code> (локальный capture, не включён в репозиторий); 300 CPU FrameTiming observations, 5 оконных GPU observations.</td></tr></table>
 <p>Это три повторения одного текущего кода, не before/after. Offscreen ARGBHalf target:
 3420×2148, Metal / Apple M3, Unity 6000.6.0f1. Workload не закреплён; source observations
 не позволяют доказать эквивалентность входов. Разницу времени нельзя приписывать

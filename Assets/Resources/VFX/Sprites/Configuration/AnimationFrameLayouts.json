@@ -2,6 +2,7 @@
   "Layouts": [
     {
       "Name": "vfx/bz",
+      "ComputeEmission": true,
       "FrameWidth": 0,
       "FrameHeightRatio": 2,
       "FrameCount": 15,

@@ -85,7 +85,7 @@ def main():
     w, h, pixels = png(ROOT / 'Assets/Textures/VFX/bz/bz.png')
     layouts = json.loads((ROOT / 'Assets/Resources/VFX/Sprites/Configuration/AnimationFrameLayouts.json').read_text())
     layout = next(v for v in layouts['Layouts'] if v['Name'] == 'vfx/bz')
-    assert w == 32 and h == 960 and layout['FrameCount'] == 15
+    assert w == 32 and h == 960 and layout['FrameCount'] == 15 and layout['ComputeEmission']
     report['Bz'] = [integrate(pixels, (0, frame * 64, 32, 64), 2) for frame in range(15)]
     for name, frames in report.items():
         assert all(math.isfinite(v) and v >= 0 for f in frames for v in f['rgb'])

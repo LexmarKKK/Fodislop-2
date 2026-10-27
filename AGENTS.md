@@ -1,6 +1,6 @@
 # Kern agent guidance
 
-Kern — 2D MMORPG sandbox on Unity 6 (`6000.6.0f1`), URP 2D 17.6, C# 12, UI Toolkit, UniTask, and `darkar25.fodina.*` packages.
+Kern — 2D MMORPG sandbox on Unity 6 (`6000.7.0b4`, see `ProjectSettings/ProjectVersion.txt`), URP 2D 17.7, C# 12, UI Toolkit, UniTask, and `darkar25.kern.*` packages from the `Packages/MinesServerNetworking` submodule.
 
 The user has the final word: an explicit instruction in the current message
 overrides conflicting project guidance, including Git and rollback restrictions.

@@ -186,17 +186,19 @@
             </div>
           </article>
 
+          <div class="left-stack">
           <ul class="states" id="states" data-srv hidden>
             <li style="--c:rgb(255,165,0)">Добыча x4<time>4:12</time></li>
             <li style="--c:rgb(0,200,0)">Прокачка x3<time>11:40</time></li>
           </ul>
+          </div>
         </section>
 
         <!-- Левый низ: режимы, программатор, миникарта -->
         <section class="col-bottom">
           <button type="button" class="toggle" id="autodig" aria-pressed="false" title="Автокопание"><span class="dot"></span><span class="lbl">Автокопание</span><svg class="ico-only"><use href="#i-autodig"/></svg><span class="cap">Авто</span><kbd>E</kbd><span class="pg" data-act="autodig"></span></button>
           <div class="panel prog">
-            <button type="button" class="prog-open" title="Открыть программатор"><svg><use href="#i-prog"/></svg><span id="progName">Программатор</span></button>
+            <button type="button" class="prog-open" title="Открыть программатор"><svg><use href="#i-prog"/></svg><span id="progLabel">Программатор</span><span class="prog-name" id="progName" hidden></span></button>
             <button type="button" class="icon-btn prog-run" id="progRun" title="Запустить программу"><svg><use href="#i-play"/></svg></button>
           </div>
           <div class="panel minimap" title="Карта мира" role="button" tabindex="0">

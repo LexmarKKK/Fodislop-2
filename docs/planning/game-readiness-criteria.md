@@ -1,6 +1,6 @@
 # Критерии готовности игры
 
-Этот документ — Definition of Alpha Ready для клиента Fodinae. Каждый критерий: **ID** · формулировка «если игрок делает X → система делает Y за N секунд / с численными пределами» · **где проверяется** (сборка / автотест / ручной сценарий против публичного сервера). Документ — единственный источник перечня готовности; автоматизируемые пункты мапятся на существующие гейты (см. §13).
+Этот документ — целевой Definition of Alpha Ready для клиента Kern. Каждый критерий: **ID** · формулировка «если игрок делает X → система делает Y за N секунд / с численными пределами» · **где проверяется** (сборка / автотест / ручной сценарий против публичного сервера). Это требования к готовности, а не отчёт об их выполнении. Автоматизируемые пункты и фактические ограничения текущих проверок перечислены в §13; актуализация по исходникам — 27 октября 2026.
 
 ---
 
@@ -116,7 +116,7 @@
 
 ## 10. Настройки и стабильность
 
-- **SET-01** Все настройки валидируются (`SettingsProbe`), применяются на старте, сохраняются атомарно: `client_config.json` schema v15 с миграциями и backup. Набор: разрешения, HDR, громкость, язык, качество.
+- **SET-01** Все настройки валидируются, применяются на старте и сохраняются атомарно: `client_config.json` использует текущую схему из `ClientConfig.CurrentSchemaVersion` (49 на 27 октября 2026), миграции и backup. Runtime-валидация — `ClientConfigValidator`; reflection-проверки — условно включаемый `SettingsProbe` внутри линтера (ограничения в §13). Набор: разрешения, HDR, громкость, язык, качество.
 - **SET-02** Переключение настроек применяется без перезапуска игры; язык переключает UI и тексты на лету (`OnLanguageChanged`).
 - **REC-01** Разрыв соединения или перезапуск сервера → **возврат в меню** с понятной диагностической ошибкой; без краша, без зависшего экрана/оверлея, без «зомби»-подписок.
 - **REC-02** Сессия ≥2 часов без деградации (память/ФПС/стриминг/аудио не растут и не рвутся); 50 циклов «меню ↔ игра» не оставляют объектов, подписок и задач; 24-часовой мониторинг метрик (nightly soak) не фиксирует утечек.
@@ -145,18 +145,21 @@
 
 ## 13. Автоматические гейты поверх критериев
 
-Автоматически проверяемое мапится на существующие гейты проекта (нового кода почти не требуется):
+Текущий локальный набор — `bash scripts/run-ci.sh`. В GitHub остался только
+`.github/workflows/architecture-lint.yml`: `workflow_dispatch`, а job
+`unified-ci` отключён через `if: false`. Push/PR/nightly не запускают проверки.
+Таблица отделяет существующие проверки от требуемой, но отсутствующей автоматизации:
 
-| Критерии | Гейт |
-|---|---|
-| EDGE (вход), MOVE, INV, WORLD, ROB, MIS, ECO, CHAT, AUD — инварианты кода | ArchitectureLinter «все правила» (47 ID), `dotnet run --project tools/Fodinae.ArchitectureLinter` |
-| Конфигурация/миграции (SET-01) | Правило `FOD-SETTINGS-PROBE` линтера (defaults/ranges/consumers/localization) |
-| UI-инварианты: is-hidden, ScreenToPanel, одна тема USS, локализация | Правила линтера `FOD-UI-*`, `FOD-LOCALIZATION`, `FOD-HARDCODED-TEXT`; `Fodinae.DisplayTests` |
-| Сцены/переходы (REC, EDGE) | `dotnet test Fodinae.TerrainTests`, EditMode/PlayMode-тесты (SceneTransition) |
-| Билд (EDGE-01, PERF) | IPreprocessBuild-валидаторы (`ProductionSceneContractValidator`, `UnityRenderLayerValidator`, `UnityVersionGate`) |
-| Сборки Windows x64 + macOS ARM64 из чистого checkout | CI-джобы `windows-player` / `macos-player`, детерминированный бейк планет `generate_planet_maps.py`, артефакты обязательны |
-| Тесты на обеих платформах | CI `macos-tests` / `windows-tests` (EditMode + PlayMode) |
-| Soak/утечки (REC-02, PERF-04) | Nightly soak: 50 циклов меню↔игра, reconnect storm, стриминг; отчёт по метрикам |
+| Критерии | Что существует | Что это не подтверждает |
+|---|---|---|
+| Инварианты исходников | `dotnet run --project tools/Kern.ArchitectureLinter -- --project-root . --source-only --fail-on Error`; доступные правила определяются каталогом линтера | Игровые сценарии, поведение публичного сервера и assembly-only правила |
+| Конфигурация/миграции (SET-01) | `ClientConfigValidator`, Editor tests конфигурации; `KERN-SETTINGS-PROBE` внутри линтера | Probe компилируется только с `UnityManagedPath`/`KERN_SETTINGS_PROBE`; без define правило возвращает пустой результат без проверки |
+| UI и локализация | `KERN-LOCALIZATION`, `KERN-HARDCODED-TEXT`, другие правила UI; `tools/Kern.DisplayTests` | Визуальный результат, взаимодействие в Unity и соответствие всех экранов |
+| Сцены/переходы (REC, EDGE) | Unity EditMode/PlayMode tests в `Assets/Scripts/Tests`; standalone `TerrainTests` проверяет terrain-логику | Standalone terrain-тесты не исполняют переходы Unity-сцен |
+| Билд (EDGE-01, PERF) | BuildSceneOrder, ProductionSceneContractValidator, UnityRenderLayerValidator; UnityVersionGate при загрузке Editor | Готовый player-артефакт, performance и публичный endpoint; release-валидатора dummy/localhost сейчас нет |
+| Windows x64 + macOS ARM64 | Методы `BuildScript.BuildWindows` / `BuildMacOS` | CI-джобов `windows-player` / `macos-player` нет; артефакты требуют отдельно запрошенной сборки |
+| Unity-тесты обеих платформ | Исходники EditMode/PlayMode tests | CI-джобов `macos-tests` / `windows-tests` нет |
+| Soak/утечки (REC-02, PERF-04) | Сценарии и целевые критерии REC/PERF | Nightly workflow отсутствует; успешный длительный прогон и метрики не подтверждены текущим аудитом |
 
 Клиентская часть собственно «готовности против публичного сервера» — ручной сценарий-чеклист по всем ID этого документа против продакшн-стенда (автоматика через dummy-сценарии изолирует resilience-логику без сервера).
 

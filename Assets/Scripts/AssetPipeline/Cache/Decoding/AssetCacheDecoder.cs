@@ -40,7 +40,8 @@ internal static class AssetCacheDecoder
         }
 
         bool makeNoLongerReadable = RuntimeTextureFactory.SupportsTexture2DGPUCopy;
-        bool emissionNeedsPixels = EncodedImageHeader.TryReadSize(bytes, out int headerWidth, out int headerHeight) &&
+        bool emissionNeedsPixels = AnimationContainerDecoder.HasFrameEmission(filename) &&
+            EncodedImageHeader.TryReadSize(bytes, out int headerWidth, out int headerHeight) &&
             AnimationContainerDecoder.TryGetAnimationConfig(filename, headerWidth, headerHeight,
                 out _, out _, out int headerFrames, out _) && headerFrames > 1;
         Texture2D? staticTex = RuntimeTextureFactory.DecodeEncodedImageToRGBA32NoMip(
@@ -69,8 +70,11 @@ internal static class AssetCacheDecoder
             frameHeight = fh;
             frameCount = fc;
             fps = fFPS;
-            emission = SpriteEmissionIntegrator.Frames(staticTex, fw, fh, fc,
-                AnimationContainerDecoder.ResolvePixelsPerUnit(filename, fw));
+            if (emissionNeedsPixels)
+            {
+                emission = SpriteEmissionIntegrator.Frames(staticTex, fw, fh, fc,
+                    AnimationContainerDecoder.ResolvePixelsPerUnit(filename, fw));
+            }
         }
 
         if (makeNoLongerReadable && emissionNeedsPixels && staticTex != null)
@@ -119,8 +123,10 @@ internal static class AssetCacheDecoder
         Sprite[] sprites = AnimationContainerDecoder.Decode(
             atlas, frameWidth, frameHeight, frameCount,
             AnimationContainerDecoder.ResolvePixelsPerUnit(filename, frameWidth));
-        SpriteEmissionFrame[] emission = SpriteEmissionIntegrator.Frames(atlas, frameWidth, frameHeight, frameCount,
-            AnimationContainerDecoder.ResolvePixelsPerUnit(filename, frameWidth));
+        SpriteEmissionFrame[] emission = AnimationContainerDecoder.HasFrameEmission(filename)
+            ? SpriteEmissionIntegrator.Frames(atlas, frameWidth, frameHeight, frameCount,
+                AnimationContainerDecoder.ResolvePixelsPerUnit(filename, frameWidth))
+            : Array.Empty<SpriteEmissionFrame>();
         return new DecodedAnimationResult(sprites, atlas, fps, frameHeight, frameCount, emission);
     }
 

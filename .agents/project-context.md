@@ -1,7 +1,9 @@
 # Kern Project Context
 
-Kern is a 2D MMORPG sandbox built with Unity 6 (`6000.6.0f1`), URP 2D 17.6,
-C# 12, UI Toolkit, UniTask, and the `darkar25.fodinae.*` networking packages.
+Kern is a 2D MMORPG sandbox built with Unity 6 (`6000.7.0b4`, currently beta),
+URP 2D 17.7.0, C# 12, UI Toolkit, UniTask, and the `darkar25.kern.*` networking
+packages from the `Packages/MinesServerNetworking` submodule. The version sources
+are `ProjectSettings/ProjectVersion.txt` and `Packages/manifest.json`.
 Read only the sections relevant to the current task. General agent rules live in
 the root `AGENTS.md`.
 
@@ -9,18 +11,21 @@ the root `AGENTS.md`.
 
 ## 0. Unity authority boundary
 
-The root `AGENTS.md` is authoritative. Run necessary compilation, tests and
-production-path render checks headlessly through `unity`, one run at a time.
-Do not control GUI Editor/Hub or close a running editor. Use a disposable copy
-when the active project is locked; preserve production settings and user data.
-Builds and Android/device operations keep the explicit authorization rules in
-the root guidance. Never edit serialized scene, prefab or asset text.
+The root `AGENTS.md` is authoritative. Do not launch, invoke, or control Unity
+Editor, Hub, or CLI unless the user explicitly requests that specific operation
+in the current task. A verification requirement does not grant that permission.
+Continue source inspection, existing-log analysis, and permitted local checks.
+Project copies and clones, including copies of `Assets`, `Library`, or `Temp`,
+are forbidden. Builds and Android/device operations follow the explicit
+authorization rules in the root guidance. Never edit serialized scene, prefab,
+or asset text.
 
 ## 0.1. No rollback without explicit authorization
 
-Do not reset, restore, clean, revert, rebase, amend, force-push, or otherwise
-rewrite Git state without an explicit request naming the operation and target.
-Never undo user-owned working-tree changes. Do not use `--no-verify`.
+Follow the Git and rollback restrictions in root `AGENTS.md`; this context grants
+no additional exceptions. Never overwrite working-tree or index content from
+Git history. Existing working-tree changes belong to the user. Commit and push
+only when explicitly requested in the current message. Do not use `--no-verify`.
 
 ## 1. Mandatory development standards
 
@@ -45,8 +50,8 @@ Never undo user-owned working-tree changes. Do not use `--no-verify`.
   after renaming; `dotnet build` cannot perform this check.
 - `VolumeProfile.Add<T>()` creates an in-memory component. Editor code must call
   `AssetDatabase.AddObjectToAsset()` before saving.
-- Documentation under `docs/` is self-contained HTML with inline styles and no
-  external dependencies.
+- Standalone HTML documents under `docs/` are self-contained, use inline styles,
+  and have no external dependencies. Existing Markdown documents remain Markdown.
 
 ## 2. Scenes and startup
 
@@ -129,6 +134,11 @@ texture staging catalog and RuntimeAssetPaths bridge those names explicitly.
 
 ### Networking and caching
 
+Fresh configuration selects dummy/offline transport. Real transport uses the
+configured `ServerHost`/`ServerPort`; development defaults are `127.0.0.1:8090`
+and HTTP API port `5460` (`ClientConfigurationDefaults`). A public endpoint and
+an automated production-endpoint build gate are not supplied by those defaults.
+
 The server supplies lightweight state and identifiers. Heavy textures, sprites,
 and FMOD banks are loaded on demand once. The cache hierarchy is RAM, persistent
 disk cache with versioned ETag/length/SHA-256 manifest, then CDN/server.
@@ -169,9 +179,9 @@ For new or rewritten UI:
    area, form classes). On a mobile platform one panel pixel is one dp
    (`ScreenShapeRules`); `UIScale` is a multiplier over that. Form classes on
    `panel.visualTree`: `form--desktop|micro|phone|tablet`, `form--narrow|short`
-   (Micro), `pointer--touch`. All touch layout lives in `UI/Screen/Touch/Styles/Touch.uss`,
-   imported last; touch targets are at least 44 dp. Contract:
-   `docs/architecture/MOBILE_STANDARD.html`.
+   (Micro), `pointer--touch`. All touch layout lives in
+   `Assets/Resources/UI/Screen/Touch/Styles/Touch.uss`,
+   imported last; touch targets are at least 44 dp.
 
 ### World, chunks, and coordinates
 
@@ -189,8 +199,11 @@ camera-position, zoom, or aspect change.
 
 ### Terrain and surface rendering
 
-`TerrainRenderer` draws the visible world as one mesh with seven UV channels and
-sorting order `-1000`. `SurfaceRenderer` is registered and resolved through
+`TerrainRenderer` owns terrain mesh presentation, packed cell data, lighting-field
+contributions, and optional tunnel-depth geometry; sorting order is `-1000`
+(`WorldRenderLayers.TerrainSortingOrder`). The shader's current attribute layout
+is defined in `Assets/Shaders/Terrain/Rendering/Terrain.shader`.
+`SurfaceRenderer` is registered and resolved through
 `GameLifetimeScope`; never construct a second instance manually.
 
 Runtime textures are created through `RuntimeTextureFactory` in canonical RGBA32,
@@ -201,8 +214,10 @@ assets are intentional and must not be removed.
 ### Player and input
 
 The authoritative local position is `PlayerMovementController.Position` in
-server top-left coordinates. Movement uses WASD/arrows, Space digs, E enables
-auto-dig, L toggles aggression, Shift turns in place, and Ctrl moves fast.
+server top-left coordinates. Keyboard actions are configurable through
+`InterfaceSettings.Key*`. Defaults include WASD/arrows for movement, Space to dig,
+E for auto-dig, G for geo, V to heal, Shift to turn in place, and Ctrl to move fast.
+Gamepad bindings are implemented by `PlayerInputHandler` alongside keyboard/touch.
 Touch: `PlayerHUDTouchControls` (stick, Dig/Heal hold, Geo/Build taps, Run
 toggle; a small stick deflection turns in place) and `TouchCommands` for
 keys without a touch equivalent (pause, chats). World taps and pinch come
@@ -220,9 +235,12 @@ The active pipeline is GPU Radiance Cascades:
 `SolveDiffuseBounce` → `CompositeLighting`. Legacy SDF, raymarch, AO-neighbor,
 blur, CPU sweep, readback, and runtime fallback paths must not return.
 
-The server `CellConfigProperties.Glowing` flag is the only glow source;
-glow color comes from `CellConfigurationPacket.Color`. Material RGB is albedo
-for one diffuse bounce and alpha is physical occupancy. Beer–Lambert extinction,
+Terrain glow uses the cell's authored glow/lighting flags and source-texture
+emission (`TerrainSourceEmission` in `Assets/Shaders/Terrain/Textures/TerrainSampling.hlsl`);
+it is not a flat light color taken from `CellConfigurationPacket.Color`.
+Dynamic sources also include robot lights and transient visual-effect lights
+(`TransientEffectLight` submits through `LightingEngine.SetDynamicLight`).
+Material RGB is albedo for one diffuse bounce and alpha is physical occupancy. Beer–Lambert extinction,
 direct radiance, transmission, and AO remain separate quantities.
 
 AO is a persistent full-resolution single-channel 8-bit field derived from occupancy. It is
@@ -260,7 +278,9 @@ not client gameplay configuration.
 FMOD banks are downloaded through `ClientAssetLoader`, cached on disk, and loaded
 on demand. Bus hierarchy: `Master`, `SFX`, `Music`, `Voice`, `Ambience`, `UI`.
 
-`ProgrammatorGrid` is a 16×12 editor with `CELLSIZE = 32` and `CELL_GAP = 2`.
+`ProgrammatorGrid` is a 16×12 editor. `ProgrammatorData` owns `COLS = 16`,
+`ROWS = 12`, `CELL_SIZE = 40`, `IconScale = 1.25`, and `MaxPages = 25`;
+the old `CELLSIZE`/`CELL_GAP` constants are not its layout contract.
 Programs are session data; only `programmator.json` is persisted. ESC returns from
 the grid to the program list, closes the list, or leaves the creation dialog only
 through its explicit close/cancel controls.
@@ -289,8 +309,14 @@ Do not mask defects with FPS caps, frame skipping, artificial delays, throttling
 or reduced simulation/render frequency. Optimize by removing real work while
 preserving required per-frame updates.
 
-Settings are validated by executing `tools/Kern.SettingsProbe`; compilation alone
-does not validate reflection-based attributes or defaults. Dead-member counts are
+Runtime configuration is checked by `ClientConfigValidator`; the current schema
+is `ClientConfig.CurrentSchemaVersion` (49). Reflection-based settings checks
+live inside `tools/Kern.ArchitectureLinter/SettingsProbe`, exposed by rule
+`KERN-SETTINGS-PROBE`, not a separate `Kern.SettingsProbe` project. They compile
+only when `UnityManagedPath` enables `KERN_SETTINGS_PROBE` in the linter csproj;
+without that define the rule returns no findings without running the probe.
+A source-only lint result or compilation alone does not prove those checks ran.
+Dead-member counts are
 an architectural debt budget, not permission to add public dead APIs.
 
 PlayMode tests use `PlayModeHarness`, offline authentication, virtual input, and
@@ -303,7 +329,7 @@ adding new counters. Do not make changes based on unverified hypotheses.
 
 Performance diagnostics have one path per concern; extend it, do not add a parallel one:
 
-- **Stall definition** — `FrameBudget` (`Kern.Contracts`): stall = frame ≥ 25 ms and
+- **Stall definition** — `FrameBudget` (`Kern.Diagnostics`, `Diagnostics/Frames/Budgets`): stall = frame ≥ 25 ms and
   ≥ 1.6× the median (`FrameBaseline`). Monitor, F1 «Всплески», tests and budgets use it.
 - **Background stall report** — `FrameStallMonitor` (entry point in `GameLifetimeScope`),
   log tag `[FrameStall]`. It opens a fixed probe set (`FrameProbeCatalog.CreateStallProbes`)
@@ -316,3 +342,12 @@ Performance diagnostics have one path per concern; extend it, do not add a paral
 - **Files** — `DiagnosticArtifactPaths` (category folders, timestamped names, retention)
   and `DiagnosticReport` (shared header, `[Diag] <kind> → <path>` log line). Editor:
   `Logs/Diagnostics/<category>/`; player: `persistentDataPath/Diagnostics/`.
+
+## 7. Current automation status
+
+`bash scripts/run-ci.sh` runs the local standalone suite; see `tools/README.md`
+for its coverage. The only GitHub workflow is
+`.github/workflows/architecture-lint.yml`: manual `workflow_dispatch` only, with
+`unified-ci` disabled by `if: false`. There are no automatic push/PR/nightly,
+Unity test, or player-build jobs. Existing dated audit results do not establish
+that the current tree passed a check.

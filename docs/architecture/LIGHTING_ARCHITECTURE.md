@@ -503,9 +503,7 @@ the coordinator acknowledges the source state without recording a lighting frame
 Movement, color/intensity changes, entry and removal that change GPU inputs still
 invalidate dynamic radiance. An explicit `CompositeDirty` refresh always covers
 the full field, even when dynamic movement/removal occurs in the same frame;
-the dynamic union is retained for subsequent partial updates. Managed decision
-tests and remaining production gates are recorded in
-[the invalidation evidence](LIGHTING_DYNAMIC_INVALIDATION_EVIDENCE.html).
+the dynamic union is retained for subsequent partial updates.
 
 The moving one-cell emitter is sampled by a fixed `N×N` grid in the continuous
 complete source-square bounds, including its part outside the lighting field.
@@ -950,3 +948,15 @@ center/axis/diagonal weights. Additive RGB composition, HDR formats and the
 existing energy normalization remain unchanged. This increases shader work
 without changing texture allocations or pass count; see the
 [bloom evidence record](evidence/bloom-prefilter-reconstruction-2026-10-27.html).
+
+### Transient mining, heal and hurt sources (2026-10-27)
+
+Mining sparks and native Heal/Hurt clips publish dynamic point sources from
+per-frame linear RGB/coverage integrals and luminous centroids. Bz metadata is
+computed by the animation decoder before releasing CPU pixels; native quad
+clips reuse their source pixels at import. TransientEffectLight owns source
+lifetime and shares negative IDs with cell-destruction sources. Active effects
+resubmit every Update; unchanged values are deduplicated by the existing light
+manager, and generation resets are repaired without advancing the animation.
+No static glow or geometry revision is added. See the
+[effect emission evidence](evidence/effect-world-emission-2026-10-27.html).

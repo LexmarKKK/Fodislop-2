@@ -205,4 +205,27 @@ public sealed class AnimationContainerDecoderTests
 
         UnityEngine.Object.DestroyImmediate(result.Atlas);
     }
+    [Test]
+    public void TextureFirstMiningDecode_PreservesEmissionMetadataBeforeDroppingCpuPixels()
+    {
+        string path = Path.Combine(Application.dataPath, "Textures/VFX/bz/bz.png");
+        Assert.That(File.Exists(path), Is.True);
+        var result = AssetCacheDecoder.DecodeTexture(File.ReadAllBytes(path), "VFX/bz");
+        try
+        {
+            Assert.That(result.FrameEmission.Length, Is.EqualTo(15));
+            Assert.That(result.FrameEmission.Any(frame => frame.Radiance.maxColorComponent > 0f), Is.True);
+            Assert.That(result.FrameEmission.All(frame => Mathf.Abs(frame.Centroid.x) <= 0.5f &&
+                Mathf.Abs(frame.Centroid.y) <= 1f), Is.True);
+            if (Kern.AssetPipeline.Loading.RuntimeTextureFactory.SupportsTexture2DGPUCopy)
+            {
+                Assert.That(result.Texture!.isReadable, Is.False);
+            }
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(result.Texture);
+        }
+    }
+
 }

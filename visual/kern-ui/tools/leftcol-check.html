@@ -1,0 +1,29 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>leftcol: running</title>
+<!-- Левая колонка ПК: состояния и рост навыков под грузом не залезают на автокопание и программатор внизу,
+     при всех навыках сразу («Все»), на каждом мониторе стенда. Итог — в <title>. -->
+<pre id="log"></pre>
+<script>
+// ТВ (960×540) — компактная раскладка, там левой колонки нет
+const DEVICES = ['d768', 'd800', 'd1080', 'd1440', 'd219', 'd4k150', 'd4k200', 'ipadpro'];
+const wait = ms => new Promise(r => setTimeout(r, ms));
+(async () => {
+  const out = []; let fails = 0;
+  for (const dev of DEVICES) {
+    const f = document.createElement('iframe');
+    f.style.cssText = 'width:1920px;height:1200px;border:0;position:absolute;left:-9999px';
+    await new Promise(res => { f.onload = res; f.src = `../index.html?device=${dev}&state=busy`; document.body.appendChild(f); });
+    await wait(1500);
+    const d = f.contentDocument;
+    const skills = d.getElementById('miniSkills').getBoundingClientRect(), inv = d.querySelector('.col-bottom').getBoundingClientRect();
+    const gap = inv.top - skills.bottom, k = d.getElementById('frame').getBoundingClientRect().width / d.getElementById('frame').offsetWidth;
+    const ok = gap >= 4 * k;
+    if (!ok) fails++;
+    out.push(`${ok ? 'ok  ' : 'FAIL'} ${dev} зазор до автокопания ${(gap / k).toFixed(0)} px`);
+    f.remove();
+  }
+  document.getElementById('log').textContent = out.join('\n');
+  document.title = fails ? `leftcol: FAIL ${fails}` : 'leftcol: ok';
+})();
+</script>
