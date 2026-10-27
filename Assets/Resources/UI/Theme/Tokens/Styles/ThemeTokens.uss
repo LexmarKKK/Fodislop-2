@@ -1,6 +1,6 @@
 /* ФАЙЛ МАШИННЫЙ. Правки будут затёрты.
    Источник истины: visual/kern-ui-lab/css/tokens.css
-   Генератор: tools/Kern.DesignSystem/Tools/EmitUssTokensTool.cs
+   Генератор: tools/Kern.DesignSystem/Commands/Styles/Tokens/EmitUssTokensTool.cs
    Расхождение ловит CI. */
 :root {
     --space-1: 2px;
@@ -190,4 +190,1097 @@
     --planet-disc: 940px;
 }
 
+:root { --size-fixed-18: 18px; --size-fixed-20: 20px; }
+.tier--standard.text-scale--75 {
+    --size-micro: 6.75px;
+    --size-2xs: 7.5px;
+    --size-xs: 8.25px;
+    --size-sm: 9px;
+    --size-base: 9.75px;
+    --size-md: 11.25px;
+    --size-lg: 13.5px;
+    --size-xl: 18px;
+    --size-2xl: 24px;
+    --size-3xl: 31.5px;
+    --size-fixed-18: 13.5px;
+    --size-fixed-20: 15px;
+}
+.tier--compact.text-scale--75 {
+    --size-micro: 6.75px;
+    --size-2xs: 7.5px;
+    --size-xs: 8.25px;
+    --size-sm: 9px;
+    --size-base: 9.75px;
+    --size-md: 10.5px;
+    --size-lg: 12px;
+    --size-xl: 15px;
+    --size-2xl: 19.5px;
+    --size-3xl: 24px;
+    --size-fixed-18: 13.5px;
+    --size-fixed-20: 15px;
+}
+.tier--wide.text-scale--75 {
+    --size-micro: 6.75px;
+    --size-2xs: 7.5px;
+    --size-xs: 8.25px;
+    --size-sm: 9px;
+    --size-base: 9.75px;
+    --size-md: 12px;
+    --size-lg: 15px;
+    --size-xl: 21px;
+    --size-2xl: 28.5px;
+    --size-3xl: 39px;
+    --size-fixed-18: 13.5px;
+    --size-fixed-20: 15px;
+}
+.tier--standard.text-scale--80 {
+    --size-micro: 7.2px;
+    --size-2xs: 8px;
+    --size-xs: 8.8px;
+    --size-sm: 9.6px;
+    --size-base: 10.4px;
+    --size-md: 12px;
+    --size-lg: 14.4px;
+    --size-xl: 19.2px;
+    --size-2xl: 25.6px;
+    --size-3xl: 33.6px;
+    --size-fixed-18: 14.4px;
+    --size-fixed-20: 16px;
+}
+.tier--compact.text-scale--80 {
+    --size-micro: 7.2px;
+    --size-2xs: 8px;
+    --size-xs: 8.8px;
+    --size-sm: 9.6px;
+    --size-base: 10.4px;
+    --size-md: 11.2px;
+    --size-lg: 12.8px;
+    --size-xl: 16px;
+    --size-2xl: 20.8px;
+    --size-3xl: 25.6px;
+    --size-fixed-18: 14.4px;
+    --size-fixed-20: 16px;
+}
+.tier--wide.text-scale--80 {
+    --size-micro: 7.2px;
+    --size-2xs: 8px;
+    --size-xs: 8.8px;
+    --size-sm: 9.6px;
+    --size-base: 10.4px;
+    --size-md: 12.8px;
+    --size-lg: 16px;
+    --size-xl: 22.4px;
+    --size-2xl: 30.4px;
+    --size-3xl: 41.6px;
+    --size-fixed-18: 14.4px;
+    --size-fixed-20: 16px;
+}
+.tier--standard.text-scale--85 {
+    --size-micro: 7.65px;
+    --size-2xs: 8.5px;
+    --size-xs: 9.35px;
+    --size-sm: 10.2px;
+    --size-base: 11.05px;
+    --size-md: 12.75px;
+    --size-lg: 15.3px;
+    --size-xl: 20.4px;
+    --size-2xl: 27.2px;
+    --size-3xl: 35.7px;
+    --size-fixed-18: 15.3px;
+    --size-fixed-20: 17px;
+}
+.tier--compact.text-scale--85 {
+    --size-micro: 7.65px;
+    --size-2xs: 8.5px;
+    --size-xs: 9.35px;
+    --size-sm: 10.2px;
+    --size-base: 11.05px;
+    --size-md: 11.9px;
+    --size-lg: 13.6px;
+    --size-xl: 17px;
+    --size-2xl: 22.1px;
+    --size-3xl: 27.2px;
+    --size-fixed-18: 15.3px;
+    --size-fixed-20: 17px;
+}
+.tier--wide.text-scale--85 {
+    --size-micro: 7.65px;
+    --size-2xs: 8.5px;
+    --size-xs: 9.35px;
+    --size-sm: 10.2px;
+    --size-base: 11.05px;
+    --size-md: 13.6px;
+    --size-lg: 17px;
+    --size-xl: 23.8px;
+    --size-2xl: 32.3px;
+    --size-3xl: 44.2px;
+    --size-fixed-18: 15.3px;
+    --size-fixed-20: 17px;
+}
+.tier--standard.text-scale--90 {
+    --size-micro: 8.1px;
+    --size-2xs: 9px;
+    --size-xs: 9.9px;
+    --size-sm: 10.8px;
+    --size-base: 11.7px;
+    --size-md: 13.5px;
+    --size-lg: 16.2px;
+    --size-xl: 21.6px;
+    --size-2xl: 28.8px;
+    --size-3xl: 37.8px;
+    --size-fixed-18: 16.2px;
+    --size-fixed-20: 18px;
+}
+.tier--compact.text-scale--90 {
+    --size-micro: 8.1px;
+    --size-2xs: 9px;
+    --size-xs: 9.9px;
+    --size-sm: 10.8px;
+    --size-base: 11.7px;
+    --size-md: 12.6px;
+    --size-lg: 14.4px;
+    --size-xl: 18px;
+    --size-2xl: 23.4px;
+    --size-3xl: 28.8px;
+    --size-fixed-18: 16.2px;
+    --size-fixed-20: 18px;
+}
+.tier--wide.text-scale--90 {
+    --size-micro: 8.1px;
+    --size-2xs: 9px;
+    --size-xs: 9.9px;
+    --size-sm: 10.8px;
+    --size-base: 11.7px;
+    --size-md: 14.4px;
+    --size-lg: 18px;
+    --size-xl: 25.2px;
+    --size-2xl: 34.2px;
+    --size-3xl: 46.8px;
+    --size-fixed-18: 16.2px;
+    --size-fixed-20: 18px;
+}
+.tier--standard.text-scale--95 {
+    --size-micro: 8.55px;
+    --size-2xs: 9.5px;
+    --size-xs: 10.45px;
+    --size-sm: 11.4px;
+    --size-base: 12.35px;
+    --size-md: 14.25px;
+    --size-lg: 17.1px;
+    --size-xl: 22.8px;
+    --size-2xl: 30.4px;
+    --size-3xl: 39.9px;
+    --size-fixed-18: 17.1px;
+    --size-fixed-20: 19px;
+}
+.tier--compact.text-scale--95 {
+    --size-micro: 8.55px;
+    --size-2xs: 9.5px;
+    --size-xs: 10.45px;
+    --size-sm: 11.4px;
+    --size-base: 12.35px;
+    --size-md: 13.3px;
+    --size-lg: 15.2px;
+    --size-xl: 19px;
+    --size-2xl: 24.7px;
+    --size-3xl: 30.4px;
+    --size-fixed-18: 17.1px;
+    --size-fixed-20: 19px;
+}
+.tier--wide.text-scale--95 {
+    --size-micro: 8.55px;
+    --size-2xs: 9.5px;
+    --size-xs: 10.45px;
+    --size-sm: 11.4px;
+    --size-base: 12.35px;
+    --size-md: 15.2px;
+    --size-lg: 19px;
+    --size-xl: 26.6px;
+    --size-2xl: 36.1px;
+    --size-3xl: 49.4px;
+    --size-fixed-18: 17.1px;
+    --size-fixed-20: 19px;
+}
+.tier--standard.text-scale--100 {
+    --size-micro: 9px;
+    --size-2xs: 10px;
+    --size-xs: 11px;
+    --size-sm: 12px;
+    --size-base: 13px;
+    --size-md: 15px;
+    --size-lg: 18px;
+    --size-xl: 24px;
+    --size-2xl: 32px;
+    --size-3xl: 42px;
+    --size-fixed-18: 18px;
+    --size-fixed-20: 20px;
+}
+.tier--compact.text-scale--100 {
+    --size-micro: 9px;
+    --size-2xs: 10px;
+    --size-xs: 11px;
+    --size-sm: 12px;
+    --size-base: 13px;
+    --size-md: 14px;
+    --size-lg: 16px;
+    --size-xl: 20px;
+    --size-2xl: 26px;
+    --size-3xl: 32px;
+    --size-fixed-18: 18px;
+    --size-fixed-20: 20px;
+}
+.tier--wide.text-scale--100 {
+    --size-micro: 9px;
+    --size-2xs: 10px;
+    --size-xs: 11px;
+    --size-sm: 12px;
+    --size-base: 13px;
+    --size-md: 16px;
+    --size-lg: 20px;
+    --size-xl: 28px;
+    --size-2xl: 38px;
+    --size-3xl: 52px;
+    --size-fixed-18: 18px;
+    --size-fixed-20: 20px;
+}
+.tier--standard.text-scale--105 {
+    --size-micro: 9.45px;
+    --size-2xs: 10.5px;
+    --size-xs: 11.55px;
+    --size-sm: 12.6px;
+    --size-base: 13.65px;
+    --size-md: 15.75px;
+    --size-lg: 18.9px;
+    --size-xl: 25.2px;
+    --size-2xl: 33.6px;
+    --size-3xl: 44.1px;
+    --size-fixed-18: 18.9px;
+    --size-fixed-20: 21px;
+}
+.tier--compact.text-scale--105 {
+    --size-micro: 9.45px;
+    --size-2xs: 10.5px;
+    --size-xs: 11.55px;
+    --size-sm: 12.6px;
+    --size-base: 13.65px;
+    --size-md: 14.7px;
+    --size-lg: 16.8px;
+    --size-xl: 21px;
+    --size-2xl: 27.3px;
+    --size-3xl: 33.6px;
+    --size-fixed-18: 18.9px;
+    --size-fixed-20: 21px;
+}
+.tier--wide.text-scale--105 {
+    --size-micro: 9.45px;
+    --size-2xs: 10.5px;
+    --size-xs: 11.55px;
+    --size-sm: 12.6px;
+    --size-base: 13.65px;
+    --size-md: 16.8px;
+    --size-lg: 21px;
+    --size-xl: 29.4px;
+    --size-2xl: 39.9px;
+    --size-3xl: 54.6px;
+    --size-fixed-18: 18.9px;
+    --size-fixed-20: 21px;
+}
+.tier--standard.text-scale--110 {
+    --size-micro: 9.9px;
+    --size-2xs: 11px;
+    --size-xs: 12.1px;
+    --size-sm: 13.2px;
+    --size-base: 14.3px;
+    --size-md: 16.5px;
+    --size-lg: 19.8px;
+    --size-xl: 26.4px;
+    --size-2xl: 35.2px;
+    --size-3xl: 46.2px;
+    --size-fixed-18: 19.8px;
+    --size-fixed-20: 22px;
+}
+.tier--compact.text-scale--110 {
+    --size-micro: 9.9px;
+    --size-2xs: 11px;
+    --size-xs: 12.1px;
+    --size-sm: 13.2px;
+    --size-base: 14.3px;
+    --size-md: 15.4px;
+    --size-lg: 17.6px;
+    --size-xl: 22px;
+    --size-2xl: 28.6px;
+    --size-3xl: 35.2px;
+    --size-fixed-18: 19.8px;
+    --size-fixed-20: 22px;
+}
+.tier--wide.text-scale--110 {
+    --size-micro: 9.9px;
+    --size-2xs: 11px;
+    --size-xs: 12.1px;
+    --size-sm: 13.2px;
+    --size-base: 14.3px;
+    --size-md: 17.6px;
+    --size-lg: 22px;
+    --size-xl: 30.8px;
+    --size-2xl: 41.8px;
+    --size-3xl: 57.2px;
+    --size-fixed-18: 19.8px;
+    --size-fixed-20: 22px;
+}
+.tier--standard.text-scale--115 {
+    --size-micro: 10.35px;
+    --size-2xs: 11.5px;
+    --size-xs: 12.65px;
+    --size-sm: 13.8px;
+    --size-base: 14.95px;
+    --size-md: 17.25px;
+    --size-lg: 20.7px;
+    --size-xl: 27.6px;
+    --size-2xl: 36.8px;
+    --size-3xl: 48.3px;
+    --size-fixed-18: 20.7px;
+    --size-fixed-20: 23px;
+}
+.tier--compact.text-scale--115 {
+    --size-micro: 10.35px;
+    --size-2xs: 11.5px;
+    --size-xs: 12.65px;
+    --size-sm: 13.8px;
+    --size-base: 14.95px;
+    --size-md: 16.1px;
+    --size-lg: 18.4px;
+    --size-xl: 23px;
+    --size-2xl: 29.9px;
+    --size-3xl: 36.8px;
+    --size-fixed-18: 20.7px;
+    --size-fixed-20: 23px;
+}
+.tier--wide.text-scale--115 {
+    --size-micro: 10.35px;
+    --size-2xs: 11.5px;
+    --size-xs: 12.65px;
+    --size-sm: 13.8px;
+    --size-base: 14.95px;
+    --size-md: 18.4px;
+    --size-lg: 23px;
+    --size-xl: 32.2px;
+    --size-2xl: 43.7px;
+    --size-3xl: 59.8px;
+    --size-fixed-18: 20.7px;
+    --size-fixed-20: 23px;
+}
+.tier--standard.text-scale--120 {
+    --size-micro: 10.8px;
+    --size-2xs: 12px;
+    --size-xs: 13.2px;
+    --size-sm: 14.4px;
+    --size-base: 15.6px;
+    --size-md: 18px;
+    --size-lg: 21.6px;
+    --size-xl: 28.8px;
+    --size-2xl: 38.4px;
+    --size-3xl: 50.4px;
+    --size-fixed-18: 21.6px;
+    --size-fixed-20: 24px;
+}
+.tier--compact.text-scale--120 {
+    --size-micro: 10.8px;
+    --size-2xs: 12px;
+    --size-xs: 13.2px;
+    --size-sm: 14.4px;
+    --size-base: 15.6px;
+    --size-md: 16.8px;
+    --size-lg: 19.2px;
+    --size-xl: 24px;
+    --size-2xl: 31.2px;
+    --size-3xl: 38.4px;
+    --size-fixed-18: 21.6px;
+    --size-fixed-20: 24px;
+}
+.tier--wide.text-scale--120 {
+    --size-micro: 10.8px;
+    --size-2xs: 12px;
+    --size-xs: 13.2px;
+    --size-sm: 14.4px;
+    --size-base: 15.6px;
+    --size-md: 19.2px;
+    --size-lg: 24px;
+    --size-xl: 33.6px;
+    --size-2xl: 45.6px;
+    --size-3xl: 62.4px;
+    --size-fixed-18: 21.6px;
+    --size-fixed-20: 24px;
+}
+.tier--standard.text-scale--125 {
+    --size-micro: 11.25px;
+    --size-2xs: 12.5px;
+    --size-xs: 13.75px;
+    --size-sm: 15px;
+    --size-base: 16.25px;
+    --size-md: 18.75px;
+    --size-lg: 22.5px;
+    --size-xl: 30px;
+    --size-2xl: 40px;
+    --size-3xl: 52.5px;
+    --size-fixed-18: 22.5px;
+    --size-fixed-20: 25px;
+}
+.tier--compact.text-scale--125 {
+    --size-micro: 11.25px;
+    --size-2xs: 12.5px;
+    --size-xs: 13.75px;
+    --size-sm: 15px;
+    --size-base: 16.25px;
+    --size-md: 17.5px;
+    --size-lg: 20px;
+    --size-xl: 25px;
+    --size-2xl: 32.5px;
+    --size-3xl: 40px;
+    --size-fixed-18: 22.5px;
+    --size-fixed-20: 25px;
+}
+.tier--wide.text-scale--125 {
+    --size-micro: 11.25px;
+    --size-2xs: 12.5px;
+    --size-xs: 13.75px;
+    --size-sm: 15px;
+    --size-base: 16.25px;
+    --size-md: 20px;
+    --size-lg: 25px;
+    --size-xl: 35px;
+    --size-2xl: 47.5px;
+    --size-3xl: 65px;
+    --size-fixed-18: 22.5px;
+    --size-fixed-20: 25px;
+}
+.tier--standard.text-scale--130 {
+    --size-micro: 11.7px;
+    --size-2xs: 13px;
+    --size-xs: 14.3px;
+    --size-sm: 15.6px;
+    --size-base: 16.9px;
+    --size-md: 19.5px;
+    --size-lg: 23.4px;
+    --size-xl: 31.2px;
+    --size-2xl: 41.6px;
+    --size-3xl: 54.6px;
+    --size-fixed-18: 23.4px;
+    --size-fixed-20: 26px;
+}
+.tier--compact.text-scale--130 {
+    --size-micro: 11.7px;
+    --size-2xs: 13px;
+    --size-xs: 14.3px;
+    --size-sm: 15.6px;
+    --size-base: 16.9px;
+    --size-md: 18.2px;
+    --size-lg: 20.8px;
+    --size-xl: 26px;
+    --size-2xl: 33.8px;
+    --size-3xl: 41.6px;
+    --size-fixed-18: 23.4px;
+    --size-fixed-20: 26px;
+}
+.tier--wide.text-scale--130 {
+    --size-micro: 11.7px;
+    --size-2xs: 13px;
+    --size-xs: 14.3px;
+    --size-sm: 15.6px;
+    --size-base: 16.9px;
+    --size-md: 20.8px;
+    --size-lg: 26px;
+    --size-xl: 36.4px;
+    --size-2xl: 49.4px;
+    --size-3xl: 67.6px;
+    --size-fixed-18: 23.4px;
+    --size-fixed-20: 26px;
+}
+.tier--standard.text-scale--135 {
+    --size-micro: 12.15px;
+    --size-2xs: 13.5px;
+    --size-xs: 14.85px;
+    --size-sm: 16.2px;
+    --size-base: 17.55px;
+    --size-md: 20.25px;
+    --size-lg: 24.3px;
+    --size-xl: 32.4px;
+    --size-2xl: 43.2px;
+    --size-3xl: 56.7px;
+    --size-fixed-18: 24.3px;
+    --size-fixed-20: 27px;
+}
+.tier--compact.text-scale--135 {
+    --size-micro: 12.15px;
+    --size-2xs: 13.5px;
+    --size-xs: 14.85px;
+    --size-sm: 16.2px;
+    --size-base: 17.55px;
+    --size-md: 18.9px;
+    --size-lg: 21.6px;
+    --size-xl: 27px;
+    --size-2xl: 35.1px;
+    --size-3xl: 43.2px;
+    --size-fixed-18: 24.3px;
+    --size-fixed-20: 27px;
+}
+.tier--wide.text-scale--135 {
+    --size-micro: 12.15px;
+    --size-2xs: 13.5px;
+    --size-xs: 14.85px;
+    --size-sm: 16.2px;
+    --size-base: 17.55px;
+    --size-md: 21.6px;
+    --size-lg: 27px;
+    --size-xl: 37.8px;
+    --size-2xl: 51.3px;
+    --size-3xl: 70.2px;
+    --size-fixed-18: 24.3px;
+    --size-fixed-20: 27px;
+}
+.tier--standard.text-scale--140 {
+    --size-micro: 12.6px;
+    --size-2xs: 14px;
+    --size-xs: 15.4px;
+    --size-sm: 16.8px;
+    --size-base: 18.2px;
+    --size-md: 21px;
+    --size-lg: 25.2px;
+    --size-xl: 33.6px;
+    --size-2xl: 44.8px;
+    --size-3xl: 58.8px;
+    --size-fixed-18: 25.2px;
+    --size-fixed-20: 28px;
+}
+.tier--compact.text-scale--140 {
+    --size-micro: 12.6px;
+    --size-2xs: 14px;
+    --size-xs: 15.4px;
+    --size-sm: 16.8px;
+    --size-base: 18.2px;
+    --size-md: 19.6px;
+    --size-lg: 22.4px;
+    --size-xl: 28px;
+    --size-2xl: 36.4px;
+    --size-3xl: 44.8px;
+    --size-fixed-18: 25.2px;
+    --size-fixed-20: 28px;
+}
+.tier--wide.text-scale--140 {
+    --size-micro: 12.6px;
+    --size-2xs: 14px;
+    --size-xs: 15.4px;
+    --size-sm: 16.8px;
+    --size-base: 18.2px;
+    --size-md: 22.4px;
+    --size-lg: 28px;
+    --size-xl: 39.2px;
+    --size-2xl: 53.2px;
+    --size-3xl: 72.8px;
+    --size-fixed-18: 25.2px;
+    --size-fixed-20: 28px;
+}
+.tier--standard.text-scale--145 {
+    --size-micro: 13.05px;
+    --size-2xs: 14.5px;
+    --size-xs: 15.95px;
+    --size-sm: 17.4px;
+    --size-base: 18.85px;
+    --size-md: 21.75px;
+    --size-lg: 26.1px;
+    --size-xl: 34.8px;
+    --size-2xl: 46.4px;
+    --size-3xl: 60.9px;
+    --size-fixed-18: 26.1px;
+    --size-fixed-20: 29px;
+}
+.tier--compact.text-scale--145 {
+    --size-micro: 13.05px;
+    --size-2xs: 14.5px;
+    --size-xs: 15.95px;
+    --size-sm: 17.4px;
+    --size-base: 18.85px;
+    --size-md: 20.3px;
+    --size-lg: 23.2px;
+    --size-xl: 29px;
+    --size-2xl: 37.7px;
+    --size-3xl: 46.4px;
+    --size-fixed-18: 26.1px;
+    --size-fixed-20: 29px;
+}
+.tier--wide.text-scale--145 {
+    --size-micro: 13.05px;
+    --size-2xs: 14.5px;
+    --size-xs: 15.95px;
+    --size-sm: 17.4px;
+    --size-base: 18.85px;
+    --size-md: 23.2px;
+    --size-lg: 29px;
+    --size-xl: 40.6px;
+    --size-2xl: 55.1px;
+    --size-3xl: 75.4px;
+    --size-fixed-18: 26.1px;
+    --size-fixed-20: 29px;
+}
+.tier--standard.text-scale--150 {
+    --size-micro: 13.5px;
+    --size-2xs: 15px;
+    --size-xs: 16.5px;
+    --size-sm: 18px;
+    --size-base: 19.5px;
+    --size-md: 22.5px;
+    --size-lg: 27px;
+    --size-xl: 36px;
+    --size-2xl: 48px;
+    --size-3xl: 63px;
+    --size-fixed-18: 27px;
+    --size-fixed-20: 30px;
+}
+.tier--compact.text-scale--150 {
+    --size-micro: 13.5px;
+    --size-2xs: 15px;
+    --size-xs: 16.5px;
+    --size-sm: 18px;
+    --size-base: 19.5px;
+    --size-md: 21px;
+    --size-lg: 24px;
+    --size-xl: 30px;
+    --size-2xl: 39px;
+    --size-3xl: 48px;
+    --size-fixed-18: 27px;
+    --size-fixed-20: 30px;
+}
+.tier--wide.text-scale--150 {
+    --size-micro: 13.5px;
+    --size-2xs: 15px;
+    --size-xs: 16.5px;
+    --size-sm: 18px;
+    --size-base: 19.5px;
+    --size-md: 24px;
+    --size-lg: 30px;
+    --size-xl: 42px;
+    --size-2xl: 57px;
+    --size-3xl: 78px;
+    --size-fixed-18: 27px;
+    --size-fixed-20: 30px;
+}
+.tier--standard.text-scale--155 {
+    --size-micro: 13.95px;
+    --size-2xs: 15.5px;
+    --size-xs: 17.05px;
+    --size-sm: 18.6px;
+    --size-base: 20.15px;
+    --size-md: 23.25px;
+    --size-lg: 27.9px;
+    --size-xl: 37.2px;
+    --size-2xl: 49.6px;
+    --size-3xl: 65.1px;
+    --size-fixed-18: 27.9px;
+    --size-fixed-20: 31px;
+}
+.tier--compact.text-scale--155 {
+    --size-micro: 13.95px;
+    --size-2xs: 15.5px;
+    --size-xs: 17.05px;
+    --size-sm: 18.6px;
+    --size-base: 20.15px;
+    --size-md: 21.7px;
+    --size-lg: 24.8px;
+    --size-xl: 31px;
+    --size-2xl: 40.3px;
+    --size-3xl: 49.6px;
+    --size-fixed-18: 27.9px;
+    --size-fixed-20: 31px;
+}
+.tier--wide.text-scale--155 {
+    --size-micro: 13.95px;
+    --size-2xs: 15.5px;
+    --size-xs: 17.05px;
+    --size-sm: 18.6px;
+    --size-base: 20.15px;
+    --size-md: 24.8px;
+    --size-lg: 31px;
+    --size-xl: 43.4px;
+    --size-2xl: 58.9px;
+    --size-3xl: 80.6px;
+    --size-fixed-18: 27.9px;
+    --size-fixed-20: 31px;
+}
+.tier--standard.text-scale--160 {
+    --size-micro: 14.4px;
+    --size-2xs: 16px;
+    --size-xs: 17.6px;
+    --size-sm: 19.2px;
+    --size-base: 20.8px;
+    --size-md: 24px;
+    --size-lg: 28.8px;
+    --size-xl: 38.4px;
+    --size-2xl: 51.2px;
+    --size-3xl: 67.2px;
+    --size-fixed-18: 28.8px;
+    --size-fixed-20: 32px;
+}
+.tier--compact.text-scale--160 {
+    --size-micro: 14.4px;
+    --size-2xs: 16px;
+    --size-xs: 17.6px;
+    --size-sm: 19.2px;
+    --size-base: 20.8px;
+    --size-md: 22.4px;
+    --size-lg: 25.6px;
+    --size-xl: 32px;
+    --size-2xl: 41.6px;
+    --size-3xl: 51.2px;
+    --size-fixed-18: 28.8px;
+    --size-fixed-20: 32px;
+}
+.tier--wide.text-scale--160 {
+    --size-micro: 14.4px;
+    --size-2xs: 16px;
+    --size-xs: 17.6px;
+    --size-sm: 19.2px;
+    --size-base: 20.8px;
+    --size-md: 25.6px;
+    --size-lg: 32px;
+    --size-xl: 44.8px;
+    --size-2xl: 60.8px;
+    --size-3xl: 83.2px;
+    --size-fixed-18: 28.8px;
+    --size-fixed-20: 32px;
+}
+.tier--standard.text-scale--165 {
+    --size-micro: 14.85px;
+    --size-2xs: 16.5px;
+    --size-xs: 18.15px;
+    --size-sm: 19.8px;
+    --size-base: 21.45px;
+    --size-md: 24.75px;
+    --size-lg: 29.7px;
+    --size-xl: 39.6px;
+    --size-2xl: 52.8px;
+    --size-3xl: 69.3px;
+    --size-fixed-18: 29.7px;
+    --size-fixed-20: 33px;
+}
+.tier--compact.text-scale--165 {
+    --size-micro: 14.85px;
+    --size-2xs: 16.5px;
+    --size-xs: 18.15px;
+    --size-sm: 19.8px;
+    --size-base: 21.45px;
+    --size-md: 23.1px;
+    --size-lg: 26.4px;
+    --size-xl: 33px;
+    --size-2xl: 42.9px;
+    --size-3xl: 52.8px;
+    --size-fixed-18: 29.7px;
+    --size-fixed-20: 33px;
+}
+.tier--wide.text-scale--165 {
+    --size-micro: 14.85px;
+    --size-2xs: 16.5px;
+    --size-xs: 18.15px;
+    --size-sm: 19.8px;
+    --size-base: 21.45px;
+    --size-md: 26.4px;
+    --size-lg: 33px;
+    --size-xl: 46.2px;
+    --size-2xl: 62.7px;
+    --size-3xl: 85.8px;
+    --size-fixed-18: 29.7px;
+    --size-fixed-20: 33px;
+}
+.tier--standard.text-scale--170 {
+    --size-micro: 15.3px;
+    --size-2xs: 17px;
+    --size-xs: 18.7px;
+    --size-sm: 20.4px;
+    --size-base: 22.1px;
+    --size-md: 25.5px;
+    --size-lg: 30.6px;
+    --size-xl: 40.8px;
+    --size-2xl: 54.4px;
+    --size-3xl: 71.4px;
+    --size-fixed-18: 30.6px;
+    --size-fixed-20: 34px;
+}
+.tier--compact.text-scale--170 {
+    --size-micro: 15.3px;
+    --size-2xs: 17px;
+    --size-xs: 18.7px;
+    --size-sm: 20.4px;
+    --size-base: 22.1px;
+    --size-md: 23.8px;
+    --size-lg: 27.2px;
+    --size-xl: 34px;
+    --size-2xl: 44.2px;
+    --size-3xl: 54.4px;
+    --size-fixed-18: 30.6px;
+    --size-fixed-20: 34px;
+}
+.tier--wide.text-scale--170 {
+    --size-micro: 15.3px;
+    --size-2xs: 17px;
+    --size-xs: 18.7px;
+    --size-sm: 20.4px;
+    --size-base: 22.1px;
+    --size-md: 27.2px;
+    --size-lg: 34px;
+    --size-xl: 47.6px;
+    --size-2xl: 64.6px;
+    --size-3xl: 88.4px;
+    --size-fixed-18: 30.6px;
+    --size-fixed-20: 34px;
+}
+.tier--standard.text-scale--175 {
+    --size-micro: 15.75px;
+    --size-2xs: 17.5px;
+    --size-xs: 19.25px;
+    --size-sm: 21px;
+    --size-base: 22.75px;
+    --size-md: 26.25px;
+    --size-lg: 31.5px;
+    --size-xl: 42px;
+    --size-2xl: 56px;
+    --size-3xl: 73.5px;
+    --size-fixed-18: 31.5px;
+    --size-fixed-20: 35px;
+}
+.tier--compact.text-scale--175 {
+    --size-micro: 15.75px;
+    --size-2xs: 17.5px;
+    --size-xs: 19.25px;
+    --size-sm: 21px;
+    --size-base: 22.75px;
+    --size-md: 24.5px;
+    --size-lg: 28px;
+    --size-xl: 35px;
+    --size-2xl: 45.5px;
+    --size-3xl: 56px;
+    --size-fixed-18: 31.5px;
+    --size-fixed-20: 35px;
+}
+.tier--wide.text-scale--175 {
+    --size-micro: 15.75px;
+    --size-2xs: 17.5px;
+    --size-xs: 19.25px;
+    --size-sm: 21px;
+    --size-base: 22.75px;
+    --size-md: 28px;
+    --size-lg: 35px;
+    --size-xl: 49px;
+    --size-2xl: 66.5px;
+    --size-3xl: 91px;
+    --size-fixed-18: 31.5px;
+    --size-fixed-20: 35px;
+}
+.tier--standard.text-scale--180 {
+    --size-micro: 16.2px;
+    --size-2xs: 18px;
+    --size-xs: 19.8px;
+    --size-sm: 21.6px;
+    --size-base: 23.4px;
+    --size-md: 27px;
+    --size-lg: 32.4px;
+    --size-xl: 43.2px;
+    --size-2xl: 57.6px;
+    --size-3xl: 75.6px;
+    --size-fixed-18: 32.4px;
+    --size-fixed-20: 36px;
+}
+.tier--compact.text-scale--180 {
+    --size-micro: 16.2px;
+    --size-2xs: 18px;
+    --size-xs: 19.8px;
+    --size-sm: 21.6px;
+    --size-base: 23.4px;
+    --size-md: 25.2px;
+    --size-lg: 28.8px;
+    --size-xl: 36px;
+    --size-2xl: 46.8px;
+    --size-3xl: 57.6px;
+    --size-fixed-18: 32.4px;
+    --size-fixed-20: 36px;
+}
+.tier--wide.text-scale--180 {
+    --size-micro: 16.2px;
+    --size-2xs: 18px;
+    --size-xs: 19.8px;
+    --size-sm: 21.6px;
+    --size-base: 23.4px;
+    --size-md: 28.8px;
+    --size-lg: 36px;
+    --size-xl: 50.4px;
+    --size-2xl: 68.4px;
+    --size-3xl: 93.6px;
+    --size-fixed-18: 32.4px;
+    --size-fixed-20: 36px;
+}
+.tier--standard.text-scale--185 {
+    --size-micro: 16.65px;
+    --size-2xs: 18.5px;
+    --size-xs: 20.35px;
+    --size-sm: 22.2px;
+    --size-base: 24.05px;
+    --size-md: 27.75px;
+    --size-lg: 33.3px;
+    --size-xl: 44.4px;
+    --size-2xl: 59.2px;
+    --size-3xl: 77.7px;
+    --size-fixed-18: 33.3px;
+    --size-fixed-20: 37px;
+}
+.tier--compact.text-scale--185 {
+    --size-micro: 16.65px;
+    --size-2xs: 18.5px;
+    --size-xs: 20.35px;
+    --size-sm: 22.2px;
+    --size-base: 24.05px;
+    --size-md: 25.9px;
+    --size-lg: 29.6px;
+    --size-xl: 37px;
+    --size-2xl: 48.1px;
+    --size-3xl: 59.2px;
+    --size-fixed-18: 33.3px;
+    --size-fixed-20: 37px;
+}
+.tier--wide.text-scale--185 {
+    --size-micro: 16.65px;
+    --size-2xs: 18.5px;
+    --size-xs: 20.35px;
+    --size-sm: 22.2px;
+    --size-base: 24.05px;
+    --size-md: 29.6px;
+    --size-lg: 37px;
+    --size-xl: 51.8px;
+    --size-2xl: 70.3px;
+    --size-3xl: 96.2px;
+    --size-fixed-18: 33.3px;
+    --size-fixed-20: 37px;
+}
+.tier--standard.text-scale--190 {
+    --size-micro: 17.1px;
+    --size-2xs: 19px;
+    --size-xs: 20.9px;
+    --size-sm: 22.8px;
+    --size-base: 24.7px;
+    --size-md: 28.5px;
+    --size-lg: 34.2px;
+    --size-xl: 45.6px;
+    --size-2xl: 60.8px;
+    --size-3xl: 79.8px;
+    --size-fixed-18: 34.2px;
+    --size-fixed-20: 38px;
+}
+.tier--compact.text-scale--190 {
+    --size-micro: 17.1px;
+    --size-2xs: 19px;
+    --size-xs: 20.9px;
+    --size-sm: 22.8px;
+    --size-base: 24.7px;
+    --size-md: 26.6px;
+    --size-lg: 30.4px;
+    --size-xl: 38px;
+    --size-2xl: 49.4px;
+    --size-3xl: 60.8px;
+    --size-fixed-18: 34.2px;
+    --size-fixed-20: 38px;
+}
+.tier--wide.text-scale--190 {
+    --size-micro: 17.1px;
+    --size-2xs: 19px;
+    --size-xs: 20.9px;
+    --size-sm: 22.8px;
+    --size-base: 24.7px;
+    --size-md: 30.4px;
+    --size-lg: 38px;
+    --size-xl: 53.2px;
+    --size-2xl: 72.2px;
+    --size-3xl: 98.8px;
+    --size-fixed-18: 34.2px;
+    --size-fixed-20: 38px;
+}
+.tier--standard.text-scale--195 {
+    --size-micro: 17.55px;
+    --size-2xs: 19.5px;
+    --size-xs: 21.45px;
+    --size-sm: 23.4px;
+    --size-base: 25.35px;
+    --size-md: 29.25px;
+    --size-lg: 35.1px;
+    --size-xl: 46.8px;
+    --size-2xl: 62.4px;
+    --size-3xl: 81.9px;
+    --size-fixed-18: 35.1px;
+    --size-fixed-20: 39px;
+}
+.tier--compact.text-scale--195 {
+    --size-micro: 17.55px;
+    --size-2xs: 19.5px;
+    --size-xs: 21.45px;
+    --size-sm: 23.4px;
+    --size-base: 25.35px;
+    --size-md: 27.3px;
+    --size-lg: 31.2px;
+    --size-xl: 39px;
+    --size-2xl: 50.7px;
+    --size-3xl: 62.4px;
+    --size-fixed-18: 35.1px;
+    --size-fixed-20: 39px;
+}
+.tier--wide.text-scale--195 {
+    --size-micro: 17.55px;
+    --size-2xs: 19.5px;
+    --size-xs: 21.45px;
+    --size-sm: 23.4px;
+    --size-base: 25.35px;
+    --size-md: 31.2px;
+    --size-lg: 39px;
+    --size-xl: 54.6px;
+    --size-2xl: 74.1px;
+    --size-3xl: 101.4px;
+    --size-fixed-18: 35.1px;
+    --size-fixed-20: 39px;
+}
+.tier--standard.text-scale--200 {
+    --size-micro: 18px;
+    --size-2xs: 20px;
+    --size-xs: 22px;
+    --size-sm: 24px;
+    --size-base: 26px;
+    --size-md: 30px;
+    --size-lg: 36px;
+    --size-xl: 48px;
+    --size-2xl: 64px;
+    --size-3xl: 84px;
+    --size-fixed-18: 36px;
+    --size-fixed-20: 40px;
+}
+.tier--compact.text-scale--200 {
+    --size-micro: 18px;
+    --size-2xs: 20px;
+    --size-xs: 22px;
+    --size-sm: 24px;
+    --size-base: 26px;
+    --size-md: 28px;
+    --size-lg: 32px;
+    --size-xl: 40px;
+    --size-2xl: 52px;
+    --size-3xl: 64px;
+    --size-fixed-18: 36px;
+    --size-fixed-20: 40px;
+}
+.tier--wide.text-scale--200 {
+    --size-micro: 18px;
+    --size-2xs: 20px;
+    --size-xs: 22px;
+    --size-sm: 24px;
+    --size-base: 26px;
+    --size-md: 32px;
+    --size-lg: 40px;
+    --size-xl: 56px;
+    --size-2xl: 76px;
+    --size-3xl: 104px;
+    --size-fixed-18: 36px;
+    --size-fixed-20: 40px;
+}
 /* Не переносится в USS (67): rgb-void, rgb-abyss, rgb-slate, rgb-shelf, rgb-steel, rgb-light, rgb-shadow, rgb-crisis, rgb-ember, rgb-gold, rgb-cyan, rgb-magma, rgb-anomaly, rgb-danger, rgb-ok, hex-void, hex-abyss, hex-slate, hex-gold, hex-gold-lift, hex-cyan, hex-cyan-lift, hex-cyan-deep, hex-magma, hex-anomaly, hex-danger, hex-danger-lift, hex-ok, mat-basalt-hi, mat-basalt-lo, mat-redrock-hi, mat-redrock-lo, mat-mined, mat-strata-0, mat-strata-1, mat-strata-2, mat-strata-3, mat-planet-hi, mat-planet-mid, mat-planet-lo, mat-planet-shadow, mat-space-hi, mat-space-mid, mat-space-lo, hex-ink-100, hex-ink-70, hex-ink-50, hex-ink-30, fit-lines, tracking-base, tracking-wide, tracking-widest, layer-backdrop, layer-scene, layer-shade, layer-content, layer-chrome, layer-rail, layer-gate, layer-overlay, layer-modal, layer-toast, layer-devtools, font-title, font-body, font-label, font-data */

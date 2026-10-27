@@ -387,11 +387,11 @@ public class TerrainCellCache : ITerrainCellDataSource
 
         if (gridX < 0 || gridX >= worldWidth || unityY < 0)
         {
-            // Lower, left and right world edges are ordinary RedRock cells, so
-            // they use the same terrain shader, lighting and animation as the
-            // rest of the world. The upper edge stays outside terrain: it is
-            // the separate surface scene.
-            return CellType.RedRock;
+            // Lower, left and right world edges are ordinary WorldEdge cells,
+            // so they use the same terrain shader, lighting and animation as
+            // the rest of the world. The upper edge stays outside terrain: it
+            // is the separate surface scene.
+            return CellType.WorldEdge;
         }
 
         int serverY = WorldCoordinateConverter.UnityToServerY(unityY, worldHeight);

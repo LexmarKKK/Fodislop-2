@@ -1,4 +1,17 @@
 {
+    "WorldEdge": {
+        "drawLayer": "Foreground",
+        "outline": "Wavy",
+        "textureAnchor": "World",
+        "surfaceEffect": "Plain",
+        "surfaceEffectPalette": 0,
+        "decalAtlas": "Rock",
+        "reliefGroup": 5,
+        "emission": false,
+        "mapColor": "#AA7777",
+        "shaderAnimation": "None",
+        "frameAnimationSpeed": 6
+    },
     "Unloaded": {
         "drawLayer": "Foreground",
         "outline": "Pliant",

@@ -422,7 +422,8 @@ uint TerrainResolveUnderfill(
 
 TerrainCellVertex LoadTerrainCellVertex(
     float3 address,
-    float2 cornerBase)
+    float2 cornerBase,
+    bool retainBackground)
 {
     TerrainCellVertex v = (TerrainCellVertex)0;
     // Слой 2 — накладка дверей: передний план, адрес уже в сетке, смещение
@@ -540,7 +541,20 @@ TerrainCellVertex LoadTerrainCellVertex(
 #if defined(KERN_TERRAIN_DEBUG_BACKGROUND_TILE_VIEW)
         occluded = occluded && _TerrainDebugBackgroundTileIdentity == 0;
 #endif
-        if (occluded)
+        bool exposedPresentationGround = false;
+        if (occluded && retainBackground)
+        {
+            // A raised solid mass still covers its interior. Keep the ground
+            // only near openings, including diagonal openings reached by the
+            // bounded half-cell displacement. Field consumers do not enter here.
+            [unroll]
+            for (int groundNeighbour = 0; groundNeighbour < 8; groundNeighbour++)
+            {
+                exposedPresentationGround = exposedPresentationGround ||
+                    TerrainTypeIsBackground(neighbourRows[groundNeighbour]);
+            }
+        }
+        if (occluded && (!retainBackground || !exposedPresentationGround))
         {
             return v;
         }
@@ -702,6 +716,12 @@ TerrainCellVertex LoadTerrainCellVertex(
         (y + carrierCorner.y) * cellSize,
         layer == 0 ? 0.1 : 0.0);
     return v;
+}
+
+// Physical fields and existing consumers retain their original culling.
+TerrainCellVertex LoadTerrainCellVertex(float3 address, float2 cornerBase)
+{
+    return LoadTerrainCellVertex(address, cornerBase, false);
 }
 
 // Клип-позиция, которую растеризатор отбрасывает целиком.

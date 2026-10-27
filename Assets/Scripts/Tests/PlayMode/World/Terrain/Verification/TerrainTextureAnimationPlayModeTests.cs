@@ -160,13 +160,13 @@ public sealed partial class TerrainTextureAnimationPlayModeTests
         float previousRim = Shader.GetGlobalFloat(rimId);
         material.SetFloat(rimId, 1f);
         Mesh mesh = Own(CreateTerrainAnimationQuad());
-        mesh.SetVertexBufferParams(4, TerrainCellIdMesh.VertexLayout);
+        mesh.SetVertexBufferParams(4, TerrainVolumeMesh.VertexLayout);
         mesh.SetVertexBufferData(new[]
         {
-            new TerrainCellIdVertex(1, 1, 1, 0),
-            new TerrainCellIdVertex(1, 1, 1, 1),
-            new TerrainCellIdVertex(1, 1, 1, 2),
-            new TerrainCellIdVertex(1, 1, 1, 3),
+            new TerrainVolumeVertex(1, 1, 1, 0, Vector2.zero, Vector2.zero),
+            new TerrainVolumeVertex(1, 1, 1, 1, Vector2.zero, Vector2.zero),
+            new TerrainVolumeVertex(1, 1, 1, 2, Vector2.zero, Vector2.zero),
+            new TerrainVolumeVertex(1, 1, 1, 3, Vector2.zero, Vector2.zero),
         }, 0, 0, 4);
         mesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0, calculateBounds: false);
         _cellData = new TerrainCellBuffers();
@@ -462,8 +462,8 @@ public sealed partial class TerrainTextureAnimationPlayModeTests
             AtlasRect: new Vector4(0f, 0f, 1f, 1f), TileSize: 1f / SheetCells,
             FrameCount: 1, FrameHeightTiles: SheetCells, OpaqueOwn: true, OpaqueAny: true,
             HasTileGroup: false, TileGroupId: 0)));
-        using var carrier = new TerrainCellIdMesh();
-        carrier.EnsureSize(GridCells, GridCells, 2f, GridCells, GridCells);
+        using var carrier = new TerrainVolumeMesh();
+        carrier.EnsureSize(GridCells, GridCells, 2f, GridCells, GridCells, new TerrainVolumeTopology());
         Mesh mesh = carrier.Mesh!;
         mesh.bounds = new Bounds(new Vector3(12f, 12f, 0f), new Vector3(24f, 24f, 2f));
         GameObject meshObject = Own(new GameObject("Background sheet production mesh"));
@@ -900,13 +900,13 @@ public sealed partial class TerrainTextureAnimationPlayModeTests
     private Mesh CreateTerrainAnimationQuad()
     {
         var mesh = new Mesh { name = "TerrainAnimationRegressionMesh" };
-        mesh.SetVertexBufferParams(4, TerrainCellIdMesh.VertexLayout);
+        mesh.SetVertexBufferParams(4, TerrainVolumeMesh.VertexLayout);
         mesh.SetVertexBufferData(new[]
         {
-            new TerrainCellIdVertex(0, 0, 0, 0),
-            new TerrainCellIdVertex(0, 0, 0, 1),
-            new TerrainCellIdVertex(0, 0, 0, 2),
-            new TerrainCellIdVertex(0, 0, 0, 3),
+            new TerrainVolumeVertex(0, 0, 0, 0, Vector2.zero, Vector2.zero),
+            new TerrainVolumeVertex(0, 0, 0, 1, Vector2.zero, Vector2.zero),
+            new TerrainVolumeVertex(0, 0, 0, 2, Vector2.zero, Vector2.zero),
+            new TerrainVolumeVertex(0, 0, 0, 3, Vector2.zero, Vector2.zero),
         }, 0, 0, 4);
         mesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0, calculateBounds: false);
         // POSITION carries half-precision cell addresses, not Float3 geometry.
@@ -968,6 +968,12 @@ public sealed partial class TerrainTextureAnimationPlayModeTests
     private T Own<T>(T value)
         where T : Object
     {
+        if (value is Material material && material.shader.name == TerrainShaderName)
+        {
+            // These fixtures isolate texture animation, atlas addressing and
+            // field sampling. Raised geometry has its own MainGame capture test.
+            material.SetFloat("_TerrainDepthPixels", 0f);
+        }
         _ownedObjects.Add(value);
         return value;
     }

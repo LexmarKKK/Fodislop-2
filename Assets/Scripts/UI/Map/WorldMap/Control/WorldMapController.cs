@@ -76,6 +76,11 @@ namespace Kern.UI.Map
 
         protected void Update()
         {
+            if (!Application.isFocused || _uiInput.IsKeyCaptureInProgress)
+            {
+                return;
+            }
+
             if (_isInMapMode &&
                 Keyboard.current != null &&
                 Keyboard.current.escapeKey.wasPressedThisFrame &&

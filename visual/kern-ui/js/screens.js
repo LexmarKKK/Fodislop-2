@@ -306,24 +306,30 @@
   const playerOf = nick => PLAYERS[nick] ||= { id: 20000 + [...nick].reduce((a, ch) => a + ch.charCodeAt(0), 0) % 9000, clan: 'FED', since: '01.08.2026', level: 20 + nick.length * 3 % 40, pct: 50,
     slots: { 0: 'm', 1: 'd', 2: 'M', 3: 'l' }, skills: { m: { ...skills.m, level: 6 }, d: { ...skills.d, level: 9 }, M: { ...skills.M, level: 7 }, l: { ...skills.l, level: 5 } },
     stats: ['48 ч', '120 400', '611 900', '3 020', '880', '1'], ach: [1, .4, .2, .1, 0, 0, 0, .18] };
-  let profileNick = ME, profileSel = 0;
+  let profileNick = ME, profileSel = 0, profileView = '';
   const STAT_NAMES = ['Время в игре', 'Выкопано блоков', 'Добыто кристаллов', 'Построено блоков', 'Глубина рекорд', 'Зданий'];
   function renderProfile() {
-    const p = playerOf(profileNick), own = profileNick === ME, closed = p.hidden && !own;
+    const p = playerOf(profileNick), own = profileNick === ME, closed = p.hidden && !own, setup = own && profileView === 'settings';
     $('profileTitle').textContent = own ? 'Профиль' : 'Профиль игрока';
     const head = `<div class="profile-card">
         <div class="profile-robot"><img src="img/bee.png" alt=""></div>
         <div class="profile-who">
-          <p class="profile-nick"><img src="img/clan.png" alt="" width="16" height="16">${profileNick}${closed ? '<span class="profile-lock"><svg><use href="#i-lock"/></svg>Профиль скрыт</span>' : ''}</p>
+          <p class="profile-nick"><img src="img/clan.png" alt="" width="16" height="16">${profileNick}</p>
           <p class="profile-meta"><button type="button" class="pid" id="profileCopy" title="Скопировать ID"><span>#${p.id}</span></button><span>Клан <b>${p.clan}</b></span>${closed ? '' : `<span>В игре с ${p.since}</span>`}</p>
           <div class="profile-level"><span>Уровень <b>${p.level}</b></span>${closed ? '' : `<div class="meter"><i style="width:${p.pct}%"></i></div><small>${p.pct}%</small>`}</div>
         </div>
         <div class="profile-actions">${own
-          ? `<button type="button" class="btn" id="profileSettings"><svg class="btn-ico"><use href="#i-settings"/></svg>Настройки профиля</button>`
+          ? (setup ? `<button type="button" class="btn" id="profileSettings"><svg class="btn-ico"><use href="#i-prev"/></svg>К профилю</button>`
+                   : `<button type="button" class="btn" id="profileSettings"><svg class="btn-ico"><use href="#i-settings"/></svg>Настройки профиля</button>`)
           : '<button type="button" class="btn btn--primary" id="profileWrite">Написать</button>'}</div>
       </div>`;
-    if (closed) {
-      $('profileBody').innerHTML = head + '<p class="profile-closed"><svg><use href="#i-lock"/></svg>Игрок скрыл навыки, статистику и достижения.</p>';
+    // Настройки профиля — данные сервера, а не настройки клиента: живут в самом профиле
+    if (setup) {
+      $('profileBody').innerHTML = head + `<section class="profile-sec"><h3>Настройки профиля</h3>
+        <label class="field"><span><b>Скрыть профиль</b><small>Другие игроки увидят только ник, клан, ID и уровень</small></span><input type="checkbox" class="switch" id="profileHide"${p.hidden ? ' checked' : ''}></label></section>`;
+      $('profileHide').onchange = e => { p.hidden = e.target.checked; };
+    } else if (closed) {
+      $('profileBody').innerHTML = head + '<p class="profile-closed"><svg><use href="#i-lock"/></svg>Навыки, статистика и достижения скрыты</p>';
     } else {
       const done = p.ach.filter(v => v >= 1).length;
       $('profileBody').innerHTML = head + `
@@ -337,7 +343,7 @@
       renderProfileSkills(p);
     }
     $('profileCopy').onclick = () => { navigator.clipboard?.writeText(String(p.id)).catch(() => {}); const t = $('profileCopy').firstElementChild; t.textContent = 'Скопировано'; setTimeout(() => { t.textContent = '#' + p.id; }, 1200); };
-    if ($('profileSettings')) $('profileSettings').onclick = () => window.openSettings('profile');
+    if ($('profileSettings')) $('profileSettings').onclick = () => { profileView = setup ? '' : 'settings'; renderProfile(); };
     if ($('profileWrite')) $('profileWrite').onclick = () => { $('profileDialog').hidden = true; window.openPM(profileNick); };
   }
   function renderProfileSkills(p) {
@@ -349,9 +355,7 @@
       ? `<i class="big sk sk-${code}"></i><h3>${k.name}</h3><p class="skill-desc">${describe(code, p.skills)}</p>`
       : '<p class="skill-desc">Пустой слот</p>';
   }
-  // «Скрыть профиль» живёт в настройках, вкладка «Профиль»
-  $('setHideProfile').onchange = e => { PLAYERS[ME].hidden = e.target.checked; };
-  window.openProfile = (nick = ME) => { profileNick = nick; profileSel = 0; $('profileDialog').hidden = false; renderProfile(); $('profileBody').scrollTop = 0; };
+  window.openProfile = (nick = ME, view = '') => { profileNick = nick; profileSel = 0; profileView = view; $('profileDialog').hidden = false; renderProfile(); $('profileBody').scrollTop = 0; };
   window.openSkills = (slot = -1) => { selected = slot; renderSkills(); $('skillsDialog').hidden = false; };
   $('openSkills').onclick = () => { show('game'); window.openSkills(-1); };
   $('skillsDialog').querySelector('[data-close]').onclick = () => { $('skillsDialog').hidden = true; };

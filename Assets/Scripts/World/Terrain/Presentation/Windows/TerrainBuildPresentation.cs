@@ -25,6 +25,8 @@ internal sealed class TerrainBuildPresentation : IDisposable
 
     public Material[] CellMaterials => _materials.CellMaterials;
 
+    public Material[] PresentationMaterials => _materials.PresentationMaterials;
+
     public bool HasMaterials => _materials.CellMaterials.Length > 0;
 
     public float CellSize => _cellSize;
@@ -36,6 +38,8 @@ internal sealed class TerrainBuildPresentation : IDisposable
     public void InitializeShader() => _materials.InitializeShader();
 
     public void ApplyClientConfig(ClientConfig config) => _materials.ApplyClientConfig(config);
+
+    public void ApplyDepthConfig(ClientConfig config) => _materials.ApplyDepthConfig(config);
 
 
     public void BindAtlasTextures(

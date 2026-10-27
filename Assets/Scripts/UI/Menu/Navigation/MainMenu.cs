@@ -211,7 +211,7 @@ namespace Kern.UI.Menu
             _root.Add(tree);
 
             _doc.panelSettings = panelSettings;
-            UIScreen.Bind(_doc, _clientConfig?.Config.Interface.UIScale ?? 0f);
+            UIScreen.Bind(_doc, _clientConfig?.Config.Interface.UIScale ?? 0f, _clientConfig?.Config.Interface.TextScale);
             _tree = tree;
 
             BindUIElements(tree);

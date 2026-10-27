@@ -17,6 +17,8 @@
 CBUFFER_START(UnityPerMaterial)
     float4 _ShimmerColor;
     float4 _FlowScale;
+    float _TerrainDepthPixels;
+    float _TerrainDepthDarkening;
     float _ShimmerSpeedScale;
     float _BlinkingSpeedScale;
     float _RoundableCornerRadius;

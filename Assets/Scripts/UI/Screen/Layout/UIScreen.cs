@@ -32,6 +32,7 @@ public static class UIScreen
     private static readonly Dictionary<IPanel, IVisualElementScheduledItem> s_panelPolls = new();
     private static readonly List<VisualElement> s_visualTrees = new();
 
+    private static float s_textScale = 1f;
     private static ScreenShape s_current;
     private static bool s_hasCurrent;
     private static ScreenShape? s_override;
@@ -75,11 +76,16 @@ public static class UIScreen
 
     // configuredScale — UIScale из конфига; null оставляет множитель, уже
     // выставленный этой панели (загрузочный экран конфига ещё не знает).
-    public static void Bind(UIDocument document, float? configuredScale)
+    public static void Bind(UIDocument document, float? configuredScale, float? textScale = null)
     {
         if (document == null)
         {
             return;
+        }
+
+        if (textScale.HasValue)
+        {
+            SetTextScale(textScale.Value);
         }
 
         ScreenShape shape = Current;
@@ -127,6 +133,7 @@ public static class UIScreen
         }
 
         UILayoutTier.Apply(visualTree, shape);
+        ApplyTextScale(visualTree);
 
         if (!s_panelPolls.ContainsKey(panel))
         {
@@ -227,6 +234,29 @@ public static class UIScreen
         ApplyScale(settings, Current);
     }
 
+    public static void SetTextScale(float scale)
+    {
+        s_textScale = Mathf.Round(Mathf.Clamp(scale, 0.75f, 2f) * 20f) / 20f;
+        foreach (VisualElement tree in s_visualTrees)
+        {
+            ApplyTextScale(tree);
+        }
+    }
+
+    private static void ApplyTextScale(VisualElement tree)
+    {
+        string selected = "text-scale--" + Mathf.RoundToInt(s_textScale * 100f);
+        if (tree.ClassListContains(selected))
+        {
+            return;
+        }
+
+        for (int percent = 75; percent <= 200; percent += 5)
+        {
+            tree.EnableInClassList("text-scale--" + percent, "text-scale--" + percent == selected);
+        }
+    }
+
     private static void ApplyScale(PanelSettings settings, in ScreenShape shape)
     {
         if (!s_userScale.TryGetValue(settings, out float multiplier))
@@ -323,6 +353,7 @@ public static class UIScreen
         s_documentSettings.Clear();
         s_panelPolls.Clear();
         s_visualTrees.Clear();
+        s_textScale = 1f;
         s_hasCurrent = false;
         s_override = null;
         Changed = null;

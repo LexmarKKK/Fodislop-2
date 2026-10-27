@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Bloom extraction and reconstruction</title>
+<style>body{font:16px/1.5 system-ui;max-width:75rem;margin:2rem auto;padding:0 1rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #aaa;padding:.5rem;text-align:left}code{overflow-wrap:anywhere}</style>
+<h1>Bloom extraction/reconstruction — TL-CHANGE, 2026-10-27</h1>
+<h2>Change contract / ownership</h2>
+<p>User reports smeared bloom and requests algorithm review. Owner: rendering post-processing, WorldBloom.compute. Producer: real pre-tonemap HDR scene plus published world glow; consumer: existing scene-linear additive pass. No lighting transport or geometry ownership change.</p>
+<p>Defect: previous quarter-resolution prefilter applied a nonlinear threshold to four bilinear averages, erasing isolated above-threshold sources. With hard threshold 1 and one white source pixel at radiance 2, the old averaged value 0.5 contributes zero; independent expected integrated quarter-pixel contribution is (2−1)/16 = 0.0625. The previous MainGame assertion explicitly expected the former order.</p>
+<p>Extraction now tests each source pixel before averaging all sixteen values. Scene radiance uses integer mip-zero Load; eligibility uses point-sampled glow to prevent adjacent non-emitter leakage. Padded source positions outside the viewport contribute black, without duplicating edge pixels.</p>
+<p>The former four-offset diagonal filter used the same large artistic radius during 2× reduction and reconstruction. Reduction now uses a fixed normalized 3×3 tent; reconstruction uses the same normalized kernel with the authored radius. The independent center/axis/diagonal impulse weights are 1/4, 1/8 and 1/16. Existing scatter, intensity, threshold, knee and radius defaults are unchanged. Pyramid energy normalization remains valid and unchanged.</p>
+<h2>TL-LIFE / TL-REV / TL-STAGE / TL-DATA</h2>
+<table><tr><th>Stage / owner</th><th>Lifecycle and contract</th></tr>
+<tr><td>WorldBloomRenderPass</td><td>Existing camera gating, RenderGraph resource ownership, per-frame scheduling, diagnostic counters and disposal remain. Stable and changing frames use the same bloom schedule; no invalidation source added.</td></tr>
+<tr><td>Prefilter</td><td>World-anchored quarter grid, complete 4×4 source footprint. Explicit integer source coordinates; UV mapping to existing world glow preserves published orientation. Tint remains linear; no upper radiance clamp or additional transfer function.</td></tr>
+<tr><td>Downsample / Upsample</td><td>Existing absolute world lattice and UV mapping. Fixed anti-alias radius 1 during reduction, authored radius during reconstruction. Same R16G16B16A16_SFloat levels, same alpha zero.</td></tr>
+<tr><td>WorldBloomAdd</td><td>Unchanged real additive RGB blend; scene and alpha preserved. URP retains exposure and output-transform ownership.</td></tr></table>
+<h2>TL-PERF: analytic cost, no GPU measurements</h2>
+<p>Let N be full world-frame pixels and L0…L3 the quarter/eighth/sixteenth/thirty-second level areas. Texture payload remains 8×[2(L0+L1+L2)+L3] bytes. Four-level frames retain seven compute dispatches and one additive raster pass; no new allocations or passes. Odd-sized frames use existing ceiling/padding rules.</p>
+<table><tr><th>Worst-case shader texture operations (all pixels eligible)</th><th>Before</th><th>After</th></tr>
+<tr><td>Prefilter per L0 pixel</td><td>8 bilinear samples</td><td>16 point glow samples + 16 scene Loads; threshold evaluations 4 → 16</td></tr>
+<tr><td>Each downsample pixel</td><td>4 bilinear samples</td><td>9 bilinear samples</td></tr>
+<tr><td>Each upsample pixel</td><td>5 samples including local base</td><td>10 samples including local base</td></tr>
+<tr><td>Final additive pixel</td><td>1 sample</td><td>1 sample</td></tr></table>
+<p>Ignoring padded edges, total sample/Load calls including the additive pass rise from about 1.9922N to 4.0049N. This is not a measured time ratio: point Loads replace bilinear footprints, cache reuse and masked early exits differ. Compute work increases on both stable and changing frames. Existing Kern.PostProcess.Bloom.Prefilter/Downsample/Upsample/Add markers and PostProcessWorkload expose dispatch/pixel/resource counts. No FPS improvement claim. Production GPU time, image comparison and acceptance remain unverified.</p>
+<h2>TL-VERIFY</h2>
+<p><code>python3 tools/Kern.BloomTests/Cli/run.py</code>: production kernels pass independent numerical scenarios; center removal, post-average threshold equivalent, artistic downsample radius and bilinear glow eligibility mutations all fail as required. Prefilter/Downsample/Upsample pass glslang syntax/type checks with a standalone installed-URP-coefficient luminance shell. This does not prove Metal compilation or actual runtime bindings.</p>
+<p>The existing MainGame_WorldBloomImage production fixture retains its real scene/shader/mesh/data/camera path and updates its independent expected source energy to 3×(peak−1)/16. Unity was not run under current user authority; full production-render and GPU gates remain pending. Static or native checks do not waive those gates.</p>
+<p>Both standard Terrain→Lighting and Lighting→Terrain scans produce no matches; changed lines add no cross-domain reference, facade or event. git diff --check is clean. No standard-change or conformance-debt exception requested.</p>
+</html>

@@ -1,6 +1,8 @@
 #nullable enable
 
+using System;
 using Kern.Core;
+using Kern.Core.Interfaces;
 using MinesServer.Data;
 using UnityEngine;
 
@@ -19,6 +21,16 @@ public sealed class TerrainClientConfigApplier
     private readonly TerrainWindow _window;
 
     public TerrainClientConfigApplier(TerrainWindow window) => _window = window;
+
+    internal void ApplyAndRecord(IClientConfigManager? clientConfigManager, TerrainWorldChangeHandler worldChanges)
+    {
+        IClientConfigManager manager = clientConfigManager ??
+            throw new InvalidOperationException("TerrainRenderer requires IClientConfigManager injection.");
+        ClientConfig config = manager.Config ??
+            throw new InvalidOperationException("TerrainRenderer requires an initialized ClientConfig.");
+        Apply(config);
+        worldChanges.RecordConfigurationChange();
+    }
 
     public void Apply(ClientConfig config)
     {

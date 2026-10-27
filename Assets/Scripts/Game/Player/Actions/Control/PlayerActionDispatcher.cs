@@ -20,6 +20,7 @@ internal sealed class PlayerActionDispatcher
 {
     private readonly IPlayerInput _input;
     private readonly INetworkService? _networkService;
+    private readonly IServerVFXService _vfx;
     private float _lastDigTime;
     private Vector2Int? _pendingDigTarget;
 
@@ -31,10 +32,12 @@ internal sealed class PlayerActionDispatcher
 
     public PlayerActionDispatcher(
         IPlayerInput input,
-        INetworkService? networkService)
+        INetworkService? networkService,
+        IServerVFXService vfx)
     {
         _input = input ?? throw new ArgumentNullException(nameof(input));
         _networkService = networkService;
+        _vfx = vfx ?? throw new ArgumentNullException(nameof(vfx));
     }
 
     /// <param name="robot">Робот игрока; до его появления делать нечего.</param>
@@ -80,6 +83,20 @@ internal sealed class PlayerActionDispatcher
         }
     }
 
+    public void HandleBoundaryDig(Vector2Int position, Direction direction)
+    {
+        if (IsDigOnCooldown || IsDigAwaitingConfirmation)
+        {
+            return;
+        }
+
+        Vector2Int target = position + PlayerDirectionMapping.DirectionToDigOffset(direction);
+        _lastDigTime = Time.time;
+        _lastDigTarget = target;
+        _lastDigDirection = direction;
+        _vfx.PlayBoundaryDig(target.x, target.y, direction);
+    }
+
     public void HandleDig(Vector2Int position, Direction direction, IMapDataProvider? mapDataProvider)
     {
         // Движение в приоритете: пока зажаты WASD/стрелки (или стик), копание
@@ -95,12 +112,17 @@ internal sealed class PlayerActionDispatcher
         }
 
         Vector2Int digTarget = position + PlayerDirectionMapping.DirectionToDigOffset(direction);
-        if (mapDataProvider == null ||
-            !PlayerMovementController.IsWithinWorldBounds(
+        if (mapDataProvider == null)
+        {
+            return;
+        }
+
+        if (!PlayerMovementController.IsWithinWorldBounds(
                 digTarget,
                 mapDataProvider.WorldWidth,
                 mapDataProvider.WorldHeight))
         {
+            HandleBoundaryDig(position, direction);
             return;
         }
 

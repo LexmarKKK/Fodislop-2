@@ -5,6 +5,8 @@ using Kern.Core.Lifecycle;
 using UnityEngine;
 
 using Kern.Game.VisualEffects.Pooling;
+using Kern.Game.VisualEffects.Lighting;
+using Kern.World.Lighting;
 
 namespace Kern.Game.VisualEffects.Sprites;
 
@@ -27,10 +29,11 @@ internal sealed class SpriteAnimationWorldEffect : IServerWorldEffect
     private readonly int _boomType;
     private int _frame = -1;
     private bool _isHeld;
+    private readonly TransientEffectLight? _light;
 
     internal SpriteAnimationWorldEffect(string id, Vector3 position, SpriteAnimationLibrary library,
         ISceneObjectFactory objects, Transform? follow = null, int boomType = 0,
-        Vector3? destinationPosition = null)
+        Vector3? destinationPosition = null, LightingEngine? lighting = null)
     {
         _library = library;
         _clip = library.Get(id);
@@ -65,6 +68,10 @@ internal sealed class SpriteAnimationWorldEffect : IServerWorldEffect
         _filter = _object.AddComponent<MeshFilter>();
         _renderer = _object.AddComponent<MeshRenderer>();
         _renderer.sortingOrder = _clip.SortingOrder;
+        if (id is "Heal" or "Hurt")
+        {
+            _light = new TransientEffectLight(lighting ?? throw new System.ArgumentNullException(nameof(lighting)));
+        }
         ApplyColor(_clip.Color);
         Update();
     }
@@ -89,6 +96,16 @@ internal sealed class SpriteAnimationWorldEffect : IServerWorldEffect
             int mesh = _clip.Frames[index].Mesh;
             _filter.sharedMesh = _library.MeshAt(mesh);
             _renderer.sharedMaterial = _library.MaterialAt(mesh);
+        }
+
+        if (_light != null)
+        {
+            SpriteEmissionFrame frame = _library.EmissionAt(_clip.Frames[index].Mesh);
+            Color emission = frame.Radiance;
+            emission = new Color(emission.r * _clip.Color.r, emission.g * _clip.Color.g,
+                emission.b * _clip.Color.b, 1f) * _clip.Color.a;
+            _light.Submit(_object.transform.TransformPoint(new Vector3(frame.Centroid.x, frame.Centroid.y, 0f)),
+                _object.transform.lossyScale, emission);
         }
 
         if (_clip.Id == "RobotSmoke")
@@ -149,6 +166,7 @@ internal sealed class SpriteAnimationWorldEffect : IServerWorldEffect
     {
         if (IsDisposed) { return; }
         IsDisposed = true;
+        _light?.Dispose();
         if (_renderer != null) { _renderer.enabled = false; }
         if (_object != null) { Object.Destroy(_object); }
     }

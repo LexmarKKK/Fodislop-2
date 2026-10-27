@@ -28,6 +28,9 @@ using Kern.Game.VisualEffects.Pooling;
 using Kern.Game.VisualEffects.Sprites;
 using Kern.Infrastructure.VisualEffects.Effekseer;
 
+using Kern.Game.VisualEffects.Lighting;
+using Kern.World.Lighting;
+
 namespace Kern.Game.Events.VisualEffects;
 
 /// <summary>
@@ -60,8 +63,9 @@ public sealed class ServerVFXEvent : IServerWorldEffect
     // Зазор между кристалликом и первой цифрой количества.
 
     private readonly VFX _effectType;
-    private readonly ushort _sourceX;
-    private readonly ushort _sourceY;
+    private readonly int _sourceX;
+    private readonly int _sourceY;
+    private readonly float? _localFacingAngle;
     private readonly ushort _targetBotId;
     private readonly IRobotService _robotService;
     private readonly IAssetLoader _assetLoader;
@@ -154,6 +158,8 @@ public sealed class ServerVFXEvent : IServerWorldEffect
     private float _digitStep = 0f;
 
     private CancellationTokenSource? _cts;
+    private readonly TransientEffectLight? _light;
+    private SpriteEmissionFrame[] _frameEmission = Array.Empty<SpriteEmissionFrame>();
 
     public ServerVFXEvent(
         VFXPacket packet,
@@ -167,11 +173,15 @@ public sealed class ServerVFXEvent : IServerWorldEffect
         SpriteAnimationLibrary spriteAnimations,
         CrystalCollectionVisualVariant crystalCollectionVariant,
         ISceneObjectFactory sceneObjects,
-        IWorldLabels? worldLabels = null)
+        IWorldLabels? worldLabels = null,
+        Vector2Int? localSourceCell = null,
+        float? localFacingAngle = null,
+        LightingEngine? lighting = null)
     {
         _effectType = packet.EffectType;
-        _sourceX = packet.X;
-        _sourceY = packet.Y;
+        _sourceX = localSourceCell?.x ?? packet.X;
+        _sourceY = localSourceCell?.y ?? packet.Y;
+        _localFacingAngle = localFacingAngle;
         _targetBotId = packet.TargetBotId;
         _slot = slot;
         _robotService = robotService;
@@ -189,6 +199,10 @@ public sealed class ServerVFXEvent : IServerWorldEffect
             _gameObject = slot.GameObject;
         }
 
+        if (_effectType == VFX.Bz && slot != null)
+        {
+            _light = new TransientEffectLight(lighting ?? throw new ArgumentNullException(nameof(lighting)));
+        }
         _parsedParams = ServerAudioParameters.Parse(packet.Parameters);
         SetupSlotPosition();
 
@@ -232,6 +246,7 @@ public sealed class ServerVFXEvent : IServerWorldEffect
             {
                 _slot?.SetSprite(_animationFrames[_currentFrame]);
                 _slot?.SetEnabled(true);
+                SubmitEmission();
             }
             else
             {
@@ -377,6 +392,14 @@ public sealed class ServerVFXEvent : IServerWorldEffect
         {
             var animData = await _assetLoader.GetAnimatedSpritesAsync(filename, token);
             frames = animData.Frames;
+            if (_light != null)
+            {
+                if (animData.FrameEmission.Length != frames.Length)
+                {
+                    throw new InvalidOperationException("Mining animation has no frame emission metadata.");
+                }
+                _frameEmission = animData.FrameEmission;
+            }
             frameDuration = animData.FrameDuration / Mathf.Max(0.01f, _speed);
         }
         catch (OperationCanceledException)
@@ -406,6 +429,7 @@ public sealed class ServerVFXEvent : IServerWorldEffect
             _isAnimated = true;
             _slot?.SetSprite(_animationFrames[0]);
             _slot?.SetEnabled(true);
+            SubmitEmission();
 
             _maxLifetime = (_animationFrames.Length * _frameDuration) + 0.5f;
             return true;
@@ -1239,6 +1263,11 @@ public sealed class ServerVFXEvent : IServerWorldEffect
             _targetBot = null;
         }
 
+        if (_localFacingAngle.HasValue && _gameObject != null)
+        {
+            _gameObject.transform.rotation = Quaternion.Euler(0f, 0f, _localFacingAngle.Value);
+        }
+
         _slot?.SetColor(Color.white);
         _slot?.SetSprite(null);
     }
@@ -1266,8 +1295,19 @@ public sealed class ServerVFXEvent : IServerWorldEffect
         }
     }
 
+    private void SubmitEmission()
+    {
+        if (_light != null && _gameObject != null && _currentFrame < _frameEmission.Length)
+        {
+            SpriteEmissionFrame frame = _frameEmission[_currentFrame];
+            _light.Submit(_gameObject.transform.TransformPoint(new Vector3(frame.Centroid.x, frame.Centroid.y, 0f)),
+                _gameObject.transform.lossyScale, frame.Radiance);
+        }
+    }
+
     private void ReleaseSlot()
     {
+        _light?.Dispose();
         _collectionLabel?.Dispose();
         _collectionLabel = null;
         if (_sourceCollectionSpriteObject != null)

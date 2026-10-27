@@ -77,6 +77,18 @@ namespace Kern.Game.Player.Movement
                 return false;
             }
 
+            if (!PlayerMovementValidator.IsWithinWorldBounds(
+                    target, _mapDataProvider.WorldWidth, _mapDataProvider.WorldHeight))
+            {
+                Vector2Int delta = target - Position;
+                Vector2Int direction = Mathf.Abs(delta.x) > Mathf.Abs(delta.y)
+                    ? new Vector2Int(Math.Sign(delta.x), 0)
+                    : new Vector2Int(0, -Math.Sign(delta.y));
+                CancelClickPath();
+                TryRotate(direction);
+                return false;
+            }
+
             List<Vector2Int>? path;
             try
             {
@@ -132,6 +144,9 @@ namespace Kern.Game.Player.Movement
         private bool _awaitingMoveConfirmation;
         [Inject]
         private IWorldDataStorage _storage = null!;
+
+        [Inject]
+        private IServerVFXService _vfx = null!;
 
         [Inject]
         private INetworkService _networkService = null!;
@@ -215,7 +230,7 @@ namespace Kern.Game.Player.Movement
             _localPlayerState?.Publish(this);
             if (_input != null)
             {
-                _actionDispatcher = new PlayerActionDispatcher(_input, _networkService);
+                _actionDispatcher = new PlayerActionDispatcher(_input, _networkService, _vfx);
             }
             _programmator.StateChanged += OnProgramStateChanged;
         }
@@ -488,6 +503,24 @@ namespace Kern.Game.Player.Movement
                 TryRotate(direction);
             }
 
+            // Поворот к грани мира не должен ждать кулдауна шага или бура:
+            // шага за границу всё равно не будет, но робот обязан смотреть
+            // на видимую WorldEdge-клетку.
+            if (direction != Vector2Int.zero && _mapDataProvider != null &&
+                !PlayerMovementValidator.IsWithinWorldBounds(
+                    Position + PlayerDirectionMapping.MovementToDeltaServer(direction),
+                    _mapDataProvider.WorldWidth,
+                    _mapDataProvider.WorldHeight))
+            {
+                TryRotate(direction);
+                if (_autoDig && !_input.IsShiftPressed && !_awaitingMoveConfirmation)
+                {
+                    _actionDispatcher?.HandleBoundaryDig(Position, PlayerDirectionMapping.ToPacketDirection(direction));
+                }
+
+                return;
+            }
+
             if (_awaitingMoveConfirmation)
             {
                 return;
@@ -501,19 +534,6 @@ namespace Kern.Game.Player.Movement
                     StepClickPath();
                 }
 
-                return;
-            }
-
-            // Поворот к грани мира не должен ждать кулдауна шага или бура:
-            // шага за границу всё равно не будет, но робот обязан смотреть
-            // на видимую RedRock-клетку.
-            if (_mapDataProvider != null &&
-                !PlayerMovementValidator.IsWithinWorldBounds(
-                    Position + PlayerDirectionMapping.MovementToDeltaServer(direction),
-                    _mapDataProvider.WorldWidth,
-                    _mapDataProvider.WorldHeight))
-            {
-                TryRotate(direction);
                 return;
             }
 

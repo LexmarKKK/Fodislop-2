@@ -62,7 +62,9 @@
   load.push(new Promise(res => { robot.onload = res; robot.onerror = res; }));
   robot.src = 'img/bee.png';
 
-  const world = { map, PX, PY, TYPES, CELL };
+  // Другие роботы рядом (позиции — пример; ник и клан — из данных игрока)
+  const world = { map, PX, PY, TYPES, CELL, marks: [],
+    bots: [{ nick: 'ШАХТЁР-102', clan: true, x: PX - 12, y: PY }, { nick: 'ROCKBOT', clan: false, x: PX - 4, y: PY - 2 }] };
   world.draw = () => {
     const canvas = document.getElementById('world');
     const frame = document.getElementById('frame');
@@ -85,7 +87,7 @@
       if (img?.naturalWidth) cell(img, x, y);
     }
     ctx.imageSmoothingEnabled = false;
-    if (robot.complete) cell(robot, PX - ox, PY - oy);
+    if (robot.complete) { cell(robot, PX - ox, PY - oy); world.bots.forEach(b => cell(robot, b.x - ox, b.y - oy)); }
     // Куда смотрит робот — треугольник у края его клетки
     const [fx, fy] = STEP[world.facing], cx = offX + (PX - ox + .5) * CELL, cy = offY + (PY - oy + .5) * CELL, e = CELL * .62, w = CELL * .18;
     ctx.fillStyle = '#e8b04a'; ctx.beginPath();
@@ -94,6 +96,7 @@
     ctx.lineTo(px(cx + fx * e + fy * w), px(cy + fy * e - fx * w));
     ctx.fill();
     world.drawMinimap();
+    world.onDraw?.();
   };
   world.drawMinimap = () => {
     const mm = document.getElementById('minimap');
@@ -105,6 +108,11 @@
       ctx.fillStyle = t.mm; ctx.fillRect(x * s, y * s, s, s);
     }
     ctx.fillStyle = 'rgba(11,15,18,.35)'; ctx.fillRect(0, 0, mm.width, mm.height);
+    // Цели на миникарте: миссия и своя метка — в краю, если дальше видимого
+    world.marks.filter(m => !m.off?.()).forEach(m => {
+      const x = Math.max(3, Math.min(mm.width - 3, mm.width / 2 + (m.x - PX) * s)), y = Math.max(3, Math.min(mm.height - 3, mm.height / 2 + (m.y - PY) * s));
+      ctx.fillStyle = m.color; ctx.fillRect(x - 3, y - 3, 6, 6);
+    });
     ctx.fillStyle = '#e8b04a'; ctx.fillRect(mm.width / 2 - 2, mm.height / 2 - 2, 4, 4);
   };
   world.cellAt = (px, py) => {

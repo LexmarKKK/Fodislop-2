@@ -24,7 +24,7 @@ namespace Kern.Rendering.PostProcessing
         [Tooltip("Threshold transition width as a fraction of Threshold.")]
         public FloatParameter softKnee = new(PostProcessLook.Bloom.SoftKnee);
 
-        [Tooltip("Dual Kawase sampling radius in source texels.")]
+        [Tooltip("Tent reconstruction radius in source texels; downsampling uses a fixed anti-alias filter.")]
         public FloatParameter radius = new(PostProcessLook.Bloom.Radius);
 
         [Tooltip("How strongly reconstructed wide glow is mixed with the local glow.")]

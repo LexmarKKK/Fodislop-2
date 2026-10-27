@@ -8,6 +8,16 @@ namespace Kern.Core;
 [Serializable]
 public sealed class EffectSettings
 {
+    [SettingUnbounded("Включение рыбьего глаза без изменения сохранённой силы.")]
+    [SettingLabel("settings.effects.fisheye_enabled")]
+    [SettingConsumer(SettingConsumerTarget.PostProcessController, "PostProcessController.ApplyClientConfig")]
+    public bool FisheyeEnabled;
+
+    [SettingRange(0f, 10f)]
+    [SettingLabel("settings.effects.fisheye")]
+    [SettingConsumer(SettingConsumerTarget.PostProcessController, "PostProcessController.ApplyClientConfig")]
+    public float FisheyeScale = 1f;
+
     // Дефолти — авторський вигляд, єдиний дім у PostProcessLook.Effects.
     [SettingUnbounded("Тумблер свечения ярких участков.")]
     [SettingLabel("settings.effects.bloom")]

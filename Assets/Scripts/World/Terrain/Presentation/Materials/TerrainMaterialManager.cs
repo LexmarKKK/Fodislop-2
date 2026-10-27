@@ -27,6 +27,27 @@ public sealed class TerrainMaterialManager
     private static readonly int s_worldLightRectPropertyId = Shader.PropertyToID("_WorldLightRect");
 
     private Material[] _cellMaterials = Array.Empty<Material>();
+    private Material[] _presentationMaterials = Array.Empty<Material>();
+
+    public Material[] PresentationMaterials => _presentationMaterials;
+
+    private static readonly int s_depthPixelsId = Shader.PropertyToID("_TerrainDepthPixels");
+    private static readonly int s_depthDarkeningId = Shader.PropertyToID("_TerrainDepthDarkening");
+
+    public void ApplyDepthConfig(ClientConfig config)
+    {
+        foreach (Material material in _cellMaterials)
+        {
+            ApplyDepth(material, config);
+        }
+    }
+
+    private static void ApplyDepth(Material material, ClientConfig config)
+    {
+        material.SetFloat(s_depthPixelsId, config.Terrain.DepthEnabled
+            ? Mathf.Round(Mathf.Clamp(config.Terrain.DepthPixels, 0f, 16f)) : 0f);
+        material.SetFloat(s_depthDarkeningId, Mathf.Clamp01(config.Terrain.DepthDarkening));
+    }
 
     // Единственный материал террейна: меш идентификаторов и накладка дверей,
     // все атласы разом.
@@ -66,6 +87,7 @@ public sealed class TerrainMaterialManager
             // Вид поверхности авторский: декали, кайма, глинт и
             // призматик берут числа из TerrainConfigHolder.
             TerrainMaterialTuning.Apply(material, config.Terrain.EnableRim);
+            ApplyDepth(material, config);
         }
     }
 
@@ -119,6 +141,8 @@ public sealed class TerrainMaterialManager
         cellCache.ClearCaches();
         CleanupMaterials();
         _cellMaterials = new[] { CreateCellMaterial(clientConfig) };
+        Material surface = _cellMaterials[0];
+        _presentationMaterials = new[] { surface, surface, surface };
 
         SnapshotAtlasRefs(atlases);
         FrameEventLog.Record($"террейн: материалы пересозданы, атласов {atlases.Count}");
@@ -189,6 +213,7 @@ public sealed class TerrainMaterialManager
         // Вид поверхности авторский: декали, кайма, глинт и
         // призматик берут числа из TerrainConfigHolder.
         TerrainMaterialTuning.Apply(material, clientConfig.Terrain.EnableRim);
+        ApplyDepth(material, clientConfig);
         RequireLightingPasses(material);
         return material;
     }
@@ -320,6 +345,7 @@ public sealed class TerrainMaterialManager
         }
 
         _cellMaterials = Array.Empty<Material>();
+        _presentationMaterials = Array.Empty<Material>();
     }
 
     private static void RequireShaderProperties(Material material)
@@ -334,6 +360,8 @@ public sealed class TerrainMaterialManager
             "_BlinkingSpeedScale",
             "_ShimmerColor",
             "_TerrainRimEnabled",
+            "_TerrainDepthPixels",
+            "_TerrainDepthDarkening",
             "_RimFalloff",
             "_RimDistanceScale",
             "_EmissionBrightnessStart",

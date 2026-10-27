@@ -48,6 +48,7 @@ public sealed class ApplicationBootstrap : IStartable
 
     public void Start()
     {
+        UnityEngine.Application.runInBackground = true;
         _operations.Run("application_startup", _ => StartAsync());
     }
 

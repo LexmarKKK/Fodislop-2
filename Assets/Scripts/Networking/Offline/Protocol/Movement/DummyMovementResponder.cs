@@ -72,6 +72,12 @@ internal sealed class DummyMovementResponder : IDisposable
             return;
         }
 
+        if (IsOutsideWorld(packet.X, packet.Y))
+        {
+            SendPositionSnapshot();
+            return;
+        }
+
         CellType cellType = CellType.Unloaded;
         if (_worldState.HasLayer &&
             !_ignoreCollision() &&
@@ -113,6 +119,17 @@ internal sealed class DummyMovementResponder : IDisposable
         CancelPositionSnapshot();
         _moveRequestVersion++;
         CancelPath();
+        if (IsOutsideWorld(packet.X, packet.Y))
+        {
+            int dx = packet.X - _playerState.X;
+            int dy = packet.Y - _playerState.Y;
+            _playerState.SetDirection(Math.Abs(dx) > Math.Abs(dy)
+                ? (dx < 0 ? Direction.Left : Direction.Right)
+                : (dy < 0 ? Direction.Up : Direction.Down));
+            SendPositionSnapshot();
+            return;
+        }
+
         List<(ushort X, ushort Y)> path = _pathFinder.FindPath(
             _playerState.X,
             _playerState.Y,
@@ -130,6 +147,10 @@ internal sealed class DummyMovementResponder : IDisposable
             "dummy_walk_path",
             supervisorToken => WalkPathAsync(path, pathToken, supervisorToken));
     }
+
+    private bool IsOutsideWorld(ushort x, ushort y) =>
+        _worldState.Layer is { } layer &&
+        (x >= layer.WidthChunks * layer.ChunkSize || y >= layer.HeightChunks * layer.ChunkSize);
 
     public void SendPositionSnapshot()
     {

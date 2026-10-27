@@ -37,3 +37,22 @@ This is an algorithm regression, not a Unity render test. It cannot validate
 Metal compilation, runtime texture bindings, mesh submission order, or the final
 camera image. The MainGame PlayMode test checks runtime wiring separately. The
 sampling fixture models bilinear mip-zero filtering at the receiver position.
+
+Raised terrain geometry uses the actual `TerrainDepth.hlsl` forward vertex
+projection. Independent expectations cover ground/top height planes, perspective
+width (rather than a translated face), camera response, outward normals, wall UV
+depth, exact POSITION-only endpoint decoding, face bounds and ground/field
+isolation. Twelve injected mutations must fail. Source guards reject screen-only
+field accesses in lighting passes, reserved HLSL identifiers and TEXCOORD vertex
+requirements. The native runner remains an algorithm check, not Metal/render proof.
+
+`dotnet test tools/Kern.TerrainTests` additionally executes real volume topology
+and mesh-construction code with published-fact and mesh-upload test backends:
+internal faces, destruction, round contour area, grid/negative origin, shape-only
+invalidation, wire-format values, ordered side indices, stable upload behavior,
+and disposal/recreation. MainGame PlayMode asserts the production POSITION-only
+layout and real side triangles, then compares six camera/zoom cases with real
+textures, lighting and fisheye. Those captures require a separate Unity execution.
+
+Optional local HLSL grammar/type check (not a production render):
+`glslangValidator -D -V -S vert -e Main -I. tools/Kern.TerrainRasterTests/Native/Terrain/volume-syntax.hlsl -o /tmp/kern-volume-syntax.spv`.

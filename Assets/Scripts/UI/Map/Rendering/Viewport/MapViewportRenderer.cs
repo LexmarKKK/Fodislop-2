@@ -124,6 +124,7 @@ internal sealed class MapViewportRenderer : IDisposable
         _computeShader!.SetVector("_StartWorld", new Vector4(grid.StartWorldX, grid.StartWorldY, 0f, 0f));
         _computeShader.SetVector("_TexSize", new Vector4(texWidth, texHeight, 0f, 0f));
         _computeShader.SetFloat("_CellsPerPixel", cellsPerPixel);
+        _computeShader.SetInt("_WorldEdgeType", (int)CellType.WorldEdge);
         _computeShader.SetInt("_WorldWidth", worldWidth);
         _computeShader.SetInt("_WorldHeight", worldHeight);
         _computeShader.SetInt("_UseMip", useMip ? 1 : 0);

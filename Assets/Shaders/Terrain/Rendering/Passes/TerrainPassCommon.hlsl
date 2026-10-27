@@ -25,10 +25,15 @@ struct TerrainVertexInput
 // worldPos — постоянный адрес клетки и упакованные флаги, не позиция
 // фрагмента. Все проходы передают его с nointerpolation: интерполяционная
 // погрешность перед floor/modulo может выбрать соседний тайл листа.
+// Only the camera presentation can expose ground beneath a raised block.
+#ifndef KERN_TERRAIN_RETAIN_BACKGROUND
+#define KERN_TERRAIN_RETAIN_BACKGROUND false
+#endif
+
 // Разбор вершины. Объявляет `cell` — проходу она нужна и после макроса.
 #define TERRAIN_RESOLVE_CELL_VERTEX(input, output) \
     TerrainCellVertex cell = LoadTerrainCellVertex( \
-        input.positionOS.xyz, TerrainCornerBase(input.positionOS.w)); \
+        input.positionOS.xyz, TerrainCornerBase(input.positionOS.w), KERN_TERRAIN_RETAIN_BACKGROUND); \
     output.positionCS = TerrainVertexClipPosition(cell.atlasIndex, cell.positionOS); \
     output.uv = cell.uv; \
     output.subAtlasRect = cell.subAtlasRect; \

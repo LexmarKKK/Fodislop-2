@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Linq;
 using System.IO;
 using Kern.World;
 using NUnit.Framework;
@@ -194,6 +195,9 @@ public sealed class AnimationContainerDecoderTests
 
         Assert.That(result.Sprites, Is.Not.Null);
         Assert.That(result.Sprites.Length, Is.EqualTo(15));
+        Assert.That(result.FrameEmission.Length, Is.EqualTo(15));
+        Assert.That(result.FrameEmission.Any(frame => frame.Radiance.maxColorComponent > 0f), Is.True);
+        Assert.That(result.FrameEmission.All(frame => float.IsFinite(frame.Centroid.x) && float.IsFinite(frame.Centroid.y)), Is.True);
         Assert.That(result.FrameHeight, Is.EqualTo(64));
         Assert.That(result.FrameCount, Is.EqualTo(15));
         Assert.That(result.FPS, Is.EqualTo(30f));

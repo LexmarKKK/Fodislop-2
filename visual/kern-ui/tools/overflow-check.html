@@ -6,8 +6,11 @@
 <pre id="log"></pre>
 <script>
 const DEVICES = ['se', 'promax', 'pixel8', 'ipadmini', 'ipadpro', 'foldin', 'd768', 'd800', 'd1080', 'd1440', 'd219', 'd4k150'];
-const SCREENS = ['auth', 'auth&auth=register&autherr=1', 'onboarding&onbstep=0', 'onboarding&onbstep=1', 'onboarding&onbstep=2', 'menu', 'game', 'game&state=busy', 'game&state=busy&chat=1', 'game&settings=graphics', 'game&settings=audio', 'game&settings=interface', 'game&settings=controls', 'game&skills=1', 'game&pause=1', 'game&inv=1'];
+const SCREENS = ['auth', 'auth&auth=register&autherr=1', 'onboarding&onbstep=0', 'onboarding&onbstep=1', 'onboarding&onbstep=2', 'menu', 'game', 'game&state=busy', 'game&state=busy&chat=1', 'game&settings=graphics', 'game&settings=audio', 'game&settings=interface', 'game&settings=controls', 'game&skills=1', 'game&pause=1', 'game&inv=1',
+  'game&prog=1', 'game&prog=debug', 'game&prog=list', 'game&event=kicked', 'game&event=modal', 'game&event=link', 'game&map=1&mark=1'];
 const out = [];
+// ?lang=en|zh — та же проверка на другом языке
+const LANG = new URLSearchParams(location.search).get('lang');
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const load = src => new Promise(res => {
   const f = document.createElement('iframe');
@@ -43,13 +46,13 @@ function scan(d, w) {
 (async () => {
   let fails = 0;
   for (const s of SCREENS) for (const dev of DEVICES) {
-    const f = await load(`../index.html?screen=${s}&device=${dev}`);
-    await wait(1600);
+    const f = await load(`../index.html?screen=${s}&device=${dev}${LANG ? '&lang=' + LANG : ''}`);
+    await wait(LANG ? 2200 : 1600);
     const bad = [...new Set(scan(f.contentDocument, f.contentWindow))];
     if (bad.length) { fails += bad.length; out.push(`FAIL ${s} ${dev}` + bad.map(b => '\n     ' + b).join('')); }
     f.remove();
   }
   document.getElementById('log').textContent = out.join('\n');
-  document.title = fails ? `overflow: FAIL ${fails}` : 'overflow: ok';
+  document.title = (fails ? `overflow: FAIL ${fails}` : 'overflow: ok') + (LANG ? ' ' + LANG : '');
 })();
 </script>

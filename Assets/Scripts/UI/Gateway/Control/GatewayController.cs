@@ -243,7 +243,7 @@ namespace Kern.UI.Gateway
             }
 
             // Диапазон тот же, что проверяет ClientConfigManager.
-            UIScreen.Bind(_document, UIScalePolicy.Clamp(scale));
+            UIScreen.Bind(_document, UIScalePolicy.Clamp(scale), _clientConfig.Config.Interface.TextScale);
         }
 
         // ─────────────────────────────────────────────────────────────

@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>collect: running</title>
+<!-- Сбор строк интерфейса для перевода: проходит экраны и окна стенда и собирает русский текст
+     (текстовые узлы, placeholder, title, aria-label), включая скрытые окна. Числа заменены на «#».
+     Итог — JSON в <pre>; его читает tools/i18n-build.py. -->
+<pre id="out"></pre>
+<script>
+const URLS = ['screen=boot', 'screen=auth', 'screen=auth&auth=register&autherr=1', 'screen=auth&forgot=1', 'screen=onboarding&onbstep=0', 'screen=onboarding&onbstep=1', 'screen=onboarding&onbstep=2',
+  'screen=menu', 'screen=menu&update=1&updwin=1', 'screen=menu&health=run', 'screen=descent', 'game', 'game&state=busy&mark=1', 'game&chat=1', 'game&pm=ШАХТЁР-102',
+  'game&clan=1&clanrole=leader', 'game&mail=1', 'game&profile=1', 'game&profile=ГЛУБИНА', 'game&profile=ШАХТЁР-102', 'game&skills=0', 'game&skills=-1', 'game&skills=5', 'game&inv=1', 'game&inv=3',
+  'game&menu=1', 'game&pause=1&device=promax', 'game&device=promax', 'game&input=xbox', 'game&settings=graphics', 'game&settings=audio', 'game&settings=interface', 'game&profile=settings', 'game&settings=controls',
+  'game&prog=1', 'game&prog=debug', 'game&prog=list', 'game&prog=error', 'game&map=1&mark=1', 'game&event=reconnect', 'game&event=lost', 'game&event=kicked', 'game&event=modal', 'game&event=link',
+  'game&buildings=1', 'game&assets=40'];
+const SKIP = '.stand-bar, script, style, svg, .nick-link, .nick, .wl-name, .wl-chat, .chat-log li:not(.sys), #chatPeek3, .prog-cell, #progName, #progPickName, [translate="no"]';
+const found = new Set();
+const norm = s => s.replace(/\s+/g, ' ').trim().replace(/\d+/g, '#');
+const cyr = /[А-Яа-яЁё]/;
+const wait = ms => new Promise(r => setTimeout(r, ms));
+(async () => {
+  for (const u of URLS) {
+    const f = document.createElement('iframe');
+    f.style.cssText = 'width:1920px;height:1080px;border:0;position:absolute;left:-9999px';
+    await new Promise(res => { f.onload = res; f.src = '../index.html?' + u; document.body.appendChild(f); });
+    await wait(2500);
+    const d = f.contentDocument, root = d.getElementById('frame');
+    const it = d.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
+    while ((n = it.nextNode())) { const t = norm(n.data); if (cyr.test(t) && !n.parentElement.closest(SKIP)) found.add(t); }
+    root.querySelectorAll('[placeholder], [title], [aria-label]').forEach(el => {
+      if (el.closest('.stand-bar')) return;
+      ['placeholder', 'title', 'aria-label'].forEach(a => { const t = norm(el.getAttribute(a) || ''); if (cyr.test(t)) found.add(t); });
+    });
+    f.remove();
+  }
+  document.getElementById('out').textContent = JSON.stringify([...found].sort(), null, 1);
+  document.title = 'collect: ' + found.size;
+})();
+</script>

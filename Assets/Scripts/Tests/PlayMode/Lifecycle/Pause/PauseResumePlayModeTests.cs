@@ -40,6 +40,13 @@ public sealed class PauseResumePlayModeTests
         yield return PlayModeHarness.EnterMainGame(_bootstrap);
     }
 
+    [Test]
+    public void ApplicationStartup_EnablesBackgroundPlayerLoop()
+    {
+        Assert.That(Application.runInBackground, Is.True,
+            "Losing desktop focus must not suspend the packet-processing player loop.");
+    }
+
     [UnityTearDown]
     public IEnumerator TearDown()
     {

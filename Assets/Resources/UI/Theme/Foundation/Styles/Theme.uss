@@ -1002,7 +1002,7 @@ Button#ServerSelectButton Label {
     border-width: 1px;
     border-color: transparent;
     color: var(--text-secondary);
-    font-size: 20px;
+    font-size: var(--size-fixed-20);
     -unity-text-align: middle-center;
 }
 

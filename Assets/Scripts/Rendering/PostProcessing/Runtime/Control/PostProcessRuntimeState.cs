@@ -9,6 +9,8 @@ using Kern.Core;
 namespace Kern.Rendering.PostProcessing;
 public static class PostProcessRuntimeState
 {
+    internal static float FisheyeScale { get; set; }
+
     internal static Camera? MainCamera { get; private set; }
 
     // Explicit production-image observation. The test records a GPU readback in
@@ -196,6 +198,7 @@ public static class PostProcessRuntimeState
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetForDomainReload()
     {
+        FisheyeScale = 0f;
         MainCamera = null;
         DiagnosticOffscreenCamera = null;
         DiagnosticWorldImage = null;

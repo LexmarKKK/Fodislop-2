@@ -43,8 +43,8 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .col-top { max-width: calc(100% - 2 * var(--margin) - 480px); }
 .hud[data-chat="1"] .col-top { max-width: calc(100% - 2 * var(--margin) - 480px - var(--chat-w)); }
 .player-row > .mission { min-width: 180px; }
-.player { width: var(--col); padding: 12px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
-.player-head { display: flex; align-items: center; gap: 6px; }
+.player { width: var(--pcol, var(--col)); padding: 12px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
+.player-head { display: flex; align-items: center; gap: 6px; white-space: nowrap; }   /* одна строка: ник не режется и не переносится — растёт панель */
 .clan { width: 16px; height: 16px; image-rendering: pixelated; }
 /* ID игрока — кнопка профиля: текст в рамке, не значок */
 .pid { flex: none; display: grid; place-items: center; padding: 0; border: 0; background: none; cursor: pointer; }
@@ -55,8 +55,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .frame.in-touch .pid { height: 44px; min-width: 44px; margin: -13px 0; }
 .frame.compact .pid span { height: 18px; padding: 0 4px; font-size: 10px; line-height: 16px; }
 .frame.compact .player-head { gap: 5px; }
-.nick { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t-strong); font-weight: 700; letter-spacing: .01em; }
-.level { flex: none; margin-left: auto; color: var(--ash); font-size: var(--t-small); }
+.nick { flex: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--t-strong); font-weight: 700; letter-spacing: .01em; }
 .hp { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
 .hp .meter { height: 10px; }
 /* Деления по 10 % — полоса читается как запас, а не как прогресс-бар */
@@ -84,9 +83,9 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .mission-text { grid-column: 1; font-size: var(--t-small); color: var(--ash); }
 .mission-progress { grid-row: 2; grid-column: 2; font-weight: 600; color: var(--signal); }
 
-.cargo { width: var(--col); padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+.cargo { width: var(--pcol, var(--col)); padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
 .cargo[hidden] { display: none; }
-.cargo-head { display: flex; align-items: center; gap: 8px; }
+.cargo-head { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
 .cargo-head span { color: var(--ash); }
 .cargo-head strong { font-weight: 700; }
 .cargo-head .icon-btn { margin-left: auto; margin-right: -6px; }
@@ -359,8 +358,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .profile-actions { flex: none; align-self: flex-start; display: flex; gap: 8px; }
 .profile-actions .btn { display: flex; align-items: center; gap: 8px; }
 .btn-ico { width: 16px; height: 16px; }
-.profile-lock { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; padding: 2px 8px; border-radius: 3px; background: var(--plate); border: 1px solid var(--seam); color: var(--ash); font-size: var(--t-small); font-weight: 600; }
-.profile-lock svg, .profile-closed svg { width: 14px; height: 14px; }
+.profile-closed svg { width: 14px; height: 14px; }
 .profile-closed { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 40px 20px; border-radius: var(--radius); border: 1px dashed var(--seam-strong); color: var(--ash); }
 .profile-ach { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .profile-ach li { display: grid; grid-template-columns: 28px minmax(0, 1fr); column-gap: 10px; row-gap: 2px; align-items: center; padding: 8px 10px; border-radius: var(--radius); background: var(--plate); border: 1px solid var(--seam); }
@@ -470,3 +468,11 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .frame.size-s .map-side { padding: 10px; gap: 8px; }
 .frame.in-touch .map-tools .icon-btn { width: 44px; height: 44px; }
 .frame.in-touch .map-places button { min-height: 44px; }
+
+/* Прокрутка: полоса видна всегда, а не только во время прокрутки, и заметна на графите —
+   по ней сразу понятно, что содержимое продолжается. Собственный вид полосы отключает исчезающую системную */
+.frame ::-webkit-scrollbar { width: 10px; height: 10px; }
+.frame ::-webkit-scrollbar-track { background: rgba(255, 255, 255, .04); border-radius: 5px; }
+.frame ::-webkit-scrollbar-thumb { background: #6b767e; border: 2px solid transparent; border-radius: 5px; background-clip: padding-box; min-height: 32px; }
+.frame ::-webkit-scrollbar-thumb:hover { background-color: #8d979e; }
+.frame ::-webkit-scrollbar-corner { background: transparent; }

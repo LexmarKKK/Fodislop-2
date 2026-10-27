@@ -1,7 +1,7 @@
 #nullable enable
 
 using System;
-using System.Threading;
+using Kern.Game.VisualEffects.Lighting;
 using Kern.Core.Interfaces;
 using Kern.Core.Lifecycle;
 using Kern.World.Lighting;
@@ -15,8 +15,6 @@ namespace Kern.Game.VisualEffects.Cells;
 // D and G share their original sprite animation. Audio remains owned by SFX.
 public sealed class CellDestructionEffect : IServerWorldEffect
 {
-    // RobotLighting owns positive ids; transient effect sources own negative ids.
-    private static int s_nextLightId;
     private readonly CellDestructionClip _clip;
     private readonly LightingEngine _lighting;
     private readonly int _lightId;
@@ -36,7 +34,7 @@ public sealed class CellDestructionEffect : IServerWorldEffect
 
         _clip = clip;
         _lighting = lighting;
-        _lightId = Interlocked.Decrement(ref s_nextLightId);
+        _lightId = TransientEffectLight.AllocateId();
         _createdAtSeconds = Time.timeAsDouble;
         _object = objects.Create(variant == SFX.Destroy ? "CellDestructionD" : "CellDestructionG", RuntimeOwner.VFX);
         _object.transform.SetPositionAndRotation(position, Quaternion.identity);

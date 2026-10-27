@@ -25,7 +25,7 @@ internal sealed class PauseMenuDisplayTabBuilder
     private readonly ICollection<Action> _refreshers;
     private readonly ILocalizationService _loc;
 
-    private Button? _fullscreenButton;
+    private DropdownField? _windowModeDropdown;
     private Action? _refreshResolutionDropdown;
 
     public PauseMenuDisplayTabBuilder(
@@ -51,10 +51,28 @@ internal sealed class PauseMenuDisplayTabBuilder
             throw new InvalidOperationException(
                 "[PauseMenu] HDROutputGroup is missing from PauseMenu.uxml.");
 
-        _fullscreenButton = new Button(ToggleFullscreen);
-        _fullscreenButton.text = Screen.fullScreen ? _loc.Get("menu.settings.fullscreen") : _loc.Get("settings.display.windowed");
-        _fullscreenButton.AddToClassList("pause-btn");
-        displaySection.Add(_fullscreenButton);
+        var windowModeRow = new VisualElement();
+        windowModeRow.AddToClassList("pause-slider-container");
+        var windowModeLabel = new Label(_loc.Get("settings.display.window_mode"));
+        windowModeLabel.AddToClassList("pause-slider-label");
+        windowModeRow.Add(windowModeLabel);
+        var windowModeDropdown = new DropdownField
+        {
+            choices = new List<string>
+            {
+                _loc.Get("settings.display.windowed"),
+                _loc.Get("settings.display.borderless"),
+            },
+        };
+        windowModeDropdown.SetValueWithoutNotify(windowModeDropdown.choices[
+            Screen.fullScreenMode == FullScreenMode.Windowed ? 0 : 1]);
+        windowModeDropdown.RegisterValueChangedCallback(_ => SetWindowMode(
+            windowModeDropdown.index == 0 ? FullScreenMode.Windowed : FullScreenMode.FullScreenWindow));
+        windowModeRow.Add(windowModeDropdown);
+        displaySection.Add(windowModeRow);
+        _windowModeDropdown = windowModeDropdown;
+        _refreshers.Add(() => windowModeDropdown.SetValueWithoutNotify(windowModeDropdown.choices[
+            Screen.fullScreenMode == FullScreenMode.Windowed ? 0 : 1]));
 
         var resolutions = Screen.resolutions;
         var resolutionMap = new Dictionary<string, Resolution>();
@@ -218,7 +236,7 @@ internal sealed class PauseMenuDisplayTabBuilder
         // На телефоне и планшете окно, разрешение и синхронизацию задаёт
         // система: переключатели были бы кнопками без действия.
         bool systemOwnsWindow = Application.isMobilePlatform;
-        UIState.SetHidden(_fullscreenButton, systemOwnsWindow);
+        UIState.SetHidden(windowModeRow, systemOwnsWindow);
         UIState.SetHidden(resolutionRow, systemOwnsWindow);
         UIState.SetHidden(vSyncToggle, systemOwnsWindow);
         Label syncContext = displaySection.Q<Label>("DisplaySyncContext") ??
@@ -346,21 +364,17 @@ internal sealed class PauseMenuDisplayTabBuilder
             });
     }
 
-    private void ToggleFullscreen()
+    private void SetWindowMode(FullScreenMode nextMode)
     {
-        FullScreenMode nextMode = Screen.fullScreenMode == FullScreenMode.Windowed
-            ? FullScreenMode.FullScreenWindow
-            : FullScreenMode.Windowed;
         _displayManager.SetResolution(
             Screen.width,
             Screen.height,
             nextMode,
             (int)Screen.currentResolution.refreshRateRatio.value);
-        if (_fullscreenButton != null)
+        if (_windowModeDropdown != null)
         {
-            _fullscreenButton.text = nextMode == FullScreenMode.Windowed
-                ? _loc.Get("settings.display.windowed")
-                : _loc.Get("menu.settings.fullscreen");
+            _windowModeDropdown.SetValueWithoutNotify(_windowModeDropdown.choices[
+                nextMode == FullScreenMode.Windowed ? 0 : 1]);
         }
 
         _refreshResolutionDropdown?.Invoke();

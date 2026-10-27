@@ -433,6 +433,10 @@
       "Published": "Cells/RedRock.png"
     },
     {
+      "Source": "Cells/State/WorldEdge/WorldEdge.png",
+      "Published": "Cells/WorldEdge.png"
+    },
+    {
       "Source": "Cells/Crystals/Red/Red.png",
       "Published": "Cells/Red.png"
     },

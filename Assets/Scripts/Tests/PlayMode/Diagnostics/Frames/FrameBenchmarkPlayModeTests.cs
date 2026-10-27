@@ -852,8 +852,8 @@ public sealed class FrameBenchmarkPlayModeTests
                 Assert.That(alphaError, Is.EqualTo(0f), "Additive bloom modified scene alpha.");
                 if (scenario == 0)
                 {
-                    Assert.That(prefilterEnergy, Is.EqualTo(3f * (peak / 4f - 1f) / 4f).Within(0.1f),
-                        "The actual lit HDR white pixel must contribute (radiance/4 - threshold)/4 per RGB channel.");
+                    Assert.That(prefilterEnergy, Is.EqualTo(3f * (peak - 1f) / 16f).Within(0.1f),
+                        "Threshold each actual HDR pixel before averaging: (radiance - threshold)/16 per RGB channel.");
                 }
                 if (scenario == 2)
                 {

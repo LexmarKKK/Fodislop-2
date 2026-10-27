@@ -16,11 +16,15 @@ namespace UnityEngine
 
         public static Vector2 operator +(Vector2 a, Vector2 b) => new(a.x + b.x, a.y + b.y);
 
+        public static Vector2 operator /(Vector2 value, float divisor) => new(value.x / divisor, value.y / divisor);
+
         public static Vector2 operator -(Vector2 a, Vector2 b) => new(a.x - b.x, a.y - b.y);
 
         public static bool operator ==(Vector2 a, Vector2 b) => a.Equals(b);
 
         public static bool operator !=(Vector2 a, Vector2 b) => !a.Equals(b);
+
+        public static Vector2 zero => default;
 
         public float sqrMagnitude => (x * x) + (y * y);
 
@@ -114,6 +118,11 @@ namespace UnityEngine
         public float g = g;
         public float b = b;
         public float a = a;
+
+        public float maxColorComponent => Math.Max(r, Math.Max(g, b));
+
+        public static Color operator *(Color color, float scale) =>
+            new(color.r * scale, color.g * scale, color.b * scale, color.a * scale);
 
         public static Color white => new(1, 1, 1, 1);
 
@@ -245,6 +254,8 @@ namespace UnityEngine
             ? value * 12.92f
             : (1.055f * MathF.Pow(value, 1f / 2.4f)) - 0.055f;
 
+        public static ushort FloatToHalf(float value) => BitConverter.HalfToUInt16Bits((Half)value);
+
         public static float HalfToFloat(ushort half) => (float)BitConverter.UInt16BitsToHalf(half);
     }
 
@@ -268,6 +279,7 @@ namespace UnityEngine
 
     public static class Application
     {
+        public static bool isPlaying => false;
         public static string dataPath => System.AppContext.BaseDirectory;
     }
 

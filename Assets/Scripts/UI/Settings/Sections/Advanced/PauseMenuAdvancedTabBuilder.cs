@@ -73,6 +73,25 @@ internal sealed class PauseMenuAdvancedTabBuilder
             _graphicsSettings.UpdateWorldMaterialSettings(update);
         }
 
+        worldMaterialsSection.Add(PauseMenuUIFactory.CreateBoundToggle(
+            _loc.Get("settings.world.depth_enabled"),
+            () => _clientConfig.Config.Terrain.DepthEnabled,
+            _graphicsSettings.UpdateTerrainDepthEnabled,
+            _refreshers));
+        worldMaterialsSection.Add(PauseMenuUIFactory.CreateBoundSlider<TerrainSettings>(
+            nameof(TerrainSettings.DepthPixels),
+            _loc,
+            () => _clientConfig.Config.Terrain.DepthPixels,
+            value => _graphicsSettings.UpdateTerrainDepthSettings(
+                value, _clientConfig.Config.Terrain.DepthDarkening),
+            _refreshers));
+        worldMaterialsSection.Add(PauseMenuUIFactory.CreateBoundSlider<TerrainSettings>(
+            nameof(TerrainSettings.DepthDarkening),
+            _loc,
+            () => _clientConfig.Config.Terrain.DepthDarkening,
+            value => _graphicsSettings.UpdateTerrainDepthSettings(
+                _clientConfig.Config.Terrain.DepthPixels, value),
+            _refreshers));
         worldMaterialsSection.Add(PauseMenuUIFactory.CreateBoundSlider<TerrainSettings>(
             nameof(TerrainSettings.ShimmerSpeedScale),
             _loc,

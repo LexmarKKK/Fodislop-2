@@ -35,6 +35,7 @@ internal sealed class AssetCacheEntry
     private float _spriteFPS;
     private int _spriteFrameHeight;
     private int _spriteFrameCount;
+    private SpriteEmissionFrame[] _spriteEmission = Array.Empty<SpriteEmissionFrame>();
 
     internal AssetCacheEntry(string filename, AssetCache cache)
     {
@@ -67,6 +68,7 @@ internal sealed class AssetCacheEntry
         _spriteFPS = 0f;
         _spriteFrameHeight = 0;
         _spriteFrameCount = 0;
+        _spriteEmission = Array.Empty<SpriteEmissionFrame>();
     }
 
     internal long EstimateDecodedBytes()
@@ -96,7 +98,7 @@ internal sealed class AssetCacheEntry
                 total += (long)texture.width * texture.height * 4;
             }
 
-            return total;
+            return total + _spriteEmission.Length * 24L;
         }
     }
 
@@ -162,7 +164,7 @@ internal sealed class AssetCacheEntry
 
         lock (_lock)
         {
-            return new AnimatedSpriteData(frames, _spriteFPS, _spriteFrameHeight);
+            return new AnimatedSpriteData(frames, _spriteFPS, _spriteFrameHeight, _spriteEmission);
         }
     }
 
@@ -217,6 +219,7 @@ internal sealed class AssetCacheEntry
                 _spriteFPS = decoded.FPS;
                 _spriteFrameHeight = decoded.FrameHeight;
                 _spriteFrameCount = decoded.FrameCount;
+                _spriteEmission = decoded.FrameEmission;
                 texPromise = _texturePromise;
                 _texturePromise = null;
             }
@@ -326,6 +329,7 @@ internal sealed class AssetCacheEntry
                 _spriteFPS = anim.FPS;
                 _spriteFrameHeight = anim.FrameHeight;
                 _spriteFrameCount = anim.FrameCount;
+                _spriteEmission = anim.FrameEmission;
                 _texture = anim.Atlas;
                 spritePromise = _spritePromise;
                 _spritePromise = null;

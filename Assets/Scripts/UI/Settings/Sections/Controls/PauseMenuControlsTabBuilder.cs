@@ -36,6 +36,66 @@ internal sealed class PauseMenuControlsTabBuilder
     {
 
         new(
+            "settings.controls.key_move_up",
+            settings => settings.KeyMoveUp,
+            (settings, key) => settings.KeyMoveUp = key,
+            InterfaceSettings.DefaultKeyMoveUp),
+        new(
+            "settings.controls.key_move_down",
+            settings => settings.KeyMoveDown,
+            (settings, key) => settings.KeyMoveDown = key,
+            InterfaceSettings.DefaultKeyMoveDown),
+        new(
+            "settings.controls.key_move_left",
+            settings => settings.KeyMoveLeft,
+            (settings, key) => settings.KeyMoveLeft = key,
+            InterfaceSettings.DefaultKeyMoveLeft),
+        new(
+            "settings.controls.key_move_right",
+            settings => settings.KeyMoveRight,
+            (settings, key) => settings.KeyMoveRight = key,
+            InterfaceSettings.DefaultKeyMoveRight),
+        new(
+            "settings.controls.key_move_up_alternate",
+            settings => settings.KeyMoveUpAlternate,
+            (settings, key) => settings.KeyMoveUpAlternate = key,
+            InterfaceSettings.DefaultKeyMoveUpAlternate),
+        new(
+            "settings.controls.key_move_down_alternate",
+            settings => settings.KeyMoveDownAlternate,
+            (settings, key) => settings.KeyMoveDownAlternate = key,
+            InterfaceSettings.DefaultKeyMoveDownAlternate),
+        new(
+            "settings.controls.key_move_left_alternate",
+            settings => settings.KeyMoveLeftAlternate,
+            (settings, key) => settings.KeyMoveLeftAlternate = key,
+            InterfaceSettings.DefaultKeyMoveLeftAlternate),
+        new(
+            "settings.controls.key_move_right_alternate",
+            settings => settings.KeyMoveRightAlternate,
+            (settings, key) => settings.KeyMoveRightAlternate = key,
+            InterfaceSettings.DefaultKeyMoveRightAlternate),
+        new(
+            "settings.controls.key_turn_only",
+            settings => settings.KeyTurnOnly,
+            (settings, key) => settings.KeyTurnOnly = key,
+            InterfaceSettings.DefaultKeyTurnOnly),
+        new(
+            "settings.controls.key_turn_only_alternate",
+            settings => settings.KeyTurnOnlyAlternate,
+            (settings, key) => settings.KeyTurnOnlyAlternate = key,
+            InterfaceSettings.DefaultKeyTurnOnlyAlternate),
+        new(
+            "settings.controls.key_fast_move",
+            settings => settings.KeyFastMove,
+            (settings, key) => settings.KeyFastMove = key,
+            InterfaceSettings.DefaultKeyFastMove),
+        new(
+            "settings.controls.key_fast_move_alternate",
+            settings => settings.KeyFastMoveAlternate,
+            (settings, key) => settings.KeyFastMoveAlternate = key,
+            InterfaceSettings.DefaultKeyFastMoveAlternate),
+        new(
             "settings.controls.key_dig",
             settings => settings.KeyDig,
             (settings, key) => settings.KeyDig = key,
@@ -213,10 +273,8 @@ internal sealed class PauseMenuControlsTabBuilder
             AddKeyRow(
                 _loc.Get("settings.controls.mouse_route"),
                 _loc.Get("settings.controls.mouse_route_key"));
-            return;
         }
 
-        AddKeyRow(_loc.Get("settings.controls.key_move"), "W A S D / ← ↑ ↓ →");
         foreach (KeyAction action in s_keyActions)
         {
             AddRebindableRow(action);
@@ -263,10 +321,15 @@ internal sealed class PauseMenuControlsTabBuilder
         _keyList?.Add(row);
     }
 
-    private static string FormatKey(string keyName)
+    private string FormatKey(string keyName)
     {
         // "Space" → "SPACE", "LeftShift" → "LEFT SHIFT": имена enum Key
         // выводятся капсом, как значения в прежнем хардкод-списке.
+        if (keyName == "None")
+        {
+            return _loc.Get("settings.controls.unassigned");
+        }
+
         return Regex.Replace(keyName, @"\B[A-Z]", " $0").ToUpperInvariant();
     }
 
@@ -313,7 +376,7 @@ internal sealed class PauseMenuControlsTabBuilder
 
     private void PollCapture()
     {
-        if (_capturedButton == null ||
+        if (!Application.isFocused || _capturedButton == null ||
             _capturedButton.panel == null ||
             _capturedButton.resolvedStyle.display == DisplayStyle.None)
         {
@@ -347,6 +410,15 @@ internal sealed class PauseMenuControlsTabBuilder
 
     private void AssignKey(Key assigned)
     {
+        if (assigned is Key.Enter or Key.NumpadEnter or Key.Tab or Key.M or Key.I or
+            Key.P or Key.R or Key.T or Key.F1 or Key.F2 or
+            Key.Digit1 or Key.Digit2 or Key.Digit3 or Key.Digit4 or Key.Digit5 or
+            Key.Digit6 or Key.Digit7 or Key.Digit8 or Key.Digit9)
+        {
+            _capturedButton!.text = _loc.Get("settings.controls.reserved_key");
+            return;
+        }
+
         KeyAction action = _capturedAction!.Value;
         string keyName = assigned.ToString();
         StopCaptureTask();
@@ -354,9 +426,8 @@ internal sealed class PauseMenuControlsTabBuilder
             config => config.Interface,
             settings =>
             {
-                // Конфликт разрешается в пользу назначаемого действия:
-                // прежний владелец клавиши возвращается к своей дефолтной,
-                // поэтому дубли клавиш невозможны.
+                // Обмен привязками сохраняет уникальность и пользовательский выбор.
+                string previousKey = action.Get(settings);
                 foreach (KeyAction other in s_keyActions)
                 {
                     if (other.LabelKey != action.LabelKey &&
@@ -365,7 +436,7 @@ internal sealed class PauseMenuControlsTabBuilder
                             keyName,
                             StringComparison.OrdinalIgnoreCase))
                     {
-                        other.Set(settings, other.DefaultKey);
+                        other.Set(settings, previousKey);
                     }
                 }
 

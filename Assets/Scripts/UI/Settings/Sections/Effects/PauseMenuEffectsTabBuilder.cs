@@ -47,8 +47,7 @@ internal sealed class PauseMenuEffectsTabBuilder
 
         _postProcessController.EnsureVolumeSetup();
 
-        // Сила художественных эффектов задаётся PostProcessLook, а игрок
-        // решает, платить ли за эффект, через тумблеры ниже.
+        // Тумблеры сохраняют авторскую силу соответствующих эффектов.
         Toggle Switch(string fieldName, Func<bool> read, Action<ClientConfig, bool> write) =>
             PauseMenuUIFactory.CreateBoundToggle(
                 _loc.Get(SettingSchema.LabelOf<EffectSettings>(fieldName)),
@@ -63,6 +62,19 @@ internal sealed class PauseMenuEffectsTabBuilder
             nameof(EffectSettings.BloomEnabled),
             () => Cfg().Effects.BloomEnabled,
             (config, value) => config.Effects.BloomEnabled = value));
+
+        cameraGroup.Add(Switch(
+            nameof(EffectSettings.FisheyeEnabled),
+            () => Cfg().Effects.FisheyeEnabled,
+            (config, value) => config.Effects.FisheyeEnabled = value));
+
+        cameraGroup.Add(PauseMenuUIFactory.CreateBoundSlider<EffectSettings>(
+            nameof(EffectSettings.FisheyeScale),
+            _loc,
+            () => Cfg().Effects.FisheyeScale,
+            value => _graphicsSettings.UpdatePostProcessSettings(
+                config => config.Effects.FisheyeScale = Mathf.Clamp(value, 0f, 10f)),
+            _refreshers));
 
         cameraGroup.Add(Switch(
             nameof(EffectSettings.VignetteEnabled),

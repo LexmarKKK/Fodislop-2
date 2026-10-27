@@ -19,6 +19,7 @@ public enum TextureWrapMode
 
 public class Object
 {
+    public static void DestroyImmediate(Object? instance) => Destroy(instance);
     public static void Destroy(Object? instance)
     {
     }
@@ -27,9 +28,13 @@ public class Object
 public sealed class Texture2D : Object
 {
     private readonly Color32[][] _mipPixels;
+    public int width { get; }
+    public int height { get; }
 
     public Texture2D(int width, int height, int mipCount)
     {
+        this.width = width;
+        this.height = height;
         _mipPixels = new Color32[mipCount][];
         for (int level = 0; level < mipCount; level++)
         {
@@ -51,7 +56,7 @@ public sealed class Texture2D : Object
         Array.Copy(pixels, _mipPixels[mipLevel], pixels.Length);
     }
 
-    public Color32[] GetPixels32(int mipLevel) => (Color32[])_mipPixels[mipLevel].Clone();
+    public Color32[] GetPixels32(int mipLevel = 0) => (Color32[])_mipPixels[mipLevel].Clone();
 
     public void Apply(bool updateMipmaps, bool makeNoLongerReadable)
     {

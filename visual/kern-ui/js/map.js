@@ -18,9 +18,19 @@
       { kind: 'build', name: 'Пушка', x: P[0] - 12, y: P[1] - 1 },
       { kind: 'build', name: 'UP', x: P[0] + 6, y: P[1] + 3 },
       { kind: 'spawn', name: 'Респаун', x: P[0] - 40, y: P[1] },
+      ...(mark ? [{ kind: 'mark', name: 'Моя метка', x: mark.x, y: mark.y }] : []),
     ];
   };
-  const shown = { me: true, clan: true, build: true, spawn: true };
+  const shown = { me: true, clan: true, build: true, spawn: true, mark: true };
+  // Своя метка: ставится на карте, ведёт стрелкой у края экрана и точкой на миникарте. Живёт только в клиенте
+  let mark = null, marking = false;
+  function setMark(m) {
+    mark = m;
+    window.kernWorld.marks = window.kernWorld.marks.filter(x => x.kind !== 'mark');
+    if (m) window.kernWorld.marks.push({ kind: 'mark', x: m.x, y: m.y, color: '#45d3e6', name: 'Метка' });
+    window.kernWorld.draw(); renderPlaces(); if (!dlg.hidden) draw();
+  }
+  window.kernMark = setMark;
 
   function draw() {
     const w = window.kernWorld, map = w.map, H = map.length, W = map[0].length, z = ZOOMS[zi];
@@ -66,9 +76,17 @@
     view.setPointerCapture(e.pointerId); view.classList.add('is-drag');
     const r = view.getBoundingClientRect(), k = view.clientWidth / r.width;
     let lx = e.clientX, ly = e.clientY;
+    const sx = e.clientX, sy = e.clientY;
+    view.onpointerup = view.onpointercancel = ev => {
+      view.onpointermove = null; view.classList.remove('is-drag');
+      if (marking && ev.type === 'pointerup' && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) { setMark(cellAt(ev)); setMarking(false); }
+    };
     view.onpointermove = ev => { cx -= (ev.clientX - lx) * k / ZOOMS[zi]; cy -= (ev.clientY - ly) * k / ZOOMS[zi]; lx = ev.clientX; ly = ev.clientY; draw(); };
-    view.onpointerup = view.onpointercancel = () => { view.onpointermove = null; view.classList.remove('is-drag'); };
   };
+  const cellAt = e => { const r = view.getBoundingClientRect(), k = view.clientWidth / r.width, z = ZOOMS[zi];
+    return { x: Math.floor(cx + ((e.clientX - r.left) * k - view.clientWidth / 2) / z), y: Math.floor(cy + ((e.clientY - r.top) * k - view.clientHeight / 2) / z) }; };
+  const setMarking = on => { marking = on; $('mapMark').setAttribute('aria-pressed', String(on)); view.classList.toggle('is-marking', on); };
+  $('mapMark').onclick = () => setMarking(!marking);
   view.addEventListener('pointermove', e => {
     const r = view.getBoundingClientRect(), k = view.clientWidth / r.width, z = ZOOMS[zi];
     const x = Math.floor(cx + ((e.clientX - r.left) * k - view.clientWidth / 2) / z), y = Math.floor(cy + ((e.clientY - r.top) * k - view.clientHeight / 2) / z);
@@ -80,9 +98,10 @@
   $('mapFilters').onchange = e => { shown[e.target.dataset.kind] = e.target.checked; draw(); };
   function renderPlaces() {
     $('mapPlaces').innerHTML = PLACES().filter(p => p.kind !== 'me').map((p, i) =>
-      `<li><button type="button" data-i="${i}"><i class="pin-dot pin-dot--${p.kind}"></i><b>${p.name}</b><small>${gx(p.x)}:${gy(p.y)}</small></button></li>`).join('');
+      `<li><button type="button" data-i="${i}"><i class="pin-dot pin-dot--${p.kind}"></i><b>${p.name}</b><small>${gx(p.x)}:${gy(p.y)}</small></button>${p.kind === 'mark' ? '<button type="button" class="icon-btn" data-unmark title="Убрать метку"><svg><use href="#i-close"/></svg></button>' : ''}</li>`).join('')
+      + (mark ? '' : '<li class="map-hint">Чтобы поставить метку, нажмите <svg><use href="#i-flag"/></svg> и выберите место на карте</li>');
   }
-  $('mapPlaces').onclick = e => { const b = e.target.closest('button'); if (!b) return; const p = PLACES().filter(q => q.kind !== 'me')[+b.dataset.i]; cx = p.x + .5; cy = p.y + .5; if (zi < 4) zi = 4; draw(); };
+  $('mapPlaces').onclick = e => { if (e.target.closest('[data-unmark]')) { setMark(null); return; } const b = e.target.closest('button'); if (!b) return; const p = PLACES().filter(q => q.kind !== 'me')[+b.dataset.i]; cx = p.x + .5; cy = p.y + .5; if (zi < 4) zi = 4; draw(); };
 
   const open = () => { dlg.hidden = false; home(); renderPlaces(); $('mapCoords').textContent = `${gx(window.kernWorld.PX)}:${gy(window.kernWorld.PY)}`; requestAnimationFrame(draw); };
   const close = () => { dlg.hidden = true; };
@@ -93,8 +112,11 @@
   document.addEventListener('keydown', e => {
     if (e.target.matches('input, textarea')) return;
     if (e.key === 'Escape' && !dlg.hidden) close();
+    else if (dlg.hidden && document.querySelector('.dialog-layer:not([hidden])')) return;
     else if ((e.key === 'm' || e.key === 'M' || e.key === 'ь' || e.key === 'Ь') && document.getElementById('frame').dataset.screen === 'game') dlg.hidden ? open() : close();
   });
   // ?map=1 — снимок: без плавного появления (в безголовом браузере кадры анимации не идут)
-  if (new URLSearchParams(location.search).get('map')) window.kernWorld.ready.then(() => { dlg.style.transition = 'none'; open(); draw(); });
+  const qm = new URLSearchParams(location.search);
+  if (qm.get('mark')) window.kernWorld.ready.then(() => setMark({ x: window.kernWorld.PX + 70, y: window.kernWorld.PY + 25 }));
+  if (qm.get('map')) window.kernWorld.ready.then(() => { dlg.style.transition = 'none'; open(); draw(); });
 })();

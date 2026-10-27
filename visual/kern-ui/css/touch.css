@@ -35,7 +35,7 @@
 .frame.in-touch:not(.compact) { --tt: 52px; --pad: 168px; --dig: 100px; --act: 64px; --edge: 12px; }
 /* Производные места */
 .frame.compact {
-  --band-l: calc(var(--col) + 2 * var(--edge));                                     /* правее колонки игрока */
+  --band-l: calc(max(var(--col), var(--pcol, 0px)) + 2 * var(--edge));            /* правее колонки игрока; панель игрока шире колонки при длинном переводе — правее неё */
   --grid-w: calc(2 * var(--tt) + 4px);                                               /* четыре кнопки 2×2 */
   --side: calc(var(--edge) + var(--mm) + 10px + 6px + var(--grid-w) + 6px);          /* миникарта и кнопки */
   --band-w: calc(100% - var(--band-l) - var(--side));
@@ -61,9 +61,9 @@
 /* ── Левый верх: игрок и груз — строками «название · значение» ── */
 .frame.compact .col-top { display: flex; width: calc(var(--col) + 2 * var(--edge)); max-width: none; padding: var(--edge); gap: 4px; }
 .frame.compact .player-row { display: contents; }
-.frame.compact .player { width: 100%; padding: 6px 10px; gap: 4px; }
-.frame.compact .player-head { height: 18px; min-width: 0; }
-.frame.compact .nick { font-size: var(--t-small); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.frame.compact .player { width: var(--pcol, 100%); padding: 6px 10px; gap: 4px; }
+.frame.compact .player-head { height: 18px; }
+.frame.compact .nick { font-size: var(--t-small); flex: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .frame.compact .hp { gap: 6px; }
 .frame.compact .hp .meter { height: 10px; border-radius: 3px; }
 .frame.compact .hp-value { line-height: 16px; font-size: var(--t-small); min-width: 0; }
@@ -75,7 +75,7 @@
 .frame.compact .geo img { width: 14px; height: 14px; }
 
 /* Кнопка бокса — справа на две строки: шапка «Груз» не растягивается до 44 dp, кристаллы идут сразу под ней */
-.frame.compact .cargo { width: 100%; display: grid; grid-template-columns: auto auto 1fr auto; grid-template-rows: auto 1fr; align-items: center; column-gap: 6px; row-gap: 2px; padding: 6px 0 6px 10px; }
+.frame.compact .cargo { width: var(--pcol, 100%); display: grid; grid-template-columns: auto auto 1fr auto; grid-template-rows: auto 1fr; align-items: center; column-gap: 6px; row-gap: 2px; padding: 6px 0 6px 10px; }
 .frame.compact .cargo-head { display: contents; }
 .frame.compact .cargo-head span, .frame.compact .cargo-head strong { font-size: var(--t-small); }
 .frame.compact .cargo-head .icon-btn { grid-column: 4; grid-row: 1 / span 2; align-self: start; margin: -6px 0 0; }
@@ -115,6 +115,9 @@
 .frame.compact .mission-text { -webkit-line-clamp: 2; }
 .frame.compact .mission-text { line-height: 13px; font-size: var(--t-small); }
 .frame.compact .mission-progress { white-space: nowrap; font-size: var(--t-small); }
+/* На планшете места хватает: текст миссии от сервера целиком, обрезка — только на телефоне */
+.frame.size-m .mission-title, .frame.size-m .mission-text { display: block; overflow: visible; }
+.frame.size-m .mission-title { line-height: 18px; }
 .frame.compact .states { position: absolute; top: calc(var(--band-t) + var(--peek-h) + 6px); left: calc(var(--band-l) + min(460px, var(--band-w)) * .52 + 4px);
   width: calc(min(460px, var(--band-w)) * .48 - 4px); gap: 2px; }
 .frame.compact .states li { padding: 2px 6px; line-height: 16px; gap: 6px; white-space: nowrap; }

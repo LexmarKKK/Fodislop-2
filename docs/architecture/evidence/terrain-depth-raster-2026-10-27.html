@@ -1,0 +1,18 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Volume native HLSL regressions</title><style>body{font:14px system-ui;margin:2rem}pre{white-space:pre-wrap;overflow-wrap:anywhere}</style><h1>Volume native HLSL regressions</h1><p>Local non-Unity verification, exit 0.</p><pre>Volume vertex planes, perspective width, camera, normals, wall UV, face bounds and ground isolation passed.
+HLSL cell decode matches FillQuad vertices: 3 worlds, 59188 vertices; displaced raster 10616832 subpixels, seams 80640 samples.
+Terrain cell reads per vertex: flat foreground=19 distorted foreground=19 background=27
+AO field sampling passed: shape sensitivity, density 8/16/32/64, empty distance and foreground receiver.
+HLSL shim displaced autotile UV continuity, geometry quantization, phase and AO geometry edge passed.
+Mutation depth-face-without-bounds rejected: Depth: expanded foreground carrier paints outside square/round face
+Mutation depth-reversed rejected: Volume: fixed base / raised vertex perspective incorrect
+Mutation depth-without-quantization rejected: Volume: fixed base / raised vertex perspective incorrect
+Mutation volume-normal-reversed rejected: Volume: physical side outward normal reversed
+Mutation double-quantize-fragments rejected: /var/folders/76/x4md2qxs6gj_1k6h2wt0yz800000gp/T/kern-terrain-raster-e3158ec206054987b19f9676958c2c50/worlds/world-11.bin: raster coverage differs from polygon oracle at cell 0,0
+Mutation ao-flat-contact rejected: Isolated block AO leaks beyond the contact neighbourhood
+Mutation ao-to-black rejected: Contact occlusion does not stop at the floor: 0.000000
+Mutation rim-merges-any-masses rejected: /var/folders/76/x4md2qxs6gj_1k6h2wt0yz800000gp/T/kern-terrain-raster-e3158ec206054987b19f9676958c2c50/worlds/world-11.bin (0,0) layer 1 corner 0: contour: 10752.000000 != 352.000000
+Mutation background-ignores-occlusion rejected: Volume: interior mass must retain background culling
+Mutation wall-variant-ignores-bottom rejected: /var/folders/76/x4md2qxs6gj_1k6h2wt0yz800000gp/T/kern-terrain-raster-e3158ec206054987b19f9676958c2c50/worlds/world-11.bin (9,22) layer 1 corner 0: u: 1.000000 != 0.000000
+Mutation node-edge-jitter-sign rejected: /var/folders/76/x4md2qxs6gj_1k6h2wt0yz800000gp/T/kern-terrain-raster-e3158ec206054987b19f9676958c2c50/worlds/world-11.bin (0,33) layer 1 corner 0: corner y: 0.078125 != -0.078125
+Mutation round-rim-follows-cell-sides rejected: Rim does not follow the round block silhouette
+</pre></html>

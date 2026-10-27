@@ -46,12 +46,21 @@
     <!-- Код игры. -->
     <Compile Include="$(Game)/World/Coordinates/Contracts/Grid/WorldGridDefaults.cs" Link="Game/WorldGridDefaults.cs" />
     <Compile Include="$(Game)/World/Storage/Contracts/Data/IWorldLayer.cs" Link="Game/IWorldLayer.cs" />
+    <Compile Include="$(Game)/AssetPipeline/Animation/Contracts/Data/SpriteEmissionFrame.cs" Link="Game/SpriteEmissionFrame.cs" />
+    <Compile Include="$(Game)/AssetPipeline/Animation/Emission/SpriteEmissionIntegrator.cs" Link="Game/SpriteEmissionIntegrator.cs" />
+    <Compile Include="$(Game)/Game/VisualEffects/Lighting/Emission/TransientEffectLight.cs" Link="Game/TransientEffectLight.cs" />
     <Compile Include="$(Game)/Core/Configuration/Contracts/Schema/SettingAttributes.cs" Link="Game/SettingAttributes.cs" />
+    <Compile Include="$(Game)/Core/Configuration/Contracts/Settings/Interface/InterfaceSettings.cs" Link="Game/InterfaceSettings.cs" />
+    <Compile Include="$(Game)/Core/Configuration/Migration/InputAndText/InputAndTextConfigMigration.cs" Link="Game/InputAndTextConfigMigration.cs" />
+    <Compile Include="$(Game)/Tests/Editor/Core/Configuration/Migration/InputAndTextConfigMigrationTests.cs" Link="Tests/InputAndTextConfigMigrationTests.cs" />
     <Compile Include="$(Game)/Core/Configuration/Contracts/Settings/Terrain/TerrainSettings.cs" Link="Game/TerrainSettings.cs" />
     <Compile Include="$(Game)/Game/Rendering/Entities/Contracts/Coverage/WorldRenderConfigHolder.cs" Link="Game/WorldRenderConfigHolder.cs" />
     <Compile Include="$(Game)/World/Terrain/Contracts/Appearance/TerrainConfigHolder.cs" Link="Game/TerrainConfigHolder.cs" />
     <Compile Include="$(Game)/World/Lighting/Quality/Contracts/LightingQualityTuning.cs" Link="Game/LightingQualityTuning.cs" />
     <Compile Include="$(Game)/World/Terrain/Autotiling/Encoding/TileBitmaskConverter.cs" Link="Game/TileBitmaskConverter.cs" />
+    <Compile Include="$(Game)/World/Terrain/GPU/Cells/TerrainCellIdVertex.cs" Link="Game/TerrainCellIdVertex.cs" />
+    <Compile Include="$(Game)/World/Terrain/Presentation/Volumes/TerrainVolumeMesh.cs" Link="Game/TerrainVolumeMesh.cs" />
+    <Compile Include="$(Game)/World/Terrain/Presentation/Volumes/TerrainVolumeTopology.cs" Link="Game/TerrainVolumeTopology.cs" />
     <Compile Include="$(Game)/World/Terrain/Build/Geometry/TerrainVertexDistortionCalculator.cs" Link="Game/TerrainVertexDistortionCalculator.cs" />
     <Compile Include="$(Game)/World/Rendering/Contracts/Grid/RenderingConstants.cs" Link="Game/RenderingConstants.cs" />
     <Compile Include="$(Game)/World/Cells/Contracts/BlockDefinition.cs" Link="Game/BlockDefinition.cs" />
@@ -75,6 +84,7 @@
     <Compile Include="$(Game)/World/Terrain/Cache/Cells/TerrainCellRegion.cs" Link="Game/TerrainCellRegion.cs" />
     <Compile Include="$(Game)/World/Terrain/Planning/Window/TerrainWindowAdvance.cs" Link="Game/TerrainWindowAdvance.cs" />
     <Compile Include="$(Game)/World/Coordinates/Conversion/WorldCoordinateConverter.cs" Link="Game/WorldCoordinateConverter.cs" />
+    <Compile Include="$(Game)/Tests/Editor/World/Coordinates/Conversion/WorldCoordinateConverterTests.cs" Link="Tests/World/WorldCoordinateConverterTests.cs" />
     <Compile Include="$(Game)/World/Terrain/Cache/Residency/TerrainRebuildCostModel.cs" Link="Game/TerrainRebuildCostModel.cs" />
     <Compile Include="$(Game)/World/Terrain/Cache/Invalidation/TerrainDirtyTracker.cs" Link="Game/TerrainDirtyTracker.cs" />
     <Compile Include="$(Game)/World/Terrain/Build/Changes/TerrainWindowChangeJournal.cs" Link="Game/TerrainWindowChangeJournal.cs" />
@@ -111,7 +121,7 @@
              Exclude="$(Game)/Tests/Editor/World/Textures/Decals/Bounds/TerrainDecalAtlasBoundsTests.cs;$(Game)/Tests/Editor/World/Terrain/Build/Cells/TerrainCellBuilderDeterminismTests.cs;$(Game)/Tests/Editor/World/Terrain/Cache/Scrolling/TerrainIncrementalScrollDifferentialTests.cs;$(Game)/Tests/Editor/World/Terrain/Build/Scheduling/TerrainBuildPipelineWorkerTests.cs;$(Game)/Tests/Editor/World/Terrain/GPU/Cells/TerrainCellIdMeshTests.cs;$(Game)/Tests/Editor/World/Terrain/Build/Cells/TerrainCellEquivalenceTests.cs"
              LinkBase="Tests/Geometry" />
     <Compile Include="$(Game)/Tests/Shared/World/Terrain/Quantization/TerrainQuantizationOracle.cs" Link="Tests/Shared/World/Terrain/Quantization/TerrainQuantizationOracle.cs" />
-    <Compile Include="$(Game)/Tests/Editor/World/Lighting/LightingRegionCalculator*.cs" LinkBase="Tests/Lighting" />
+    <Compile Include="$(Game)/Tests/Editor/World/Lighting/Fields/Regions/LightingRegionCalculator*.cs" LinkBase="Tests/Lighting" />
     <Compile Include="$(Game)/Tests/Editor/World/Lighting/Runtime/State/LightingRuntimeStateTests.cs" Link="Tests/Lighting/LightingRuntimeStateTests.cs" />
     <Compile Include="$(Game)/Tests/Editor/World/Streaming/Control/StreamingGovernorTests.cs" Link="Tests/Streaming/StreamingGovernorTests.cs" />
     <Compile Include="$(Game)/Tests/Editor/World/Terrain/Build/Scheduling/TerrainBuildSchedulerTests.cs" Link="Tests/Streaming/TerrainBuildSchedulerTests.cs" />

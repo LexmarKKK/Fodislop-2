@@ -11,6 +11,8 @@
 <link rel="stylesheet" href="css/screens.css">
 <link rel="stylesheet" href="css/touch.css">
 <link rel="stylesheet" href="css/pad.css">
+<link rel="stylesheet" href="css/prog.css">
+<link rel="stylesheet" href="css/events.css">
 </head>
 <body>
 
@@ -51,6 +53,28 @@
         <button type="button" data-update="1">Устарел</button>
       </div>
     </div>
+    <label class="stand-pick" data-for="game"><span class="stand-label">Событие</span>
+      <select id="standEvent">
+        <option value="">Нет</option>
+        <option value="reconnect">Переподключение</option>
+        <option value="lost">Связь потеряна</option>
+        <option value="kicked">Отключён сервером</option>
+        <option value="modal">Сообщение сервера</option>
+        <option value="link">Ссылка от сервера</option>
+      </select></label>
+    <label class="stand-pick"><span class="stand-label">Язык</span>
+      <select id="standLang" class="lang-pick">
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+        <option value="zh">中文</option>
+      </select></label>
+    <label class="stand-pick"><span class="stand-label">Проверка текста</span>
+      <select id="standText">
+        <option value="ru">Обычный</option>
+        <option value="p90">Перевод длиннее</option>
+        <option value="worst">Худший перевод</option>
+        <option value="slots">Места текста сервера</option>
+      </select></label>
     <p class="stand-hint" data-for="game" id="keyHint"><span>Клик по породе — копать</span><span>Enter — чат</span><span>Tab — режим чата</span><span>E — автокопание</span></p>
   </div>
   <!-- Где смотреть, по иерархии: устройство › монитор (у десктопа) › ввод; вид решают размер и ввод.
@@ -93,19 +117,26 @@
    <section class="screen screen--game" data-screen="game">
     <canvas class="world" id="world" aria-hidden="true"></canvas>
 
+    <!-- Подписи над роботами (WorldLabels): ник с кланом и облако локального чата -->
+    <div class="world-labels" id="worldLabels" aria-hidden="true"></div>
     <div class="hud" id="hud" data-chat="0">
+      <!-- Стрелки у края экрана: к цели миссии (MissionArrowPacket) и к своей метке с карты -->
+      <div class="edge-arrows" id="edgeArrows"></div>
 
       <!-- Чат, развёрнутый (Legacy: колонка слева на всю высоту, HUD сдвигается) -->
       <aside class="chat-column" aria-label="Чат">
         <div class="chat-head">
           <div class="chat-tabs" role="tablist">
-            <button type="button" role="tab" class="chat-tab is-on" data-tag="FED">Федеральный чат</button>
-            <button type="button" role="tab" class="chat-tab" data-tag="DNO">Дно</button>
+            <button type="button" role="tab" class="chat-tab is-on" data-tag="FED">Федеральный чат<b class="badge chat-badge" data-unread="FED"></b></button>
+            <button type="button" role="tab" class="chat-tab" data-tag="DNO">Дно<b class="badge chat-badge" data-unread="DNO"></b></button>
             <button type="button" role="tab" class="chat-tab" data-tag="PM">Личные<b class="badge chat-badge" id="pmBadge"></b></button>
           </div>
+          <button type="button" class="icon-btn" id="chatListBtn" title="Все каналы" aria-expanded="false"><svg><use href="#i-list"/></svg><b class="badge" id="chatListBadge"></b></button>
           <button type="button" class="icon-btn" id="chatClose" title="Свернуть чат (Tab)"><svg><use href="#i-collapse"/></svg></button>
         </div>
         <ol class="chat-log" id="chatLog"></ol>
+        <!-- Все каналы (ChatListPacket: метка, название, последнее сообщение); непрочитанное считает клиент -->
+        <ul class="chat-list" id="chatList" hidden></ul>
         <form class="chat-form" id="chatForm" autocomplete="off">
           <input id="chatInput" class="chat-input" placeholder="Напишите сообщение…" maxlength="200">
           <button type="submit" class="icon-btn chat-send compact-only" title="Отправить"><svg><use href="#i-send"/></svg></button>
@@ -122,7 +153,6 @@
                 <button type="button" class="clan-btn" id="clanBtn" title="Клан"><img class="clan" src="img/clan.png" alt="Клан" width="13" height="13"></button>
                 <button type="button" class="pid" id="profileBtn" title="Профиль"><span>#10482</span></button>
                 <h1 class="nick">ШАХТЁР-774</h1>
-                <span class="level" id="level">ур.47</span>
               </header>
               <div class="hp" title="Прочность робота">
                 <div class="meter"><i id="hpFill"></i></div>
@@ -136,8 +166,8 @@
             <button type="button" class="btn btn--signal bonus" id="bonus" title="Бонусы" aria-label="Бонусы"><svg><use href="#i-gift"/></svg></button>
             <article class="panel mission" id="mission" hidden>
               <div class="meter meter--thin"><i style="width:30%"></i></div>
-              <p class="mission-title">Тестовая миссия</p>
-              <p class="mission-text" title="Проверка центрального информационного кольца">Проверка центрального информационного кольца</p>
+              <p class="mission-title" data-srv>Тестовая миссия</p>
+              <p class="mission-text" data-srv title="Проверка центрального информационного кольца">Проверка центрального информационного кольца</p>
               <span class="mission-progress">3 / 10</span>
             </article>
           </div>
@@ -156,7 +186,7 @@
             </div>
           </article>
 
-          <ul class="states" id="states" hidden>
+          <ul class="states" id="states" data-srv hidden>
             <li style="--c:rgb(255,165,0)">Добыча x4<time>4:12</time></li>
             <li style="--c:rgb(0,200,0)">Прокачка x3<time>11:40</time></li>
           </ul>
@@ -250,7 +280,7 @@
     <div class="dialog-layer" id="skillsDialog" hidden>
       <section class="panel skills" role="dialog" aria-labelledby="skillsTitle">
         <header class="skills-head">
-          <h2 id="skillsTitle">UP</h2>
+          <h2 id="skillsTitle" data-srv>UP</h2>
           <span class="skills-slots" id="skillsSlotsInfo">4 из 20 слотов занято</span>
           <button type="button" class="icon-btn" data-close title="Выйти"><svg><use href="#i-close"/></svg></button>
         </header>
@@ -302,6 +332,7 @@
               <button type="button" class="icon-btn" id="mapZoomIn" title="Приблизить"><svg><use href="#i-plus"/></svg></button>
               <button type="button" class="icon-btn" id="mapZoomOut" title="Отдалить"><svg><use href="#i-minus"/></svg></button>
               <button type="button" class="icon-btn" id="mapHome" title="К себе"><svg><use href="#i-target"/></svg></button>
+              <button type="button" class="icon-btn" id="mapMark" aria-pressed="false" title="Поставить метку: нажмите на карту"><svg><use href="#i-flag"/></svg></button>
             </div>
             <span class="map-scale" id="mapScale"></span>
           </div>
@@ -312,10 +343,116 @@
               <label class="check"><input type="checkbox" data-kind="clan" checked><i class="pin-dot pin-dot--clan"></i>Клан в сети</label>
               <label class="check"><input type="checkbox" data-kind="build" checked><i class="pin-dot pin-dot--build"></i>Мои здания</label>
               <label class="check"><input type="checkbox" data-kind="spawn" checked><i class="pin-dot pin-dot--spawn"></i>Респаун</label>
+              <label class="check"><input type="checkbox" data-kind="mark" checked><i class="pin-dot pin-dot--mark"></i>Моя метка</label>
             </div>
             <h3>Места</h3>
             <ul class="map-places" id="mapPlaces"></ul>
           </aside>
+        </div>
+      </section>
+    </div>
+
+    <!-- Программатор (Programmator.uxml): сетка 16×12, до 25 страниц, палитра по разделам, список программ, отладка.
+         Команды, названия, иконки и клавиши — из клиента (tools/prog-data.py) -->
+    <div class="dialog-layer" id="progDialog" hidden>
+      <section class="panel prog-win" id="progWin" role="dialog" aria-labelledby="progTitle">
+        <header class="srv-head prog-head">
+          <h2 id="progTitle">Программатор</h2>
+          <button type="button" class="prog-pick" id="progPick" aria-expanded="false" title="Программы"><svg><use href="#i-list"/></svg><span id="progPickName"></span></button>
+          <div class="prog-group prog-group--run" role="group" aria-label="Запуск">
+            <button type="button" class="icon-btn" id="progSave" title="Сохранить"><svg><use href="#i-save"/></svg></button>
+            <button type="button" class="icon-btn" id="progBreak" title="Точка остановки на выбранной клетке (F9)"><svg><use href="#i-break"/></svg></button>
+            <button type="button" class="icon-btn" id="progPause" title="Пауза" disabled><svg><use href="#i-pause"/></svg></button>
+            <button type="button" class="icon-btn" id="progStepIn" title="Шаг с заходом" disabled><svg><use href="#i-step-in"/></svg></button>
+            <button type="button" class="icon-btn" id="progStepOver" title="Шаг" disabled><svg><use href="#i-step-over"/></svg></button>
+            <button type="button" class="icon-btn" id="progStepOut" title="Шаг с выходом" disabled><svg><use href="#i-step-out"/></svg></button>
+            <button type="button" class="btn btn--primary prog-go" id="progGo"><svg><use href="#i-play"/></svg><span>Запустить</span></button>
+          </div>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="prog-bar">
+          <div class="prog-group" role="group" aria-label="Страницы">
+            <button type="button" class="icon-btn" id="progPrev" title="Предыдущая страница"><svg><use href="#i-prev"/></svg></button>
+            <span class="prog-page" id="progPage"></span>
+            <button type="button" class="icon-btn" id="progNext" title="Следующая страница"><svg><use href="#i-next"/></svg></button>
+            <button type="button" class="icon-btn" id="progAddPage" title="Добавить страницу"><svg><use href="#i-plus"/></svg></button>
+            <button type="button" class="icon-btn" id="progDelPage" title="Удалить страницу"><svg><use href="#i-minus"/></svg></button>
+          </div>
+          <div class="prog-group" role="group" aria-label="Сдвинуть страницу">
+            <button type="button" class="icon-btn" data-shift="0,-1" title="Сдвинуть всё вверх"><svg><use href="#i-up"/></svg></button>
+            <button type="button" class="icon-btn" data-shift="0,1" title="Сдвинуть всё вниз"><svg><use href="#i-down"/></svg></button>
+            <button type="button" class="icon-btn" data-shift="-1,0" title="Сдвинуть всё влево"><svg><use href="#i-left"/></svg></button>
+            <button type="button" class="icon-btn" data-shift="1,0" title="Сдвинуть всё вправо"><svg><use href="#i-right"/></svg></button>
+          </div>
+          <div class="prog-group" role="group" aria-label="Правка">
+            <button type="button" class="icon-btn" data-edit="undo" title="Отменить (Ctrl+Z)"><svg><use href="#i-undo"/></svg></button>
+            <button type="button" class="icon-btn" data-edit="redo" title="Повторить (Ctrl+Y)"><svg><use href="#i-redo"/></svg></button>
+            <button type="button" class="icon-btn" data-edit="copy" title="Копировать (Ctrl+C)"><svg><use href="#i-copy"/></svg></button>
+            <button type="button" class="icon-btn" data-edit="cut" title="Вырезать (Ctrl+X)"><svg><use href="#i-cut"/></svg></button>
+            <button type="button" class="icon-btn" data-edit="paste" title="Вставить (Ctrl+V)"><svg><use href="#i-paste"/></svg></button>
+            <button type="button" class="icon-btn" data-edit="delete" title="Удалить (Del)"><svg><use href="#i-trash"/></svg></button>
+            <button type="button" class="icon-btn" data-edit="multi" id="progMulti" aria-pressed="false" title="Выбирать несколько (Ctrl+клик)"><svg><use href="#i-multi"/></svg></button>
+          </div>
+        </div>
+        <p class="prog-error" id="progError" hidden></p>
+        <div class="prog-body">
+          <div class="prog-grid-wrap"><div class="prog-grid" id="progGrid" role="grid" aria-label="Команды программы"></div></div>
+          <aside class="prog-side">
+            <div class="seg prog-tabs" role="tablist" id="progTabs">
+              <button type="button" role="tab" aria-checked="true" data-tab="ops">Команды</button>
+              <button type="button" role="tab" aria-checked="false" data-tab="mem">Память</button>
+            </div>
+            <div class="prog-cats" id="progCats" data-page="ops"></div>
+            <div class="prog-ops" id="progOps" data-page="ops"></div>
+            <div class="prog-mem" id="progMem" data-page="mem" hidden></div>
+          </aside>
+        </div>
+        <!-- Подвал: слева — что под курсором, справа — состояние программы -->
+        <footer class="prog-foot"><span class="prog-foot-info" id="progFoot"></span><span class="prog-state" id="progState"></span></footer>
+        <!-- Список программ (ProgramListPanel) — поверх сетки -->
+        <div class="prog-list" id="progList" hidden>
+          <header><h3>Программы</h3><button type="button" class="icon-btn" id="progListClose" title="Закрыть"><svg><use href="#i-close"/></svg></button></header>
+          <ul id="progListItems"></ul>
+          <form class="prog-create" id="progCreate" autocomplete="off">
+            <input class="input" id="progCreateName" maxlength="24" placeholder="Новая программа">
+            <button type="submit" class="btn btn--primary">Создать</button>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <!-- Сообщение сервера (ModalWindowPacket: заголовок, текст, одна кнопка, картинка) -->
+    <div class="dialog-layer" id="srvModal" hidden>
+      <section class="panel dialog srv-modal" role="dialog" aria-labelledby="srvModalTitle">
+        <img class="srv-modal-icon" id="srvModalIcon" src="img/items/upgradeBooster.png" alt="">
+        <h2 id="srvModalTitle" data-srv>Неделя добычи</h2>
+        <p id="srvModalText" data-srv>До воскресенья добыча всех кристаллов увеличена вдвое. Удачи в шахте!</p>
+        <div class="dialog-actions"><button type="button" class="btn btn--primary" data-close id="srvModalOk" data-srv>Отлично</button></div>
+      </section>
+    </div>
+
+    <!-- Сервер просит открыть ссылку (OpenURLPacket) — только с согласия игрока -->
+    <div class="dialog-layer" id="linkDialog" hidden>
+      <section class="panel dialog link-dlg" role="dialog" aria-labelledby="linkTitle">
+        <h2 id="linkTitle">Открыть ссылку?</h2>
+        <p>Сервер предлагает открыть страницу в браузере.</p>
+        <p class="link-url"><svg><use href="#i-link"/></svg><span><b id="linkHost">discord.gg</b><span id="linkPath">/projectkern</span></span></p>
+        <div class="dialog-actions">
+          <button type="button" class="btn" data-close>Отмена</button>
+          <button type="button" class="btn btn--primary" id="linkOpen">Открыть</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Связь (Reconnect.uxml): автоповтор подключения и разрыв. Блокирует игру, выход в меню остаётся -->
+    <div class="dialog-layer link-layer" id="netDialog" hidden>
+      <section class="panel dialog net" role="alertdialog" aria-labelledby="netTitle" aria-describedby="netText">
+        <svg class="net-ico"><use href="#i-offline"/></svg>
+        <h2 id="netTitle"></h2>
+        <p id="netText"></p>
+        <p class="net-reason" id="netReason" data-srv hidden></p>
+        <div class="dialog-actions">
+          <button type="button" class="btn" id="netMenu">Выйти в меню</button>
         </div>
       </section>
     </div>
@@ -474,7 +611,7 @@
       <div class="onb-body">
         <fieldset class="onb-step is-on" data-step="0">
           <label class="field"><span><b>Язык</b></span>
-            <select><option>Русский</option><option>English</option><option>Китайский (упрощ.)</option><option>Китайский (традиц.)</option></select></label>
+            <select class="lang-pick"><option value="ru">Русский</option><option value="en">English</option><option value="zh">Китайский (упрощ.)</option><option value="zh-hant">Китайский (традиц.)</option></select></label>
           <label class="field"><span><b>Масштаб интерфейса</b></span>
             <select><option>100%</option><option>115%</option><option>130%</option><option>150%</option><option>175%</option></select></label>
           <label class="field"><span><b>Размер текста</b></span>
@@ -538,7 +675,7 @@
       <ol class="phases" id="descentPhases">
         <li>Подключение к серверу</li><li>Загрузка ресурсов</li><li>Получение позиции</li><li>Построение мира</li><li>Загрузка текстур</li>
       </ol>
-      <p class="descent-tip" id="descentTip" aria-live="polite"></p>
+      <p class="descent-tip" id="descentTip" aria-live="polite" data-i18n-html></p>
       <button type="button" class="btn btn--wide" id="descentCancel">Отмена</button>
     </div>
 
@@ -611,7 +748,6 @@
         <button type="button" role="tab" class="is-on" data-tab="graphics">Графика</button>
         <button type="button" role="tab" data-tab="audio">Звук</button>
         <button type="button" role="tab" data-tab="interface">Интерфейс</button>
-        <button type="button" role="tab" data-tab="profile">Профиль</button>
         <button type="button" role="tab" data-tab="controls">Управление</button>
         <button type="button" class="settings-exit" id="setExit">Выход в меню</button>
       </nav>
@@ -639,12 +775,9 @@
           <label class="field"><span><b>Голос</b></span><span class="range"><input type="range" min="0" max="100" value="100"><output>100%</output></span></label>
           <label class="field"><span><b>Звук в фоне</b></span><input type="checkbox" class="switch" checked></label>
         </div>
-        <div class="set-page" data-tab="profile">
-          <label class="field"><span><b>Скрыть профиль</b><small>Другие игроки увидят только ник, клан, ID и уровень</small></span><input type="checkbox" class="switch" id="setHideProfile"></label>
-        </div>
         <div class="set-page" data-tab="interface">
           <label class="field"><span><b>Язык</b></span>
-            <select><option>Русский</option><option>English</option><option>Китайский (упрощ.)</option><option>Китайский (традиц.)</option></select></label>
+            <select class="lang-pick"><option value="ru">Русский</option><option value="en">English</option><option value="zh">Китайский (упрощ.)</option><option value="zh-hant">Китайский (традиц.)</option></select></label>
           <label class="field"><span><b>Масштаб интерфейса</b></span>
             <select><option>100%</option><option>115%</option><option>130%</option><option>150%</option><option>175%</option></select></label>
           <label class="field"><span><b>Размер текста</b></span>
@@ -735,6 +868,29 @@
     <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="1.5"/><path d="M3.5 6.5 12 13l8.5-6.5"/></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7M12 19V5"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+    <symbol id="i-cut" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.12 8.12 12 12M20 4 8.12 15.88M14.8 14.8 20 20"/></symbol>
+    <symbol id="i-paste" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
+    <symbol id="i-multi" viewBox="0 0 24 24"><path d="M5 3a2 2 0 0 0-2 2M19 3a2 2 0 0 1 2 2M21 19a2 2 0 0 1-2 2M5 21a2 2 0 0 1-2-2M9 3h1M9 21h1M14 3h1M14 21h1M3 9v1M21 9v1M3 14v1M21 14v1"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7M7 3v4a1 1 0 0 0 1 1h7"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></symbol>
+    <symbol id="i-step-in" viewBox="0 0 24 24"><path d="M12 15V3M6 9l6 6 6-6M19 21H5"/></symbol>
+    <symbol id="i-step-over" viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7l3 2.7"/><circle cx="12" cy="20" r="1.5"/></symbol>
+    <symbol id="i-step-out" viewBox="0 0 24 24"><path d="m18 9-6-6-6 6M12 3v12M5 21h14"/></symbol>
+    <symbol id="i-break" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M3 6h.01M3 12h.01M3 18h.01M8 6h13M8 12h13M8 18h13"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.98-3.98L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-offline" viewBox="0 0 24 24"><path d="M12 20h.01M8.5 16.43a5 5 0 0 1 7 0M5 12.86a10 10 0 0 1 5.17-2.69M19 12.86a10 10 0 0 0-2-1.52M2 8.82a15 15 0 0 1 4.18-2.64M22 8.82a15 15 0 0 0-11.29-3.76M2 2l20 20"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></symbol>
     <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
     <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.4"/><path d="M12 17h.01"/></symbol>
     <symbol id="i-console" viewBox="0 0 24 24"><path d="M5 7l5 5-5 5"/><path d="M12 17h7"/></symbol>
@@ -769,6 +925,11 @@
 <script src="js/settings.js"></script>
 <script src="js/calibration.js"></script>
 <script src="js/map.js"></script>
+<script src="js/prog-data.js"></script>
+<script src="js/prog.js"></script>
+<script src="js/events.js"></script>
+<script src="js/i18n-data.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/gamepad.js"></script>
 </body>
 </html>

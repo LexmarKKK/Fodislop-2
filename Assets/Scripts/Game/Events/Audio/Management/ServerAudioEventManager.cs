@@ -27,6 +27,7 @@ using Kern.Game.VisualEffects.Weapons;
 namespace Kern.Game.Events.Audio
 {
     [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "Kern.Game.Managers", sourceAssembly: null, sourceClassName: "ServerAudioEventManager")]
+    [DefaultExecutionOrder(100)]
     public class ServerAudioEventManager : MonoBehaviour, IServerAudioService, IServerVFXService
     {
         private const string TAG = "[ServerAudioEventManager]";
@@ -180,8 +181,28 @@ namespace Kern.Game.Events.Audio
                 _spriteAnimations,
                 CrystalCollectionVariant,
                 _sceneObjects,
-                _worldLabels);
+                _worldLabels,
+                lighting: _lighting);
             _activeEffects.Add(effect);
+        }
+
+        public void PlayBoundaryDig(int serverX, int serverY, global::MinesServer.Data.Direction direction)
+        {
+            float angle = direction switch
+            {
+                global::MinesServer.Data.Direction.Up => 0f,
+                global::MinesServer.Data.Direction.Right => -90f,
+                global::MinesServer.Data.Direction.Down => 180f,
+                global::MinesServer.Data.Direction.Left => 90f,
+                _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null),
+            };
+            var packet = new VFXPacket(global::MinesServer.Data.VFX.Bz, 0, 0, 0,
+                Array.Empty<MinesServer.Networking.Shared.Packets.StringPairPacket>());
+            _activeEffects.Add(new ServerVFXEvent(
+                packet, _vfxService.Acquire(), _robotService, _assetLoader, _mapManager,
+                _vfxPool, _operations, _entityBatchRenderer, _spriteAnimations,
+                CrystalCollectionVariant, _sceneObjects, _worldLabels,
+                new Vector2Int(serverX, serverY), angle, _lighting));
         }
 
         public void SetLocalHealHeld(bool held)
@@ -208,7 +229,7 @@ namespace Kern.Game.Events.Audio
             if (!_healingEffects.TryGetValue(botId, out SpriteAnimationWorldEffect healing) || healing.IsDisposed)
             {
                 healing = new SpriteAnimationWorldEffect("Heal", player.transform.position,
-                    _spriteAnimations, _sceneObjects, player.transform);
+                    _spriteAnimations, _sceneObjects, player.transform, lighting: _lighting);
                 _healingEffects[botId] = healing;
                 _activeEffects.Add(healing);
             }
@@ -306,7 +327,8 @@ namespace Kern.Game.Events.Audio
                     ? "Smoke" + UnityEngine.Random.Range(0, 3)
                     : id;
                 int boomType = packet.EffectType == global::MinesServer.Data.VFX.Boom ? ReadBombType(packet) : 0;
-                var effect = new SpriteAnimationWorldEffect(clip, position, _spriteAnimations, _sceneObjects, follow, boomType);
+                var effect = new SpriteAnimationWorldEffect(clip, position, _spriteAnimations, _sceneObjects, follow, boomType,
+                    lighting: _lighting);
                 _activeEffects.Add(effect);
                 if (id == "Heal") { _healingEffects[packet.TargetBotId] = effect; }
             }

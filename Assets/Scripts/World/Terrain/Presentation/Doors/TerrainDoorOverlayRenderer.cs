@@ -21,7 +21,7 @@ public sealed class TerrainDoorOverlayRenderer : IDisposable
     // Слой адреса накладки (TerrainCellData.hlsl).
     private const int OverlayLayer = 2;
 
-    private readonly List<TerrainCellIdVertex> _vertices = new();
+    private readonly List<TerrainVolumeVertex> _vertices = new();
     private readonly List<int> _indices = new();
     private GameObject? _gameObject;
     private Mesh? _mesh;
@@ -61,7 +61,7 @@ public sealed class TerrainDoorOverlayRenderer : IDisposable
             int baseVertex = _vertices.Count;
             for (int corner = 0; corner < 4; corner++)
             {
-                _vertices.Add(new TerrainCellIdVertex(x, y, OverlayLayer, corner));
+                _vertices.Add(new TerrainVolumeVertex(x, y, OverlayLayer, corner, Vector2.zero, Vector2.zero));
             }
 
             _indices.Add(baseVertex);
@@ -77,7 +77,7 @@ public sealed class TerrainDoorOverlayRenderer : IDisposable
         if (_mesh.vertexCount != _vertices.Count)
         {
             _mesh.Clear();
-            _mesh.SetVertexBufferParams(_vertices.Count, TerrainCellIdMesh.VertexLayout);
+            _mesh.SetVertexBufferParams(_vertices.Count, TerrainVolumeMesh.VertexLayout);
         }
 
         _mesh.SetVertexBufferData(_vertices, 0, 0, _vertices.Count, 0, UploadFlags);

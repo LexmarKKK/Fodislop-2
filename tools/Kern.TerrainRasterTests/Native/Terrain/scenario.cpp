@@ -928,6 +928,7 @@ static void checkBufferReads()
 
 int runChecks(const char* worldDirectory)
 {
+    checkDepth();
     checkAffineGeometryUv();
     checkDistortedAutotileUvSeam();
     checkThousandthsPhase();

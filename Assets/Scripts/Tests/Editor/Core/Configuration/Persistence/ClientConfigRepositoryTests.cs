@@ -73,6 +73,29 @@ public sealed class ClientConfigRepositoryTests
         Assert.That(exception.Message, Does.Contain(nameof(AudioSettings.SfxVolume)));
     }
 
+    [TestCase("FisheyeEnabled")]
+    [TestCase("DepthEnabled")]
+    [TestCase("TextScale")]
+    [TestCase("KeyMoveUp")]
+    [TestCase("FisheyeScale")]
+    [TestCase("DepthPixels")]
+    [TestCase("DepthDarkening")]
+    public void Load_CurrentSchemaMissingPresentationField_RemainsAnError(string field)
+    {
+        var repository = new ClientConfigRepository(_configPath);
+        repository.Save(new ClientConfig { SchemaVersion = ClientConfig.CurrentSchemaVersion });
+        string original = File.ReadAllText(_configPath);
+        string incomplete = System.Text.RegularExpressions.Regex.Replace(
+            original, "\\s*\"" + field + "\"\\s*:\\s*[^,}]+,", "");
+        Assert.That(incomplete, Is.Not.EqualTo(original));
+        File.WriteAllText(_configPath, incomplete);
+
+        InvalidDataException exception = Assert.Throws<InvalidDataException>(() => repository.Load())!;
+
+        Assert.That(exception.Message, Does.Contain(field));
+        Assert.That(File.ReadAllText(_configPath), Is.EqualTo(incomplete));
+    }
+
     [TestCase(false)]
     [TestCase(true)]
     public void Load_RenamedHDRSwitchFlag_PreservesSavedValue(bool pending)

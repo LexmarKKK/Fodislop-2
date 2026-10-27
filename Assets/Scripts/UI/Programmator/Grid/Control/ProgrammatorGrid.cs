@@ -145,7 +145,7 @@ public sealed class ProgrammatorGrid : IDisposable
                 }
             }
 
-            if (Keyboard.current == null)
+            if (!Application.isFocused || _uiInput.IsKeyCaptureInProgress || Keyboard.current == null)
             {
                 return;
             }

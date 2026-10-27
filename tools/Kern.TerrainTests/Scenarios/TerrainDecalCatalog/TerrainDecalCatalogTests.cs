@@ -14,6 +14,7 @@ public sealed class TerrainDecalCatalogTests
     // Семья — из cells.json. Камень — только красно- и черноскал: атлас
     // нарисован под их гамму.
     [TestCase(CellType.Empty, CellDecalAtlas.Ground)]
+    [TestCase(CellType.WorldEdge, CellDecalAtlas.Rock)]
     [TestCase(CellType.RedRock, CellDecalAtlas.Rock)]
     [TestCase(CellType.BlackRock, CellDecalAtlas.Rock)]
     [TestCase(CellType.Rock, CellDecalAtlas.None)]

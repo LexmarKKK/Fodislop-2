@@ -26,7 +26,7 @@ public static class PostProcessLook
     public static class Bloom
     {
         public const float Intensity = 0.7f;
-        public const float Threshold = 0.4f;
+        public const float Threshold = 1f;
         public const float SoftKnee = 0.5f;
         public const float Radius = 1.95f;
         public const float Scatter = 0.58f;

@@ -9,6 +9,22 @@ namespace Kern.Core;
 [Serializable]
 public sealed class TerrainSettings
 {
+    [SettingUnbounded("Включение объёма блоков без изменения сохранённой глубины.")]
+    [SettingLabel("settings.world.depth_enabled")]
+    [SettingConsumer(SettingConsumerTarget.TerrainRenderer, "TerrainRenderer.ApplyDepthConfig")]
+    public bool DepthEnabled;
+
+    // Presentation-only block volume, in art pixels (32 per cell).
+    [SettingRange(0f, 16f)]
+    [SettingLabel("settings.world.depth_pixels")]
+    [SettingConsumer(SettingConsumerTarget.TerrainRenderer, "TerrainRenderer.ApplyDepthConfig")]
+    public float DepthPixels = 16f;
+
+    [SettingRange(0f, 1f)]
+    [SettingLabel("settings.world.depth_darkening")]
+    [SettingConsumer(SettingConsumerTarget.TerrainRenderer, "TerrainRenderer.ApplyDepthConfig")]
+    public float DepthDarkening = 0.35f;
+
     // Дефолти — авторський вигляд, єдиний дім у TerrainConfigHolder.
     [SettingRange(0.001f, 1024f)]
     [SettingConsumer(SettingConsumerTarget.TerrainRenderer, "TerrainMaterialManager.FlowScale")]

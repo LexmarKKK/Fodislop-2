@@ -14,6 +14,7 @@ cbuffer MapParams
     float2 _StartWorld;
     float2 _TexSize;
     float _CellsPerPixel;
+    int _WorldEdgeType;
     int _WorldWidth;
     int _WorldHeight;
     int _UseMip;
@@ -58,7 +59,9 @@ void CSWorldMapRender(uint3 id : SV_DispatchThreadID)
 
     if (serverX < 0 || serverX >= _WorldWidth || serverY < 0 || serverY >= _WorldHeight)
     {
-        _Result[id.xy] = float4(0.0, 0.0, 0.0, 1.0);
+        _Result[id.xy] = serverY < 0
+            ? float4(0.0, 0.0, 0.0, 1.0)
+            : _Palette[_WorldEdgeType];
         return;
     }
 

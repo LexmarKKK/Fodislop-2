@@ -1,9 +1,11 @@
 // HUD MainGame: данные, форматы и поведение.
-// Форматы — Legacy GUIManager (ур.N, NHP, $N, Груз N%, пороги груза, сокращения
+// Форматы — Legacy GUIManager (NHP, $N, Груз N%, пороги груза, сокращения
 // кристаллов), чат — Legacy ChatManager (3 режима, каналы FED/DNO сервера),
 // мини-навыки — Legacy MiniSkill (видны 5 с при росте, готовые остаются).
 (() => {
   const $ = id => document.getElementById(id);
+  // Системные кнопки узнаются по русской подписи, снятой до перевода: title меняется вместе с языком
+  document.querySelectorAll('.sysbuttons button').forEach(b => { b.dataset.sys = b.title; });
   const group = n => String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
   const state = {
@@ -139,6 +141,17 @@
     'DVM_LEADER': { unread: 0, lines: [{ t: 'вчера', nick: 'DVM_LEADER', c: '#e6ccff', text: 'возьми синих на пушку' }] },
   };
   state.pm = null;
+  // Непрочитанное по каналам считает клиент: сервер шлёт только список каналов и сообщения
+  const CHANNELS = [['FED', 'Федеральный чат'], ['DNO', 'Дно']];
+  const chanUnread = { FED: 0, DNO: 3 };
+  chat.DNO.push({ t: '18:31', nick: 'ГЛУБИНА', c: '#ffe0a8', text: 'на 1100:1300 лава, не ходите' }, { t: '18:36', nick: 'ШАХТЁР-305', c: '#d8ffc8', text: 'спасибо' }, { t: '18:40', nick: 'ORE_KING', c: '#ffd0f0', text: 'продам синие, пишите в личку' });
+  function renderChatList() {
+    const last = l => l.filter(m => !m.sys).at(-1);
+    const pmUnread = Object.values(pm).reduce((n, th) => n + th.unread, 0), pmLast = Object.values(pm).map(th => th.lines.at(-1)).filter(Boolean).at(0);
+    const rows = [...CHANNELS.map(([tag, name]) => [tag, `${tag} – ${name}`, last(chat[tag]), chanUnread[tag]]), ['PM', 'Личные', pmLast, pmUnread]];
+    $('chatList').innerHTML = rows.map(([tag, name, m, n]) => `<li><button type="button" data-chan="${tag}" class="${tag === state.channel ? 'is-on' : ''}"><b>${name}</b>${n ? `<i>${n}</i>` : ''}<span>${m ? `${esc(m.nick)}: ${esc(m.text)}` : 'Сообщений нет'}</span></button></li>`).join('');
+  }
+  const showChatList = on => { $('chatList').hidden = !on; $('chatListBtn').setAttribute('aria-expanded', String(on)); if (on) renderChatList(); };
   const nickLink = (nick, c) => `<b class="nick-link" data-nick="${esc(nick)}" style="color:${c}">${esc(nick)}</b>`;
   const esc = s => s.replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
   function renderChat() {
@@ -160,6 +173,10 @@
     $('chatPeekTag').textContent = state.channel === 'PM' ? 'ЛС' : state.channel;
     const unread = Object.values(pm).reduce((n, th) => n + th.unread, 0);
     $('pmBadge').textContent = unread || '';
+    chanUnread[state.channel] = 0;
+    document.querySelectorAll('[data-unread]').forEach(b => { b.textContent = chanUnread[b.dataset.unread] || ''; });
+    $('chatListBadge').textContent = unread + chanUnread.FED + chanUnread.DNO || '';
+    if (!$('chatList').hidden) renderChatList();
     $('chatInput').placeholder = state.channel === 'PM' ? (state.pm ? `Сообщение для ${state.pm}…` : 'Выберите переписку') : 'Напишите сообщение…';
     $('chatInput').disabled = state.channel === 'PM' && !state.pm;
     document.querySelectorAll('.chat-tab').forEach(b => b.classList.toggle('is-on', b.dataset.tag === state.channel));
@@ -171,6 +188,8 @@
     if (mode === 1) setTimeout(() => $('chatInput').focus(), 0); else $('chatInput').blur();
   }
   $('chatPeek').onclick = () => setChat(1);
+  $('chatListBtn').onclick = () => showChatList($('chatList').hidden);
+  $('chatList').onclick = e => { const b = e.target.closest('[data-chan]'); if (!b) return; state.channel = b.dataset.chan; if (state.channel === 'PM') state.pm = null; showChatList(false); renderChat(); };
   $('chatClose').onclick = () => setChat(0);
   document.querySelectorAll('.chat-tab').forEach(b => b.onclick = () => { state.channel = b.dataset.tag; if (b.dataset.tag === 'PM') state.pm = null; renderChat(); });
   $('chatLog').addEventListener('click', e => {
@@ -199,14 +218,17 @@
     state.autodig = !state.autodig; press($('autodig'), state.autodig);
     clearInterval(digTimer); if (state.autodig) digTimer = setInterval(autodigTick, 450);
   };
-  $('progRun').onclick = () => {
-    state.prog = !state.prog;
-    $('progRun').classList.toggle('is-running', state.prog);
-    $('progRun').title = state.prog ? 'Остановить программу' : 'Запустить программу';
-    $('progRun').innerHTML = `<svg><use href="#i-${state.prog ? 'stop' : 'play'}"/></svg>`;
-    $('progName').textContent = state.prog ? 'Программа 1' : 'Программатор';   // имя активной программы, programmator.program «Программа {0}»
-    document.querySelectorAll('.online em').forEach(em => em.textContent = state.prog ? '(7)' : '(6)');
-  };
+  // ▶/■ в HUD и кнопка запуска в окне программатора — одно состояние
+  function setProg(on, name) {
+    state.prog = on;
+    $('progRun').classList.toggle('is-running', on);
+    $('progRun').title = on ? 'Остановить программу' : 'Запустить программу';
+    $('progRun').innerHTML = `<svg><use href="#i-${on ? 'stop' : 'play'}"/></svg>`;
+    $('progName').textContent = on ? name : 'Программатор';   // имя активной программы
+    document.querySelectorAll('.online em').forEach(em => em.textContent = on ? '(7)' : '(6)');
+  }
+  window.kernProg = { sync: setProg };
+  $('progRun').onclick = () => window.kernProgState(state.prog ? 'stopped' : 'running');
   $('bonus').onclick = () => { state.money += 500; state.creds += 25; renderPlayer(); };
   $('respawnBtn').onclick = () => { $('respawnDialog').hidden = false; $('respawnOk').focus(); };
   $('respawnDialog').querySelector('[data-close]').onclick = () => { $('respawnDialog').hidden = true; };
@@ -287,7 +309,7 @@
   // ── Клавиши ──
   window.kernHud = { skillChanged: code => document.querySelector(`.mini-skill[data-code="${code}"]`)?.remove() };
   document.addEventListener('keydown', e => {
-    if ($('frame').dataset.screen !== 'game' || !$('skillsDialog').hidden) return;
+    if ($('frame').dataset.screen !== 'game' || !$('skillsDialog').hidden || !$('progDialog').hidden) return;
     const typing = e.target === $('chatInput');
     if (e.key === 'Tab') { e.preventDefault(); setChat((state.chat + 1) % 3); return; }
     if (e.key === 'Escape') {
@@ -379,7 +401,7 @@
     sysOrig.list ||= [...document.querySelector('.sysbuttons').children];
     if (compact) {
       touchNav.prepend($('bonus'));
-      const game = sysOrig.list.filter(b => ['Почта', 'Консоль', 'Мои здания', 'Вернуться на респаун'].includes(b.title));
+      const game = sysOrig.list.filter(b => ['Почта', 'Консоль', 'Мои здания', 'Вернуться на респаун'].includes(b.dataset?.sys));
       touchNav.append(...game);
       pauseSys.append(...sysOrig.list.filter(b => b.tagName === 'BUTTON' && !game.includes(b)));
     } else {
@@ -388,11 +410,11 @@
     }
     // Кнопка «Меню»: в компактной раскладке паузы нет, в ☰ она — «Настройки»
     const sysMenu = $('sysMenu'), as = compact ? ['Настройки', '#i-settings'] : ['Меню', '#i-menu'];
-    sysMenu.title = as[0]; sysMenu.querySelector('use').setAttribute('href', as[1]);
+    sysMenu.title = as[0]; sysMenu.querySelector('use').setAttribute('href', as[1]);   // перевод подхватит новую подпись сам
     const ml = sysMenu.querySelector('.control-label'); if (ml) ml.textContent = as[0];
     // В узком блоке у миникарты подписи короче
     const short = { 'Мои здания': 'Здания', 'Вернуться на респаун': 'Респаун' };
-    sysOrig.list.forEach(b => { const l = b.querySelector?.('.control-label'); if (l && short[b.title]) l.textContent = compact ? short[b.title] : b.title === 'Вернуться на респаун' ? 'На респаун' : b.title; });
+    sysOrig.list.forEach(b => { const l = b.querySelector?.('.control-label'), k = b.dataset?.sys; if (l && short[k]) l.textContent = compact ? short[k] : k === 'Вернуться на респаун' ? 'На респаун' : k; });
     [$('bonus'), $('miniSkills'), ...sysOrig.list].forEach(el => el.toggleAttribute('data-relocated', compact));
     const mm = $('minimap'), side = compact ? (size === 'm' ? 136 : 104) * 2 : 0;
     mm.width = compact ? side : 264; mm.height = compact ? side : 264;
@@ -400,6 +422,7 @@
     if (!inputSticky) setInput(d.input || (d.form ? 'touch' : 'mouse'), true);
     else placeByInput();
     renderRes();
+    fitColumn();
     fit();
   }
   // Что зависит от управления внутри раскладки: автокопание и программатор
@@ -431,6 +454,21 @@
   $('standMonitor').onchange = e => setDevice(e.target.value);
 
   $('statusBar').append(document.querySelector('.diag'), $('assetLoad'));
+  // Панели игрока и груза — одной ширины: колонка, а если строка с ником или «Груз N%» длиннее — по ней.
+  // Строки не переносятся и не режутся; полоса правее колонки на телефоне сдвигается следом
+  const heads = [document.querySelector('.player-head'), document.querySelector('.cargo-head')];
+  function fitColumn() {
+    const need = heads.map(row => {
+      const cs = getComputedStyle(row), kids = [...row.children].filter(c => c.offsetParent);
+      const box = getComputedStyle(row.parentElement);
+      return kids.reduce((w, c) => w + c.getBoundingClientRect().width, 0) / (frame.getBoundingClientRect().width / frame.offsetWidth || 1)
+        + parseFloat(cs.columnGap || 0) * (kids.length - 1) + parseFloat(box.paddingLeft) + parseFloat(box.paddingRight) + 2;
+    });
+    const col = parseFloat(getComputedStyle(frame).getPropertyValue('--col')) || 0;
+    frame.style.setProperty('--pcol', Math.ceil(Math.max(col, ...need)) + 'px');
+  }
+  const fitObs = new ResizeObserver(fitColumn);
+  heads.forEach(row => [...row.children].forEach(c => fitObs.observe(c)));
 
   // Подписи остаются видимыми и на сенсорном экране, где нет наведения.
   document.querySelectorAll('.sysbuttons button, .menu-rail button').forEach(button => {
@@ -600,7 +638,7 @@
   $('profileDialog').querySelector('[data-close]').onclick = () => { $('profileDialog').hidden = true; };
   document.addEventListener('keydown', e => { if (e.key === 'Escape') $('profileDialog').hidden = true; });
   // Мои здания — пустое окно сервера
-  document.querySelector('[title="Мои здания"]').addEventListener('click', () => { $('buildingsDialog').hidden = false; });
+  document.querySelector('[data-sys="Мои здания"]').addEventListener('click', () => { $('buildingsDialog').hidden = false; });
   $('buildingsDialog').querySelector('[data-close]').onclick = () => { $('buildingsDialog').hidden = true; };
   document.addEventListener('keydown', e => { if (e.key === 'Escape') $('buildingsDialog').hidden = true; });
   $('touchMenu').onclick = () => { $('pauseDialog').hidden = false; };
@@ -610,7 +648,7 @@
   $('pauseDialog').querySelector('[data-close]').onclick = () => { $('pauseDialog').hidden = true; };
   $('touchDig').onclick = () => autodigTick();
   $('touchHeal').onclick = () => { state.hp = state.maxHp; renderPlayer(); };
-  $('touchGeo').onclick = () => document.querySelector('.inv-slots li[title="Геопак"]').click();
+  $('touchGeo').onclick = () => document.querySelector('.inv-slots li[data-i="0"]').click();   // геопак — первый предмет
 
   // Параметры адреса для снимков: ?aspect=1.6&state=busy&chat=1
   const q = new URLSearchParams(location.search);
@@ -622,7 +660,7 @@
     if (q.get('chat')) setChat(Number(q.get('chat')));
     if (q.get('build')) $('buildFan').hidden = false;
     if (q.get('pause')) $('pauseDialog').hidden = false;
-    if (q.get('profile')) window.openProfile(q.get('profile') === '1' ? undefined : q.get('profile'));
+    if (q.get('profile')) window.openProfile(q.get('profile') === '1' || q.get('profile') === 'settings' ? undefined : q.get('profile'), q.get('profile') === 'settings' ? 'settings' : '');
     if (q.get('pm')) window.openPM(q.get('pm'));
     if (q.get('clanrole')) setClanRole(q.get('clanrole'));
     if (q.get('clan')) { $('clanBtn').click(); if (q.get('clan') !== '1') setClanTab(q.get('clan')); }

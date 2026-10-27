@@ -232,7 +232,7 @@ namespace Kern.UI.Settings
 
             HideMenu();
 
-            UIScreen.Bind(_doc, _clientConfig.Config.Interface.UIScale);
+            UIScreen.Bind(_doc, _clientConfig.Config.Interface.UIScale, _clientConfig.Config.Interface.TextScale);
 
             // Реестр применяет текст сразу и на каждой смене языка — подписка
             // вручную не нужна и запрещена линтером.

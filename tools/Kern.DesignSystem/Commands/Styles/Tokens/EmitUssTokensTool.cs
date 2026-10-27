@@ -236,8 +236,35 @@ internal static class EmitUssTokensTool
         }
 
         sb.AppendLine();
+        EmitTextScales(sb, baseTokens, tiers);
         sb.AppendLine($"/* Не переносится в USS ({dropped.Count}): {string.Join(", ", dropped.Select(n => n.TrimStart('-')))} */");
         return sb.ToString();
+    }
+
+    private static void EmitTextScales(StringBuilder sb, Dictionary<string, string> baseTokens,
+        Dictionary<string, Dictionary<string, string>> tiers)
+    {
+        var sizes = baseTokens.Where(pair => pair.Key.StartsWith("--size-", StringComparison.Ordinal))
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        sizes.Add("--size-fixed-18", "18px");
+        sizes.Add("--size-fixed-20", "20px");
+        sb.AppendLine(":root { --size-fixed-18: 18px; --size-fixed-20: 20px; }");
+        for (int percent = 75; percent <= 200; percent += 5)
+        {
+            foreach (string tier in new[] { "tier--standard", "tier--compact", "tier--wide" })
+            {
+                sb.AppendLine($".{tier}.text-scale--{percent} {{");
+                foreach (var (name, baseline) in sizes)
+                {
+                    string value = tiers.TryGetValue(tier, out var overrides) && overrides.TryGetValue(name, out string? adjusted)
+                        ? adjusted : baseline;
+                    float pixels = float.Parse(value.Replace("px", ""), System.Globalization.CultureInfo.InvariantCulture);
+                    string scaled = (pixels * percent / 100f).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+                    sb.AppendLine($"    {name}: {scaled}px;");
+                }
+                sb.AppendLine("}");
+            }
+        }
     }
 
     private static string EmitUtilities(Dictionary<string, string> baseTokens)

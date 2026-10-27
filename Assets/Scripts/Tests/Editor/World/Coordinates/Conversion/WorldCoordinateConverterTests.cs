@@ -63,6 +63,22 @@ public class WorldCoordinateConverterTests
         Assert.AreEqual(20, serverPos.y);
     }
 
+    [TestCase(-0.5f, 255.5f, -1, 0)]
+    [TestCase(256.5f, 255.5f, 256, 0)]
+    [TestCase(3.5f, -0.5f, 3, 256)]
+    [TestCase(3.5f, 256.5f, 3, -1)]
+    [TestCase(10.2f, 235.8f, 10, 20)]
+    public void BoundaryPicking_PreservesSignedCellCoordinates(float x, float y, int expectedX, int expectedY)
+    {
+        Vector2Int cell = WorldCoordinateConverter.UnityToServerCellIncludingBoundary(
+            new Vector3(x, y, 0f), TEST_WORLD_HEIGHT);
+        Assert.That(cell.x, Is.EqualTo(expectedX));
+        Assert.That(cell.y, Is.EqualTo(expectedY));
+        Vector3 center = WorldCoordinateConverter.ServerToUnityPos(cell.x, cell.y, TEST_WORLD_HEIGHT);
+        Assert.That(center.x, Is.EqualTo(expectedX + 0.5f));
+        Assert.That(center.y, Is.EqualTo(255.5f - expectedY));
+    }
+
     [Test]
     public void UnityToServerY_NegativeUnityY_IsRejected()
     {

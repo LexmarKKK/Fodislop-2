@@ -96,7 +96,7 @@ namespace Kern.UI.Inventory
                 return;
             }
 
-            if (Keyboard.current == null)
+            if (!Application.isFocused || _uiInput.IsKeyCaptureInProgress || Keyboard.current == null)
             {
                 return;
             }
@@ -357,7 +357,7 @@ namespace Kern.UI.Inventory
             qtyLabel.style.position = Position.Relative;
             qtyLabel.style.marginRight = 1f;
             qtyLabel.style.marginBottom = 1f;
-            qtyLabel.style.fontSize = 10f;
+            qtyLabel.AddToClassList("text-size-2xs");
             qtyLabel.style.color = Color.white;
             qtyLabel.pickingMode = PickingMode.Ignore;
             qtyWrap.Add(qtyLabel);

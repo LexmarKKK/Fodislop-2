@@ -53,6 +53,19 @@ internal sealed class PauseMenuInterfaceTabBuilder
             },
             _refreshers));
 
+        interfaceSection.Add(PauseMenuUIFactory.CreateBoundSlider<InterfaceSettings>(
+            nameof(InterfaceSettings.TextScale),
+            _loc,
+            () => _clientConfig.Config.Interface.TextScale,
+            value =>
+            {
+                float scale = Mathf.Round(value * 20f) / 20f;
+                _clientConfig.UpdateSection(config => config.Interface, settings => settings.TextScale = scale);
+                UIScreen.SetTextScale(scale);
+            },
+            _refreshers,
+            quantum: 0.05f));
+
         // Язык интерфейса. Применяется сразу: SetLanguage сохраняет выбор
         // в конфиг и стреляет OnLanguageChanged, на который подписаны все
         // экраны — они пересобирают свои тексты (PauseMenu пересобирает

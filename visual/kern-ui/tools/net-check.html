@@ -1,0 +1,25 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>net: running</title>
+<!-- Автоповтор подключения идёт как в клиенте (ConnectionManager, ReconnectBackoff):
+     паузы 1, 2, 4, 8, 16, 30, 30 с, между ними «Подключение...». Итог — в <title>. -->
+<pre id="log"></pre>
+<script>
+const f = document.createElement('iframe');
+f.style.cssText = 'width:1400px;height:900px;border:0';
+f.src = '../index.html?event=reconnect';
+document.body.appendChild(f);
+f.onload = () => {
+  const d = f.contentDocument, seq = [];
+  const read = () => { const t = d.getElementById('netText').textContent; if (t && t !== seq.at(-1)) seq.push(t); };
+  read(); new MutationObserver(read).observe(d.getElementById('netText'), { childList: true, characterData: true, subtree: true });
+  setTimeout(() => {
+    // Ожидаемые паузы: первое число каждого отсчёта
+    const starts = seq.filter((t, i) => /через/.test(t) && (i === 0 || seq[i - 1] === 'Подключение...')).map(t => +t.match(/\d+/)[0]);
+    const want = [1, 2, 4, 8, 16, 30, 30];
+    const ok = want.every((n, i) => starts[i] === n) && seq.includes('Подключение...');
+    document.getElementById('log').textContent = seq.join('\n');
+    document.title = ok ? `net: ok ${starts.slice(0, 7).join(',')}` : `net: FAIL ${starts.join(',')}`;
+  }, 105000);
+};
+</script>

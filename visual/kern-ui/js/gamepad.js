@@ -225,7 +225,7 @@
     ['.inv-slots li:nth-child(1)', 'slotPrev'], ['.inv-slots li:nth-child(4)', 'slotNext'], ['.sysbar', 'hud'], ['.touch-sys', 'hud']];
   BADGES.forEach(([sel, act]) => document.querySelector(sel)?.insertAdjacentHTML('beforeend', `<span class="pg pg-badge" data-act="${act}"></span>`));
   const bar = document.createElement('div');
-  bar.className = 'pad-bar'; frame.append(bar);
+  bar.className = 'pad-bar'; bar.hidden = true; frame.append(bar);   // видна только с падом
   function renderBar() {
     const sc = active && scope();
     if (bar.hidden !== !sc) bar.hidden = !sc;

@@ -261,7 +261,7 @@ internal sealed class ProgrammatorProgramStore
             nameLabel.AddToClassList("prog-list-name");
             nameLabel.style.flexGrow = 1;
             nameLabel.style.color = new Color(0.8f, 0.8f, 0.8f, 1f);
-            nameLabel.style.fontSize = 18;
+            nameLabel.AddToClassList("text-size-fixed-18");
             nameLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
             row.Add(nameLabel);
 

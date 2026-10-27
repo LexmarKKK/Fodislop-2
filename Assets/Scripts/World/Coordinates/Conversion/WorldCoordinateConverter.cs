@@ -40,6 +40,9 @@ public static class WorldCoordinateConverter
     public static Vector3 ServerToUnityPos(int x, int y, int worldHeight, float z = 0f) =>
         new(x + 0.5f, ServerToUnityY(y, worldHeight), z);
 
+    public static Vector2Int UnityToServerCellIncludingBoundary(Vector3 unityPos, int worldHeight) =>
+        new(Mathf.FloorToInt(unityPos.x), ResolveHeight(worldHeight) - 1 - Mathf.FloorToInt(unityPos.y));
+
     public static Vector2Int UnityToServerPos(Vector3 unityPos, int worldHeight) =>
         new(Mathf.FloorToInt(unityPos.x), UnityToServerY(unityPos.y, worldHeight));
 }

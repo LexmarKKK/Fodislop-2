@@ -904,3 +904,49 @@ Horizontal source density is 32 texels/cell; each original two-cell band is
 resampled onto 64 presentation rows. Existing alpha UVs, occupancy/AO and glow
 remain independent. Visible and material-field albedo share the same raster;
 URP owns the linear-repeat sampler and texel size lives in UnityPerMaterial.
+
+## Raised terrain geometry (2026-10-27)
+
+`TerrainWindowPublishedView` derives and publishes `TerrainVolumeTopology` from
+accepted cell/type facts at commit. Exact shape-input comparison excludes
+material-only bits; its version changes only when contour dependencies change.
+Square/wavy sides and cached, merged pixel contours for round blocks contribute
+exposed edges. Internal physical faces do not contribute side geometry.
+
+`TerrainVolumeMesh` presents stationary ground, actual side quads and foreground
+in three ordered submeshes. Ground/base vertices remain at height zero; wall tops
+and face vertices share camera-relative forward perspective in `TerrainDepth.hlsl`.
+Eye height is 32 cells, maximum physical height .5 cell, and projected vertex
+movement snaps to 1/32 cell with a .5-cell displacement cap. Homogeneous clip W
+preserves perspective side UV interpolation. Robot position is not an input.
+
+Every shader vertex entry requires POSITION only. Physical fields retain their
+8-byte half4 address format. Screen vertices are 16-byte float4 addresses; side
+vertices pack exact integer cell addresses and biased 7-bit pixel endpoints into
+POSITION. The GPU decodes this before view rejection and the normal window-relative
+cell lookup. No TEXCOORD vertex stream is required, including for doors and older
+recorded warmup vertex declarations. CPU/GPU known-value tests cover the encoding.
+
+Visible-offset changes update globals without rebuilding the mesh. Out-of-view
+side vertices exit before cell-buffer reads. Exposed ground is retained near
+openings; interior solid masses retain background culling. Material/glow and AO
+field geometry, clearing, color space, formats, revisions and solver order remain
+unchanged. No new light resource or source is introduced.
+
+`GraphicsSettingsController.UpdateTerrainDepthSettings` applies presentation
+uniforms without a lighting reset. `SubmittedDepthCarrierQuads` retains its API
+name and now counts actual submitted side quads. Topology/mesh logs report reason,
+version, edge/vertex counts, CPU construction time and payload bytes. Verification
+and outstanding production-image/GPU evidence are in
+[the volume evidence bundle](evidence/terrain-depth-2026-10-27.html).
+
+### Bloom extraction and reconstruction (2026-10-27)
+
+World bloom applies its threshold to each original HDR scene pixel before the
+world-anchored quarter-resolution 4×4 reduction. Emission eligibility is sampled
+with point filtering. Pyramid reduction uses a normalized 3×3 tent at fixed
+source-texel radius 1; reconstruction uses the authored radius with the same
+center/axis/diagonal weights. Additive RGB composition, HDR formats and the
+existing energy normalization remain unchanged. This increases shader work
+without changing texture allocations or pass count; see the
+[bloom evidence record](evidence/bloom-prefilter-reconstruction-2026-10-27.html).

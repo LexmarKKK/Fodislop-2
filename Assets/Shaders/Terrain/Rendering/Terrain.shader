@@ -16,6 +16,8 @@ Shader "Universal Render Pipeline/Custom/Terrain"
         _EmissionBrightnessStart ("Emission Brightness Start", Float) = 0.25
         _EmissionBrightnessEnd ("Emission Brightness End", Float) = 0.60
         _SurfaceEmissionStrength ("Surface Emission Strength", Float) = 1
+        _TerrainDepthPixels ("Tunnel Depth (Pixels)", Range(0,16)) = 16
+        _TerrainDepthDarkening ("Tunnel Wall Darkening", Range(0,1)) = 0.35
         _RoundableCornerRadius ("Roundable Corner Radius", Float) = 0.51
         [HideInInspector] _RimDistanceScale ("Rim Distance Scale", Float) = 0
         [HideInInspector] _RimFalloff ("Rim Falloff", Float) = 0
@@ -101,14 +103,25 @@ Shader "Universal Render Pipeline/Custom/Terrain"
             #define EPS 0.0001
             // Explicit benchmark-only cumulative fragment checkpoints; zero is production.
             int _KernTerrainBenchmarkStage;
+            float4 _TerrainVolumeViewSize;
 
             TEXTURE2D(_PrismaticFlowMap);
             SAMPLER(sampler_PrismaticFlowMap);
             TEXTURE2D(_FlowMap);
             SAMPLER(sampler_FlowMap);
             #include "Assets/Shaders/Terrain/Materials/TerrainMaterialCBuffer.hlsl"
+            #define KERN_TERRAIN_RETAIN_BACKGROUND (_TerrainDepthPixels >= 0.5)
             #include "Assets/Shaders/Terrain/Rendering/Passes/TerrainPassCommon.hlsl"
             #include "Assets/Shaders/Terrain/Animation/TerrainAnimationSampling.hlsl"
+
+            #include "Assets/Shaders/Terrain/Geometry/TerrainDepth.hlsl"
+
+            // Both presentation and physical fields require POSITION only.
+            // Side endpoints are encoded exactly in presentation addresses.
+            struct TerrainVolumeVertexInput
+            {
+                float4 positionOS : POSITION;
+            };
 
             struct Varyings
             {
@@ -128,6 +141,8 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                 nointerpolation float uvBits : TEXCOORD12;
                 // Мировая клетка квада — целые числа, точные в float32.
                 nointerpolation float2 cellWorldOrigin : TEXCOORD13;
+                nointerpolation float isDepth : TEXCOORD14;
+                float2 materialCellSample : TEXCOORD15;
             };
 
             half4 SampleAtlasColor(int slot, float2 uv)
@@ -159,18 +174,82 @@ Shader "Universal Render Pipeline/Custom/Terrain"
             }
 
 
-            Varyings vert (TerrainVertexInput input)
+            Varyings vert (TerrainVolumeVertexInput input)
             {
                 Varyings output = (Varyings)0;
+                bool isDepth = input.positionOS.z > 2.5;
+                float4 volumeEdge = 0.0;
+                if (isDepth)
+                {
+                    input.positionOS = TerrainVolumeDecodeAddress(input.positionOS, volumeEdge);
+                }
+                if (isDepth && (_TerrainDepthPixels < 0.5 ||
+                    KernTerrainDebugActive() || _WorldLightDebugView != 0))
+                {
+                    output.positionCS = TerrainCulledPosition();
+                    return output;
+                }
+                if (isDepth && (input.positionOS.x < _TerrainCellViewOffset.x ||
+                    input.positionOS.y < _TerrainCellViewOffset.y ||
+                    input.positionOS.x >= _TerrainCellViewOffset.x + _TerrainVolumeViewSize.x ||
+                    input.positionOS.y >= _TerrainCellViewOffset.y + _TerrainVolumeViewSize.y))
+                {
+                    output.positionCS = TerrainCulledPosition();
+                    return output;
+                }
+                input.positionOS.z = isDepth ? 2.0 : input.positionOS.z;
                 TERRAIN_RESOLVE_CELL_VERTEX(input, output)
+                output.isDepth = isDepth ? 1.0 : 0.0;
                 output.worldPosition = TransformObjectToWorld(cell.positionOS);
                 output.cellWorldOrigin = TransformObjectToWorld(float3(
                     cell.positionOS.xy - (cell.packedData.yz * _TerrainCellGridSize.z),
                     0.0)).xy;
-                float3 rasterWorldPosition = KernWorldGridVertex(output.worldPosition);
+                uint flags = KernTerrainLightingFlags(cell.lightContourDecal.y);
+                bool raised = cell.layer > 0.5 && _TerrainDepthPixels >= 0.5 &&
+                    (flags & KERN_TERRAIN_PHYSICAL_MASS_FLAG) != 0u &&
+                    !KernTerrainDebugActive() && _WorldLightDebugView == 0;
+                output.materialCellSample = cell.packedData.yz;
+                float2 geometryPoint = cell.packedData.yz;
+                float heightFraction = raised ? 1.0 : 0.0;
+                float2 cameraCellPosition = (_WorldSpaceCameraPos.xy - output.cellWorldOrigin) / _TerrainCellGridSize.z;
+                if (isDepth)
+                {
+                    if (!raised)
+                    {
+                        output.positionCS = TerrainCulledPosition();
+                        return output;
+                    }
+                    float2 normal = TerrainVolumeOutwardNormal(volumeEdge.xy, volumeEdge.zw);
+                    float2 edgePoint = lerp(volumeEdge.xy, volumeEdge.zw,
+                        TerrainCornerBase(input.positionOS.w).x);
+                    if (dot(cameraCellPosition - edgePoint, normal) <= 0.0)
+                    {
+                        output.positionCS = TerrainCulledPosition();
+                        return output;
+                    }
+                    heightFraction = TerrainCornerBase(input.positionOS.w).y;
+                    geometryPoint = edgePoint;
+                    // Real wall UVs: tangent along the edge, height into the
+                    // block's material patch. Illumination stays at its base.
+                    output.packedData.yz = TerrainVolumeLightingPoint(edgePoint, normal);
+                    output.materialCellSample = TerrainVolumeMaterialPoint(edgePoint, normal,
+                        heightFraction, _TerrainDepthPixels);
+                }
+                output.uv = TerrainResolveGeometryTileUV(output.uv, output.materialCellSample,
+                    output.geometryCornersX, output.geometryCornersY, output.uvBits, 1.0);
+                float2 projectedPoint = TerrainVolumeProjectPoint(geometryPoint, cameraCellPosition,
+                    heightFraction, _TerrainDepthPixels);
+                float3 rasterWorldPosition = KernWorldGridVertex(float3(
+                    output.cellWorldOrigin + projectedPoint * _TerrainCellGridSize.z,
+                    output.worldPosition.z));
                 if (output.atlasIndex >= 0.0)
                 {
                     output.positionCS = KernWorldGridClipPosition(rasterWorldPosition);
+                    // Preserve virtual-eye homogeneous W so wall material UVs
+                    // interpolate perspectively between base and raised plane.
+                    output.positionCS *= (KERN_TERRAIN_PRESENTATION_EYE_HEIGHT -
+                        heightFraction * min(round(_TerrainDepthPixels), 16.0) / 32.0) /
+                        KERN_TERRAIN_PRESENTATION_EYE_HEIGHT;
                 }
                 output.worldPosition = rasterWorldPosition;
                 return output;
@@ -179,12 +258,19 @@ Shader "Universal Render Pipeline/Custom/Terrain"
             half4 frag (Varyings input) : SV_Target
             {
                 // До любых ветвлений и clip: см. TerrainPixelArtWidthTexels.
-                float2 carrierPixelWidth = fwidth(input.packedData.yz);
+                float2 carrierPixelWidth = fwidth(input.isDepth > 0.5 ? input.materialCellSample : input.packedData.yz);
                 [branch]
                 if (_KernTerrainBenchmarkStage == 1)
                 {
                     return half4(0.5, 0.5, 0.5, 1.0);
                 }
+
+                float wallDarkening = input.isDepth > 0.5 ? 1.0 - _TerrainDepthDarkening : 1.0;
+                float2 textureCellSample = input.materialCellSample;
+                uint presentationFlags = KernTerrainLightingFlags(input.lightContourDecal.y);
+                bool raisedSurface = input.isForeground > 0.5 &&
+                    (presentationFlags & KERN_TERRAIN_PHYSICAL_MASS_FLAG) != 0u &&
+                    !KernTerrainDebugActive() && _WorldLightDebugView == 0;
 
                 // Мировая позиция фрагмента нужна только свету и AO. Интерполянт
                 // около y≈40000 держит 1/256 клетки (1/8 арт-пикселя): у границы
@@ -211,6 +297,10 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                     surface,
                     1.0,
                     applyGeometry);
+                if (raisedSurface)
+                {
+                    cellCoverage = input.isDepth > 0.5 ? 1.0 : TerrainDepthFaceCoverage(surface);
+                }
 
                 if (!KernTerrainDebugActive() &&
                     _WorldLightDebugView != 0 && _WorldLightDebugView != 9)
@@ -334,7 +424,7 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                     float4 worldLight = GetWorldLightColor(input.worldPosition.xy);
                     float3 diagnosticTexture = SampleMissingTexture(input.worldPos.xy);
                     return half4(
-                        diagnosticTexture * worldLight.rgb,
+                        diagnosticTexture * worldLight.rgb * wallDarkening,
                         cellCoverage);
                 }
 
@@ -343,14 +433,14 @@ Shader "Universal Render Pipeline/Custom/Terrain"
 
                 float2 terrainTileUv = TerrainResolveGeometryTileUV(
                     input.uv,
-                    input.packedData.yz,
+                    textureCellSample,
                     input.geometryCornersX,
                     input.geometryCornersY,
                     input.uvBits,
                     input.packedData.x);
                 TerrainTileUvResult tileUV = ResolveTerrainTileUV(
                     terrainTileUv,
-                    input.packedData.yz,
+                    textureCellSample,
                     input.subAtlasRect,
                     input.tileSizeUV,
                     input.worldPos,
@@ -472,7 +562,7 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                     float emissionMask = TerrainSourceEmission(float4(texColor.rgb, 1.0)).a;
                     litRGB += animatedRGB * emissionMask * emissionStrength * _SurfaceEmissionStrength;
                 }
-                return half4(litRGB, finalAlpha);
+                return half4(litRGB * wallDarkening, finalAlpha);
             }
             ENDHLSL
         }

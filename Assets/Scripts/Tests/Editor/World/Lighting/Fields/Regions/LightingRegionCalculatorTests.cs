@@ -217,6 +217,19 @@ public class LightingRegionCalculatorTests
             "Lighting region must advance at policy cadence, never at a hidden smaller step.");
     }
 
+    [TestCase(-12, -12)]
+    [TestCase(500, -12)]
+    [TestCase(-12, 500)]
+    public void WorldBoundaryViewport_IsContainedWithoutClampingToMap(int x, int y)
+    {
+        Vector4 region = LightingRegionCalculator.GetStableLightingRegion(
+            x, y, 24, 24, new Vector4(float.NaN, 0f, 0f, 0f));
+        Assert.That(region.x, Is.LessThanOrEqualTo(x));
+        Assert.That(region.y, Is.LessThanOrEqualTo(y));
+        Assert.That(region.x + region.z, Is.GreaterThanOrEqualTo(x + 24));
+        Assert.That(region.y + region.w, Is.GreaterThanOrEqualTo(y + 24));
+    }
+
     [Test]
     public void RegionIsNeverSmallerThanTwoCells()
     {

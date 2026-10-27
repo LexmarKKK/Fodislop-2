@@ -94,12 +94,14 @@ namespace Kern.Game.Player.Input
 
         public bool IsShiftPressed =>
             IsTouchTurnOnly ||
-            (Keyboard.current != null && Keyboard.current.shiftKey.isPressed) ||
+            (IsHeld(ConfiguredKey(_clientConfig?.Config.Interface.KeyTurnOnly, Key.LeftShift)) ||
+             IsHeld(ConfiguredKey(_clientConfig?.Config.Interface.KeyTurnOnlyAlternate, Key.RightShift))) ||
             (Gamepad.current != null && (Gamepad.current.rightShoulder.isPressed || Gamepad.current.leftStickButton.isPressed));
 
         public bool IsCtrlPressed =>
             _touchFastMove ||
-            (Keyboard.current != null && Keyboard.current.ctrlKey.isPressed) ||
+            (IsHeld(ConfiguredKey(_clientConfig?.Config.Interface.KeyFastMove, Key.LeftCtrl)) ||
+             IsHeld(ConfiguredKey(_clientConfig?.Config.Interface.KeyFastMoveAlternate, Key.RightCtrl))) ||
             (Gamepad.current != null && Gamepad.current.leftTrigger.isPressed);
 
         [VContainer.Inject]
@@ -114,7 +116,7 @@ namespace Kern.Game.Player.Input
         // (InputBlockState агрегирует состояние UI), чтобы слою Game не
         // приходилось ссылаться на UI-сборку.
         private bool InputIntercepted =>
-            _inputBlocker != null && _inputBlocker.IsKeyCaptureInProgress;
+            !Application.isFocused || (_inputBlocker != null && _inputBlocker.IsKeyCaptureInProgress);
 
         // Клавиша действия из живого конфига (InterfaceSettings). Пустое или
         // неизвестное имя (правка конфига руками, поле из будущей схемы)
@@ -126,8 +128,7 @@ namespace Kern.Game.Player.Input
                 return fallback;
             }
 
-            return Enum.TryParse(configured.Trim(), ignoreCase: true, out Key key) &&
-                key != Key.None
+            return Enum.TryParse(configured.Trim(), ignoreCase: true, out Key key)
                 ? key
                 : fallback;
         }
@@ -226,7 +227,8 @@ namespace Kern.Game.Player.Input
             // не переставая идти. Движение и действия блокирует только реальный
             // UI (окна сервера, фокус чата, пауза, инструменты) — поэтому здесь
             // ExcludingMapMode, а не полный IsInputBlocked.
-            if (_inputBlocker != null && _inputBlocker.IsInputBlockedExcludingMapMode)
+            if (!Application.isFocused || InputIntercepted ||
+                (_inputBlocker != null && _inputBlocker.IsInputBlockedExcludingMapMode))
             {
                 _moveInput = Vector2.zero;
                 _touchMoveInput = Vector2.zero;
@@ -246,25 +248,29 @@ namespace Kern.Game.Player.Input
 
                 if (Keyboard.current != null)
                 {
-                    if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed)
+                    if (IsHeld(ConfiguredKey(_clientConfig?.Config.Interface.KeyMoveUp, Key.W)) ||
+                        IsHeld(ConfiguredKey(_clientConfig?.Config.Interface.KeyMoveUpAlternate, Key.UpArrow)))
                     {
                         _moveInput.y += 1f;
                         _isGamepadActive = false;
                     }
 
-                    if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed)
+                    if (IsHeld(ConfiguredKey(_clientConfig?.Config.Interface.KeyMoveDown, Key.S)) ||
+                        IsHeld(ConfiguredKey(_clientConfig?.Config.Interface.KeyMoveDownAlternate, Key.DownArrow)))
                     {
                         _moveInput.y -= 1f;
                         _isGamepadActive = false;
                     }
 
-                    if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed)
+                    if (IsHeld(ConfiguredKey(_clientConfig?.Config.Interface.KeyMoveLeft, Key.A)) ||
+                        IsHeld(ConfiguredKey(_clientConfig?.Config.Interface.KeyMoveLeftAlternate, Key.LeftArrow)))
                     {
                         _moveInput.x -= 1f;
                         _isGamepadActive = false;
                     }
 
-                    if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed)
+                    if (IsHeld(ConfiguredKey(_clientConfig?.Config.Interface.KeyMoveRight, Key.D)) ||
+                        IsHeld(ConfiguredKey(_clientConfig?.Config.Interface.KeyMoveRightAlternate, Key.RightArrow)))
                     {
                         _moveInput.x += 1f;
                         _isGamepadActive = false;

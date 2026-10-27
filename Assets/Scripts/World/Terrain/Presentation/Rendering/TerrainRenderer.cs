@@ -132,17 +132,15 @@ namespace Kern.World.Terrain
         public bool IsReadyForGameplay =>
             TerrainReadiness.IsReadyForGameplay(_window, _textureService);
 
-        public void ApplyClientConfig()
-        {
-            IClientConfigManager clientConfigManager = _clientConfigManager ??
-                throw new InvalidOperationException(
-                    "TerrainRenderer requires IClientConfigManager injection.");
-            ClientConfig config = clientConfigManager.Config ??
-                throw new InvalidOperationException(
-                    "TerrainRenderer requires an initialized ClientConfig.");
+        public void ApplyClientConfig() => ConfigApplier.ApplyAndRecord(_clientConfigManager, WorldChanges);
 
-            ConfigApplier.Apply(config);
-            WorldChanges.RecordConfigurationChange();
+        public int SubmittedDepthCarrierQuads => _presentation.SubmittedDepthCarrierQuads;
+
+        public void ApplyDepthConfig()
+        {
+            ClientConfig config = _clientConfigManager?.Config ??
+                throw new InvalidOperationException("Terrain depth requires an initialized ClientConfig.");
+            _window.Driver.Presentation.ApplyDepthConfig(config);
         }
 
         public void EnsureSubscriptions()
@@ -398,7 +396,7 @@ namespace Kern.World.Terrain
                     _window.Width,
                     _window.Height,
                     _cellSize,
-                    _meshFilter);
+                    _meshFilter, _window.VolumeTopology);
             }
 
             _lightingViewport = framePlan.LightingViewport;

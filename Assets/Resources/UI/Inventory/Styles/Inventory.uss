@@ -388,3 +388,5 @@
     flex-grow: 0;
     flex-shrink: 0;
 }
+
+.inv-qty.text-size-2xs { font-size: var(--size-2xs); }

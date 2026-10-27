@@ -6,6 +6,7 @@ using Kern.World;
 using UnityEngine;
 
 using Kern.AssetPipeline.Loading;
+using Kern.AssetPipeline.Animation;
 
 namespace Kern.Game.VisualEffects.Sprites;
 
@@ -19,6 +20,7 @@ public sealed class SpriteAnimationLibrary : IDisposable
     private readonly Mesh[] _meshes;
     private readonly Material[] _meshMaterials;
     private readonly Sprite[] _crystalCollectionSprites;
+    private readonly SpriteEmissionFrame[] _meshEmission;
 
     public SpriteAnimationLibrary()
     {
@@ -28,6 +30,18 @@ public sealed class SpriteAnimationLibrary : IDisposable
             ?? throw new InvalidOperationException("The sprite animation catalog is invalid.");
         Shader shader = Resources.Load<Shader>("Shaders/Effects/Cells/Destruction/CellDestruction")
             ?? throw new InvalidOperationException("The world-grid effect shader is missing.");
+        var emittingMeshes = new HashSet<int>();
+        foreach (Clip clip in data.Clips)
+        {
+            if (clip.Id is "Heal" or "Hurt")
+            {
+                foreach (Frame frame in clip.Frames) { emittingMeshes.Add(frame.Mesh); }
+            }
+        }
+        var emittingTextures = new HashSet<string>(StringComparer.Ordinal);
+        foreach (int mesh in emittingMeshes) { emittingTextures.Add(data.Meshes[mesh].Texture); }
+        var emissionPixels = new Dictionary<string, (Color32[] Pixels, int Width, int Height)>(StringComparer.Ordinal);
+        _meshEmission = new SpriteEmissionFrame[data.Meshes.Length];
         _meshes = new Mesh[data.Meshes.Length];
         _meshMaterials = new Material[data.Meshes.Length];
         for (int index = 0; index < data.Meshes.Length; index++)
@@ -35,7 +49,8 @@ public sealed class SpriteAnimationLibrary : IDisposable
             MeshData source = data.Meshes[index];
             if (!_materials.TryGetValue(source.Texture, out Material material))
             {
-                Texture2D texture = ImportTexture(source.Texture);
+                Texture2D texture = ImportTexture(source.Texture,
+                    emittingTextures.Contains(source.Texture) ? emissionPixels : null);
                 material = new Material(shader) { name = source.Texture, mainTexture = texture };
                 material.SetVector("_SourceTextureSize", new Vector4(texture.width, texture.height, 0, 0));
                 _materials.Add(source.Texture, material);
@@ -48,6 +63,28 @@ public sealed class SpriteAnimationLibrary : IDisposable
             mesh.UploadMeshData(markNoLongerReadable: true);
             _meshes[index] = mesh;
             _meshMaterials[index] = material;
+        }
+
+        foreach (int index in emittingMeshes)
+        {
+            MeshData mesh = data.Meshes[index];
+            var pixels = emissionPixels[mesh.Texture];
+            Vector2 uvMin = mesh.Uv[0], uvMax = mesh.Uv[0];
+            Vector3 min = mesh.Vertices[0], max = mesh.Vertices[0];
+            if (mesh.Vertices.Length != 4 || mesh.Triangles.Length != 6)
+            {
+                throw new InvalidOperationException("Heal/Hurt emission requires the authored rectangular quad.");
+            }
+            foreach (Vector2 uv in mesh.Uv) { uvMin = Vector2.Min(uvMin, uv); uvMax = Vector2.Max(uvMax, uv); }
+            foreach (Vector3 vertex in mesh.Vertices) { min = Vector3.Min(min, vertex); max = Vector3.Max(max, vertex); }
+            int x = Mathf.RoundToInt(uvMin.x * pixels.Width), y = Mathf.RoundToInt(uvMin.y * pixels.Height);
+            var rect = new RectInt(x, y, Mathf.RoundToInt(uvMax.x * pixels.Width) - x,
+                Mathf.RoundToInt(uvMax.y * pixels.Height) - y);
+            SpriteEmissionFrame emission = SpriteEmissionIntegrator.IntegrateFrame(pixels.Pixels, pixels.Width, rect,
+                new Vector2(max.x - min.x, max.y - min.y));
+            _meshEmission[index] = emission with { Centroid = new Vector2(
+                (min.x + max.x) * 0.5f + emission.Centroid.x,
+                (min.y + max.y) * 0.5f + emission.Centroid.y) };
         }
 
         foreach (Clip clip in data.Clips)
@@ -91,6 +128,7 @@ public sealed class SpriteAnimationLibrary : IDisposable
     internal Clip Get(string id) => _clips[id];
     internal Mesh MeshAt(int index) => _meshes[index];
     internal Material MaterialAt(int index) => _meshMaterials[index];
+    internal SpriteEmissionFrame EmissionAt(int index) => _meshEmission[index];
 
     internal Sprite GetCrystalCollectionSprite(string colorLetter)
     {
@@ -134,7 +172,8 @@ public sealed class SpriteAnimationLibrary : IDisposable
         return sprites;
     }
 
-    private Texture2D ImportTexture(string resource)
+    private Texture2D ImportTexture(string resource,
+        Dictionary<string, (Color32[] Pixels, int Width, int Height)>? emissionPixels = null)
     {
         TextAsset image = Resources.Load<TextAsset>(resource)
             ?? throw new InvalidOperationException($"Missing sprite animation texture: {resource}.");
@@ -145,6 +184,7 @@ public sealed class SpriteAnimationLibrary : IDisposable
         try
         {
             Color32[] encoded = source.GetPixels32();
+            emissionPixels?.Add(resource, (encoded, source.width, source.height));
             var pixels = new Color[encoded.Length];
             for (int index = 0; index < pixels.Length; index++)
             {

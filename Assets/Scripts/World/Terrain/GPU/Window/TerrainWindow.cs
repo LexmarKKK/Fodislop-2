@@ -62,6 +62,8 @@ public sealed class TerrainWindow
 
     public Mesh? CellIdMesh => _publishedView.CellIdMesh;
 
+    internal TerrainVolumeTopology VolumeTopology => _publishedView.VolumeTopology;
+
     public Vector2Int Origin => _publishedView.Origin;
 
     public int Width => _publishedView.Width;

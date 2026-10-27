@@ -25,8 +25,12 @@ public class ClientConfig
     // 44: на мобильной платформе UIScale — множитель поверх dp; сброс к 1.0.
     // 45: объединение веток схемы: ApiPort и сохранённая геометрия чата.
     // Поля аддитивные; существующие значения сохраняются.
-    // Схемы 31–44 мигрируются штатным загрузчиком с созданием backup.
-    public const int CurrentSchemaVersion = 45;
+    // 46: TerrainSettings.DepthPixels и DepthDarkening для стенок тоннелей.
+    // 47: EffectSettings.FisheyeScale — сохраняемая сила рыбьего глаза.
+    // 48: независимый масштаб текста и полные клавиатурные привязки.
+    // 49: отдельные тумблеры рыбьего глаза и глубины, изначально выключены.
+    // Схемы 31–48 мигрируются штатным загрузчиком с созданием backup.
+    public const int CurrentSchemaVersion = 49;
 
     public int SchemaVersion;
     public AudioSettings Audio = new();

@@ -17,14 +17,16 @@ internal static class AssetCacheDecoder
         Texture2D? Texture,
         float FPS,
         int FrameHeight,
-        int FrameCount);
+        int FrameCount,
+        SpriteEmissionFrame[] FrameEmission);
 
     public readonly record struct DecodedAnimationResult(
         Sprite[] Sprites,
         Texture2D Atlas,
         float FPS,
         int FrameHeight,
-        int FrameCount);
+        int FrameCount,
+        SpriteEmissionFrame[] FrameEmission);
 
     public static DecodedTextureResult DecodeTexture(byte[] bytes, string filename)
     {
@@ -34,27 +36,31 @@ internal static class AssetCacheDecoder
         {
             Texture2D m3g = M3GImageDecoder.Decode(bytes);
             m3g.name = $"Cache_M3G_{DateTime.Now.Ticks}";
-            return new DecodedTextureResult(m3g, 0f, 0, 0);
+            return new DecodedTextureResult(m3g, 0f, 0, 0, Array.Empty<SpriteEmissionFrame>());
         }
 
         bool makeNoLongerReadable = RuntimeTextureFactory.SupportsTexture2DGPUCopy;
+        bool emissionNeedsPixels = EncodedImageHeader.TryReadSize(bytes, out int headerWidth, out int headerHeight) &&
+            AnimationContainerDecoder.TryGetAnimationConfig(filename, headerWidth, headerHeight,
+                out _, out _, out int headerFrames, out _) && headerFrames > 1;
         Texture2D? staticTex = RuntimeTextureFactory.DecodeEncodedImageToRGBA32NoMip(
             bytes,
             $"Cache_Tex_{DateTime.Now.Ticks}",
             RuntimeTextureColorSpace.Srgb,
             FilterMode.Point,
             TextureWrapMode.Clamp,
-            makeNoLongerReadable: makeNoLongerReadable);
+            makeNoLongerReadable: makeNoLongerReadable && !emissionNeedsPixels);
 
         int frameHeight = 0;
         int frameCount = 0;
         float fps = 0f;
+        SpriteEmissionFrame[] emission = Array.Empty<SpriteEmissionFrame>();
         if (staticTex != null &&
             AnimationContainerDecoder.TryGetAnimationConfig(
                 filename,
                 staticTex.width,
                 staticTex.height,
-                out _,
+                out int fw,
                 out int fh,
                 out int fc,
                 out float fFPS) &&
@@ -63,9 +69,15 @@ internal static class AssetCacheDecoder
             frameHeight = fh;
             frameCount = fc;
             fps = fFPS;
+            emission = SpriteEmissionIntegrator.Frames(staticTex, fw, fh, fc,
+                AnimationContainerDecoder.ResolvePixelsPerUnit(filename, fw));
         }
 
-        return new DecodedTextureResult(staticTex, fps, frameHeight, frameCount);
+        if (makeNoLongerReadable && emissionNeedsPixels && staticTex != null)
+        {
+            staticTex.Apply(updateMipmaps: false, makeNoLongerReadable: true);
+        }
+        return new DecodedTextureResult(staticTex, fps, frameHeight, frameCount, emission);
     }
 
     private static bool IsM3G(string filename)
@@ -107,7 +119,9 @@ internal static class AssetCacheDecoder
         Sprite[] sprites = AnimationContainerDecoder.Decode(
             atlas, frameWidth, frameHeight, frameCount,
             AnimationContainerDecoder.ResolvePixelsPerUnit(filename, frameWidth));
-        return new DecodedAnimationResult(sprites, atlas, fps, frameHeight, frameCount);
+        SpriteEmissionFrame[] emission = SpriteEmissionIntegrator.Frames(atlas, frameWidth, frameHeight, frameCount,
+            AnimationContainerDecoder.ResolvePixelsPerUnit(filename, frameWidth));
+        return new DecodedAnimationResult(sprites, atlas, fps, frameHeight, frameCount, emission);
     }
 
     public static Sprite[] SliceAnimationFromTexture(Texture2D texture, int frameHeight, int frameCount,

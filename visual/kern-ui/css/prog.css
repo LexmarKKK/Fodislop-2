@@ -1,0 +1,102 @@
+/* Программатор: окно на всю доступную высоту; сетка 16×12 клеток по 40 px (ProgrammatorData.CELL_SIZE), справа палитра */
+.prog-win { position: relative; width: min(1140px, calc(100% - 48px)); height: min(860px, calc(100% - 48px)); display: flex; flex-direction: column; overflow: hidden; }
+.prog-head { gap: 12px; }
+.prog-head h2 { flex: none; }
+.prog-pick { margin-right: auto; display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 3px; border: 1px solid var(--seam-strong); background: var(--plate); color: var(--bone); font: inherit; font-weight: 600; cursor: pointer; min-width: 0; }
+.prog-pick:hover { background: var(--plate-hover); }
+.prog-pick span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 240px; }
+.prog-pick svg { width: 16px; height: 16px; color: var(--ash); }
+.prog-state { flex: none; color: var(--ash); font-size: var(--t-small); white-space: nowrap; }
+.prog-state.is-run { color: var(--ok); }
+.prog-state.is-paused { color: var(--signal); }
+
+.prog-bar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 12px; border-bottom: 1px solid var(--seam); }
+.prog-group { display: flex; align-items: center; gap: 2px; }
+.prog-group + .prog-group { padding-left: 14px; border-left: 1px solid var(--seam); }
+.prog-group--run { gap: 4px; margin-right: 6px; }
+.prog-group .icon-btn { width: 32px; height: 32px; }
+.prog-group .icon-btn svg { width: 18px; height: 18px; }
+.prog-group .icon-btn:disabled { opacity: .35; cursor: default; background: none; }
+.prog-group .icon-btn[aria-pressed="true"] { color: var(--signal); background: var(--signal-soft); }
+.prog-group .icon-btn[aria-pressed="true"]::after { content: none; }
+.prog-page { min-width: 72px; text-align: center; color: var(--bone); font-size: var(--t-small); font-variant-numeric: tabular-nums; }
+.prog-go { display: flex; align-items: center; gap: 8px; height: 32px; margin-left: 6px; }
+.prog-go svg { width: 16px; height: 16px; fill: currentColor; stroke: none; }
+.prog-go.is-stop { background: var(--danger); border-color: var(--danger); color: #fff; }
+.prog-error { flex: none; padding: 6px 16px; color: var(--danger); font-size: var(--t-small); border-bottom: 1px solid var(--seam); }
+
+.prog-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 300px; }
+.prog-grid-wrap { overflow: auto; display: grid; place-items: center; padding: 12px; background: var(--well); }
+.prog-grid { --cell: 48px; display: grid; grid-template-columns: repeat(16, var(--cell)); grid-auto-rows: var(--cell); gap: 1px; padding: 1px; background: var(--seam); border-radius: 2px; }
+.prog-win.is-run .prog-grid { background: var(--ok); }
+.prog-cell { position: relative; display: grid; place-items: center; background: #0e1316; border: 0; padding: 0; cursor: pointer; color: var(--bone); font: inherit; }
+.prog-cell:hover { background: #172026; }
+.prog-cell img { width: 26px; height: 26px; image-rendering: pixelated; pointer-events: none; }
+.prog-cell.is-sel { background: var(--signal-soft); box-shadow: inset 0 0 0 2px var(--signal); }
+.prog-cell.is-start::before { content: ""; position: absolute; left: 2px; top: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
+.prog-cell.is-here { box-shadow: inset 0 0 0 2px var(--ok); background: rgba(121, 217, 138, .16); }
+.prog-cell.is-break::after { content: ""; position: absolute; right: 2px; top: 2px; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); }
+/* Значение команды (метка, имя переменной, число) — строкой внизу клетки */
+.prog-cell small { position: absolute; left: 1px; right: 1px; bottom: 0; font-size: 9px; line-height: 11px; color: var(--signal); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: clip; pointer-events: none; }
+.prog-cell small + img, .prog-cell:has(small) img { translate: 0 -4px; }
+
+.prog-side { min-height: 0; border-left: 1px solid var(--seam); display: flex; flex-direction: column; }
+.prog-tabs { margin: 12px 12px 0; width: auto; }
+.prog-cats { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px 12px; border-bottom: 1px solid var(--seam); }
+.prog-cats button { display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 14px; border: 1px solid var(--seam-strong); background: none; color: var(--ash); font: inherit; font-size: var(--t-small); cursor: pointer; }
+.prog-cats button i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.prog-cats button[aria-pressed="true"] { color: var(--bone); border-color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); }
+.prog-ops { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); align-content: start; gap: 4px; }
+.prog-op { height: 44px; display: grid; place-items: center; border-radius: 3px; border: 1px solid var(--seam); background: var(--plate); cursor: pointer; padding: 0; }
+.prog-op:hover, .prog-op:focus-visible { border-color: var(--c); }
+.prog-op img { width: 26px; height: 26px; image-rendering: pixelated; }
+.prog-mem { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
+.prog-mem table { width: 100%; border-collapse: collapse; font-size: var(--t-small); }
+.prog-mem th { color: var(--smoke); font-weight: 600; text-align: left; padding: 0 0 6px; }
+.prog-mem td { padding: 5px 0; border-top: 1px solid var(--seam); font-variant-numeric: tabular-nums; }
+.prog-mem td:last-child, .prog-mem th:last-child { text-align: right; }
+.prog-mem .is-changed td:last-child { color: var(--signal); }
+.prog-mem-note { color: var(--ash); font-size: var(--t-small); line-height: 1.45; }
+
+/* Подвал: что под курсором — название, код и клавиша; без курсора — что выбрано */
+.prog-foot { flex: none; min-height: 34px; display: flex; align-items: center; gap: 14px; padding: 0 16px; border-top: 1px solid var(--seam); color: var(--ash); font-size: var(--t-small); white-space: nowrap; overflow: hidden; }
+.prog-foot-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; overflow: hidden; }
+.prog-foot b { color: var(--bone); font-weight: 600; }
+.prog-foot kbd { padding: 1px 6px; border-radius: 3px; border: 1px solid var(--seam-strong); color: var(--bone); font: inherit; }
+
+/* Список программ — поверх окна, у кнопки выбора */
+.prog-list { position: absolute; z-index: 3; left: 12px; top: 56px; width: 340px; max-height: calc(100% - 68px); display: flex; flex-direction: column; background: #12171b; border: 1px solid var(--seam-strong); border-radius: var(--radius); box-shadow: 0 12px 32px rgba(0, 0, 0, .5); }
+.prog-list[hidden] { display: none; }
+.prog-list header { display: flex; align-items: center; justify-content: space-between; padding: 6px 6px 6px 14px; border-bottom: 1px solid var(--seam); }
+.prog-list h3 { font-size: var(--t-body); }
+.prog-list ul { list-style: none; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.prog-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 2px; border-radius: 3px; }
+.prog-list li.is-on { background: var(--signal-soft); }
+.prog-list li > button:first-child { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; padding: 8px 10px; background: none; border: 0; color: var(--bone); font: inherit; text-align: left; cursor: pointer; }
+.prog-list li > button:first-child b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.prog-list li > button:first-child small { color: var(--ash); font-size: 11px; }
+.prog-list li input { margin: 4px; height: 32px; min-width: 0; }
+.prog-list .icon-btn { width: 32px; height: 32px; }
+.prog-list .icon-btn svg { width: 16px; height: 16px; }
+.prog-create { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--seam); }
+.prog-create .input { flex: 1; min-width: 0; height: 36px; }
+
+/* ── Компактный экран: окно целиком, палитра уже, клетки крупнее под палец ── */
+.frame.compact .prog-win { width: 100%; height: 100%; border-radius: 0; }
+.frame.compact .prog-head { height: 44px; padding-left: 16px; }
+.frame.compact .prog-body { grid-template-columns: minmax(0, 1fr) 236px; }
+.frame.compact .prog-grid-wrap { place-items: start; padding: 6px; }
+.frame.compact .prog-bar { gap: 4px 8px; padding: 4px 8px; flex-wrap: nowrap; overflow-x: auto; }
+.frame.compact .prog-group + .prog-group { padding-left: 8px; }
+.frame.compact .prog-tabs { margin: 8px 8px 0; width: auto; }
+.frame.compact .prog-head h2 { font-size: var(--t-body); }
+.frame.compact .prog-cats { padding: 6px 8px; }
+.frame.compact .prog-ops { padding: 6px 8px; }
+.frame.compact .prog-foot { min-height: 28px; }
+.frame.in-touch .prog-grid { --cell: 44px; }
+.frame.in-touch .prog-group .icon-btn, .frame.in-touch .prog-go { width: 44px; height: 44px; }
+.frame.in-touch .prog-go { width: auto; }
+.frame.in-touch .prog-cats button { height: 36px; }
+.frame.compact .prog-list { left: 8px; top: 48px; max-height: calc(100% - 56px); width: min(340px, calc(100% - 16px)); }
+.prog-cell-input { position: absolute; z-index: 1; left: -1px; bottom: -22px; width: 96px; height: 24px; padding: 0 6px; border: 1px solid var(--signal); border-radius: 2px; background: var(--well); color: var(--bone); font: inherit; font-size: 12px; }
+.prog-cell-input:focus { outline: none; }

@@ -148,7 +148,7 @@ internal sealed class TerrainWindowBuildRequestScheduler : IDisposable
             // набор не собран целиком.
             if (intent.MeshRenderer != null)
             {
-                intent.MeshRenderer.sharedMaterials = _driver.Presentation.CellMaterials;
+                intent.MeshRenderer.sharedMaterials = _driver.Presentation.PresentationMaterials;
             }
 
             if (_publishedView.CellsCommitted)

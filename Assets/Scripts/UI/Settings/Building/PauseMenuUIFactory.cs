@@ -94,7 +94,7 @@ internal static class PauseMenuUIFactory
         float Quantize(float value) => quantum > 0f
             ? Mathf.Clamp(Mathf.Round(value / quantum) * quantum, minimum, maximum)
             : SnapValue(value, minimum, maximum);
-        string Format(float value) => quantum > 0f
+        string Format(float value) => quantum >= 1f
             ? $"{labelText}: {value:F0}"
             : $"{labelText}: {value:F2}";
 

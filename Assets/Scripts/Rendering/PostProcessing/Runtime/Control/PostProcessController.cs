@@ -225,6 +225,9 @@ namespace Kern.Rendering.PostProcessing
 
             Debug.Log($"[PostProcessController] ApplyClientConfig: Bloom={config.Effects.BloomEnabled}, Vignette={config.Effects.VignetteEnabled}");
 
+            PostProcessRuntimeState.FisheyeScale = config.Effects.FisheyeEnabled
+                ? Mathf.Clamp(config.Effects.FisheyeScale, 0f, 10f) : 0f;
+
             BloomComponent bloom = GetRequired(_bloom, nameof(_bloom));
             bloom.threshold.overrideState = true;
             bloom.threshold.value = PostProcessLook.Bloom.Threshold;

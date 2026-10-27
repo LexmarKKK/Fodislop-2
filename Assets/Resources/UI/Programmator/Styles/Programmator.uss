@@ -912,3 +912,5 @@
 .prog-joy-center .prog-joy-item-label {
     font-size: var(--size-md);
 }
+
+.prog-list-name.text-size-fixed-18 { font-size: var(--size-fixed-18); }

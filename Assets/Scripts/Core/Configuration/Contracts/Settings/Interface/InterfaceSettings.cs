@@ -15,6 +15,11 @@ public sealed class InterfaceSettings
     [SettingConsumer(SettingConsumerTarget.UserInterface, "PauseMenu / UIDocument panelSettings.scale")]
     public float UIScale = 1f;
 
+    [SettingRange(0.75f, 2f)]
+    [SettingLabel("settings.interface.text_scale")]
+    [SettingConsumer(SettingConsumerTarget.UserInterface, "UIScreen.SetTextScale")]
+    public float TextScale = 1f;
+
     [SettingUnbounded("Код языка из перечня локализаций; проверяется списком.")]
     [SettingLabel("settings.interface.language")]
     [SettingConsumer(SettingConsumerTarget.LocalizationService, "LocalizationService.SetLanguage")]
@@ -44,6 +49,67 @@ public sealed class InterfaceSettings
     // перебиндивает по клику, «Сбросить до стандартных» возвращает дефолты.
     // Неизвестное имя (правка конфига руками) откатывается к дефолту
     // действия на месте использования, поэтому валидатор их не проверяет.
+    public const string DefaultKeyMoveUp = "W";
+    public const string DefaultKeyMoveDown = "S";
+    public const string DefaultKeyMoveLeft = "A";
+    public const string DefaultKeyMoveRight = "D";
+    public const string DefaultKeyMoveUpAlternate = "UpArrow";
+    public const string DefaultKeyMoveDownAlternate = "DownArrow";
+    public const string DefaultKeyMoveLeftAlternate = "LeftArrow";
+    public const string DefaultKeyMoveRightAlternate = "RightArrow";
+    public const string DefaultKeyTurnOnly = "LeftShift";
+    public const string DefaultKeyTurnOnlyAlternate = "RightShift";
+    public const string DefaultKeyFastMove = "LeftCtrl";
+    public const string DefaultKeyFastMoveAlternate = "RightCtrl";
+
+    [SettingUnbounded("Имя клавиши UnityEngine.InputSystem.Key.")]
+    [SettingConsumer(SettingConsumerTarget.Gameplay, "PlayerInputHandler")]
+    public string KeyMoveUp = DefaultKeyMoveUp;
+
+    [SettingUnbounded("Имя клавиши UnityEngine.InputSystem.Key.")]
+    [SettingConsumer(SettingConsumerTarget.Gameplay, "PlayerInputHandler")]
+    public string KeyMoveDown = DefaultKeyMoveDown;
+
+    [SettingUnbounded("Имя клавиши UnityEngine.InputSystem.Key.")]
+    [SettingConsumer(SettingConsumerTarget.Gameplay, "PlayerInputHandler")]
+    public string KeyMoveLeft = DefaultKeyMoveLeft;
+
+    [SettingUnbounded("Имя клавиши UnityEngine.InputSystem.Key.")]
+    [SettingConsumer(SettingConsumerTarget.Gameplay, "PlayerInputHandler")]
+    public string KeyMoveRight = DefaultKeyMoveRight;
+
+    [SettingUnbounded("Имя клавиши UnityEngine.InputSystem.Key.")]
+    [SettingConsumer(SettingConsumerTarget.Gameplay, "PlayerInputHandler")]
+    public string KeyMoveUpAlternate = DefaultKeyMoveUpAlternate;
+
+    [SettingUnbounded("Имя клавиши UnityEngine.InputSystem.Key.")]
+    [SettingConsumer(SettingConsumerTarget.Gameplay, "PlayerInputHandler")]
+    public string KeyMoveDownAlternate = DefaultKeyMoveDownAlternate;
+
+    [SettingUnbounded("Имя клавиши UnityEngine.InputSystem.Key.")]
+    [SettingConsumer(SettingConsumerTarget.Gameplay, "PlayerInputHandler")]
+    public string KeyMoveLeftAlternate = DefaultKeyMoveLeftAlternate;
+
+    [SettingUnbounded("Имя клавиши UnityEngine.InputSystem.Key.")]
+    [SettingConsumer(SettingConsumerTarget.Gameplay, "PlayerInputHandler")]
+    public string KeyMoveRightAlternate = DefaultKeyMoveRightAlternate;
+
+    [SettingUnbounded("Имя клавиши UnityEngine.InputSystem.Key.")]
+    [SettingConsumer(SettingConsumerTarget.Gameplay, "PlayerInputHandler")]
+    public string KeyTurnOnly = DefaultKeyTurnOnly;
+
+    [SettingUnbounded("Имя клавиши UnityEngine.InputSystem.Key.")]
+    [SettingConsumer(SettingConsumerTarget.Gameplay, "PlayerInputHandler")]
+    public string KeyTurnOnlyAlternate = DefaultKeyTurnOnlyAlternate;
+
+    [SettingUnbounded("Имя клавиши UnityEngine.InputSystem.Key.")]
+    [SettingConsumer(SettingConsumerTarget.Gameplay, "PlayerInputHandler")]
+    public string KeyFastMove = DefaultKeyFastMove;
+
+    [SettingUnbounded("Имя клавиши UnityEngine.InputSystem.Key.")]
+    [SettingConsumer(SettingConsumerTarget.Gameplay, "PlayerInputHandler")]
+    public string KeyFastMoveAlternate = DefaultKeyFastMoveAlternate;
+
     public const string DefaultKeyDig = "Space";
     public const string DefaultKeyAutoDig = "E";
     public const string DefaultKeyGeo = "G";
@@ -121,4 +187,25 @@ public sealed class InterfaceSettings
     [SettingUnbounded("Пиксели панели UI; минимум и границы экрана проверяет ChatWindowInteractionController.")]
     [SettingConsumer(SettingConsumerTarget.UserInterface, "ChatWindowInteractionController.ApplySavedLayout")]
     public float ChatWindowHeight;
+    public bool IsGameplayKey(string keyName) =>
+        string.Equals(KeyMoveUp, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyMoveDown, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyMoveLeft, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyMoveRight, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyMoveUpAlternate, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyMoveDownAlternate, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyMoveLeftAlternate, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyMoveRightAlternate, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyTurnOnly, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyTurnOnlyAlternate, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyFastMove, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyFastMoveAlternate, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyDig, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyAutoDig, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyGeo, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyHeal, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyBuildCyan, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyBuildGray, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyBuildGreen, keyName, StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(KeyBuildWhite, keyName, StringComparison.OrdinalIgnoreCase);
 }

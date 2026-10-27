@@ -14,6 +14,7 @@ namespace Kern.World.Terrain;
 internal sealed class TerrainWindowPublishedView : System.IDisposable
 {
     private readonly TerrainCellIdMesh _cellIdMesh = new();
+    internal TerrainVolumeTopology VolumeTopology { get; } = new();
     private Transform? _transform;
     private float _cellSize = 1f;
     private bool _cellTexturesDirty;
@@ -88,8 +89,10 @@ internal sealed class TerrainWindowPublishedView : System.IDisposable
             return 0f;
         }
 
-        _cellTexturesDirty = false;
+        CellsCommitted = false;
+        VolumeTopology.Publish(driver.Pipeline.CellBuilder.Buffers, Origin, Width, Height, driver.Pipeline.EnableDistortion);
         float uploadMs = driver.Commit(Origin.x, Origin.y);
+        _cellTexturesDirty = false;
         CellsCommitted = true;
         return uploadMs;
     }

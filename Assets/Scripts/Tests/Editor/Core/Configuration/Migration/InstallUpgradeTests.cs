@@ -60,6 +60,167 @@ public sealed class InstallUpgradeTests
         }
     }
 
+    [TestCase(44)]
+    [TestCase(45)]
+    public void PreDepthConfig_MigratesMissingDepthSettingsAndPreservesSavedValues(int schema)
+    {
+        ClientConfig legacy = ClientConfigDefaults.Create(_profile);
+        legacy.SchemaVersion = schema;
+        legacy.Audio.MasterVolume = 0.37f;
+        legacy.Connection.ServerHost = "depth-migration.test";
+        legacy.Connection.ApiPort = 4321;
+        legacy.Terrain.ShimmerSpeedScale = 0.23f;
+        legacy.Terrain.EnableRim = false;
+        Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
+        string original = JsonUtility.ToJson(legacy, prettyPrint: true);
+        original = Regex.Replace(original, """\s*"DepthPixels"\s*:\s*[^,}]+,""", "");
+        original = Regex.Replace(original, """\s*"DepthDarkening"\s*:\s*[^,}]+,""", "");
+        File.WriteAllText(ConfigPath, original);
+
+        ClientConfigLoader.Result result = LoadConfig();
+
+        Assert.That(result.Outcome, Is.EqualTo(ClientConfigLoader.Outcome.Migrated));
+        Assert.That(result.SourceSchemaVersion, Is.EqualTo(schema));
+        Assert.That(result.Config.SchemaVersion, Is.EqualTo(ClientConfig.CurrentSchemaVersion));
+        Assert.That(result.Config.Terrain.DepthPixels, Is.EqualTo(16f));
+        Assert.That(result.Config.Terrain.DepthDarkening, Is.EqualTo(0.35f));
+        Assert.That(result.Config.Audio.MasterVolume, Is.EqualTo(0.37f));
+        Assert.That(result.Config.Connection.ServerHost, Is.EqualTo("depth-migration.test"));
+        Assert.That(result.Config.Connection.ApiPort, Is.EqualTo(4321));
+        Assert.That(result.Config.Terrain.ShimmerSpeedScale, Is.EqualTo(0.23f));
+        Assert.That(result.Config.Terrain.EnableRim, Is.False);
+        Assert.That(File.ReadAllText(ConfigPath + ".backup"), Is.EqualTo(original));
+        ClientConfig reloaded = new ClientConfigRepository(ConfigPath).Load().Config;
+        Assert.That(reloaded.Terrain.DepthPixels, Is.EqualTo(16f));
+        Assert.That(reloaded.Terrain.DepthDarkening, Is.EqualTo(0.35f));
+        Assert.That(LoadConfig().Outcome, Is.EqualTo(ClientConfigLoader.Outcome.Loaded));
+    }
+
+    [Test]
+    public void Schema45WithSavedDepthValues_PreservesDisabledEffect()
+    {
+        ClientConfig legacy = ClientConfigDefaults.Create(_profile);
+        legacy.SchemaVersion = 45;
+        legacy.Terrain.DepthPixels = 0f;
+        legacy.Terrain.DepthDarkening = 0.18f;
+        Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
+        File.WriteAllText(ConfigPath, JsonUtility.ToJson(legacy, prettyPrint: true));
+
+        ClientConfigLoader.Result result = LoadConfig();
+
+        Assert.That(result.Outcome, Is.EqualTo(ClientConfigLoader.Outcome.Migrated));
+        Assert.That(result.Config.Terrain.DepthPixels, Is.Zero);
+        Assert.That(result.Config.Terrain.DepthDarkening, Is.EqualTo(0.18f));
+    }
+
+    [TestCase(44)]
+    [TestCase(45)]
+    [TestCase(46)]
+    public void PreFisheyeConfig_MigratesMissingScaleAndPreservesVolume(int schema)
+    {
+        ClientConfig legacy = ClientConfigDefaults.Create(_profile);
+        legacy.SchemaVersion = schema;
+        legacy.Terrain.DepthPixels = 0f;
+        legacy.Terrain.DepthDarkening = 0.18f;
+        legacy.Audio.MasterVolume = 0.37f;
+        Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
+        string original = Regex.Replace(
+            JsonUtility.ToJson(legacy, prettyPrint: true),
+            """\s*"FisheyeScale"\s*:\s*[^,}]+,""", "");
+        File.WriteAllText(ConfigPath, original);
+
+        ClientConfigLoader.Result result = LoadConfig();
+
+        Assert.That(result.Outcome, Is.EqualTo(ClientConfigLoader.Outcome.Migrated));
+        Assert.That(result.Config.SchemaVersion, Is.EqualTo(ClientConfig.CurrentSchemaVersion));
+        Assert.That(result.Config.Effects.FisheyeScale, Is.EqualTo(1f));
+        Assert.That(result.Config.Terrain.DepthPixels, Is.Zero);
+        Assert.That(result.Config.Terrain.DepthDarkening, Is.EqualTo(0.18f));
+        Assert.That(result.Config.Audio.MasterVolume, Is.EqualTo(0.37f));
+        Assert.That(File.ReadAllText(ConfigPath + ".backup"), Is.EqualTo(original));
+        Assert.That(new ClientConfigRepository(ConfigPath).Load().Config.Effects.FisheyeScale, Is.EqualTo(1f));
+        Assert.That(LoadConfig().Outcome, Is.EqualTo(ClientConfigLoader.Outcome.Loaded));
+    }
+
+    [TestCase(0f)]
+    [TestCase(2.5f)]
+    public void Schema46WithSavedFisheyeScale_PreservesExplicitValue(float scale)
+    {
+        ClientConfig legacy = ClientConfigDefaults.Create(_profile);
+        legacy.SchemaVersion = 46;
+        legacy.Effects.FisheyeScale = scale;
+        Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
+        File.WriteAllText(ConfigPath, JsonUtility.ToJson(legacy, prettyPrint: true));
+
+        ClientConfigLoader.Result result = LoadConfig();
+
+        Assert.That(result.Outcome, Is.EqualTo(ClientConfigLoader.Outcome.Migrated));
+        Assert.That(result.Config.Effects.FisheyeScale, Is.EqualTo(scale));
+        Assert.That(new ClientConfigRepository(ConfigPath).Load().Config.Effects.FisheyeScale, Is.EqualTo(scale));
+    }
+
+    [TestCase(45)]
+    [TestCase(46)]
+    [TestCase(47)]
+    public void PreTextAndMovementConfig_PreservesScaleAndCustomActions(int schema)
+    {
+        ClientConfig legacy = ClientConfigDefaults.Create(_profile);
+        legacy.SchemaVersion = schema;
+        legacy.Interface.UIScale = 1.2f;
+        legacy.Interface.KeyDig = "W";
+        legacy.Effects.FisheyeScale = 0f;
+        string original = JsonUtility.ToJson(legacy, prettyPrint: true);
+        foreach (string field in new[] { "TextScale", "KeyMoveUp", "KeyMoveDown", "KeyMoveLeft", "KeyMoveRight",
+            "KeyMoveUpAlternate", "KeyMoveDownAlternate", "KeyMoveLeftAlternate", "KeyMoveRightAlternate",
+            "KeyTurnOnly", "KeyTurnOnlyAlternate", "KeyFastMove", "KeyFastMoveAlternate" })
+        {
+            original = Regex.Replace(original, "\\s*\"" + field + "\"\\s*:\\s*[^,}]+,", "");
+        }
+        Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
+        File.WriteAllText(ConfigPath, original);
+
+        ClientConfigLoader.Result result = LoadConfig();
+
+        Assert.That(result.Outcome, Is.EqualTo(ClientConfigLoader.Outcome.Migrated));
+        Assert.That(result.Config.Interface.TextScale, Is.EqualTo(1f));
+        Assert.That(result.Config.Interface.UIScale, Is.EqualTo(1.2f));
+        Assert.That(result.Config.Interface.KeyDig, Is.EqualTo("W"));
+        Assert.That(result.Config.Interface.KeyMoveUp, Is.EqualTo("None"));
+        Assert.That(result.Config.Interface.KeyMoveUpAlternate, Is.EqualTo("UpArrow"));
+        Assert.That(result.Config.Interface.KeyTurnOnly, Is.EqualTo("LeftShift"));
+        Assert.That(result.Config.Effects.FisheyeScale, Is.Zero);
+        Assert.That(File.ReadAllText(ConfigPath + ".backup"), Is.EqualTo(original));
+        Assert.That(LoadConfig().Outcome, Is.EqualTo(ClientConfigLoader.Outcome.Loaded));
+    }
+
+    [Test]
+    public void Schema48_DisablesNewPresentationSwitchesWithoutLosingStrengths()
+    {
+        ClientConfig legacy = ClientConfigDefaults.Create(_profile);
+        legacy.SchemaVersion = 48;
+        legacy.Effects.FisheyeScale = 2.5f;
+        legacy.Terrain.DepthPixels = 12f;
+        legacy.Terrain.DepthDarkening = 0.42f;
+        string original = JsonUtility.ToJson(legacy, prettyPrint: true);
+        foreach (string field in new[] { "FisheyeEnabled", "DepthEnabled" })
+        {
+            original = Regex.Replace(original, "\\s*\"" + field + "\"\\s*:\\s*[^,}]+,", "");
+        }
+        Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
+        File.WriteAllText(ConfigPath, original);
+
+        ClientConfigLoader.Result result = LoadConfig();
+
+        Assert.That(result.Config.Effects.FisheyeEnabled, Is.False);
+        Assert.That(result.Config.Terrain.DepthEnabled, Is.False);
+        Assert.That(result.Config.Effects.FisheyeScale, Is.EqualTo(2.5f));
+        Assert.That(result.Config.Terrain.DepthPixels, Is.EqualTo(12f));
+        Assert.That(result.Config.Terrain.DepthDarkening, Is.EqualTo(0.42f));
+        Assert.That(result.Config.SchemaVersion, Is.EqualTo(ClientConfig.CurrentSchemaVersion));
+        Assert.That(File.ReadAllText(ConfigPath + ".backup"), Is.EqualTo(original));
+        Assert.That(LoadConfig().Outcome, Is.EqualTo(ClientConfigLoader.Outcome.Loaded));
+    }
+
     [Test]
     public void CleanInstall_CreatesCurrentFormatsWithoutBackups()
     {

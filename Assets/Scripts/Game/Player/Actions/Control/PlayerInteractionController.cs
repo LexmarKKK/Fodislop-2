@@ -27,6 +27,8 @@ namespace Kern.Game.Player.Actions
         [Inject]
         private IMapDataProvider _mapManager = null!;
         [Inject]
+        private IClientConfigManager _clientConfig = null!;
+        [Inject]
         private INetworkService _networkService = null!;
         [Inject]
         private Kern.Core.Interfaces.IInputBlocker _inputBlocker = null!;
@@ -123,6 +125,12 @@ namespace Kern.Game.Player.Actions
 
         protected void Update()
         {
+            if (!Application.isFocused)
+            {
+                _hasPendingClick = false;
+                return;
+            }
+
             EnsureUIEventSubscription();
             if (!_touchSubscribed && _touchGestures != null)
             {
@@ -204,23 +212,8 @@ namespace Kern.Game.Player.Actions
                 return;
             }
 
-            Vector2Int serverPosition;
-            try
-            {
-                serverPosition = WorldCoordinateConverter.UnityToServerPos(worldPos, _mapManager.WorldHeight);
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                return;
-            }
-
-            if (!PlayerMovementController.IsWithinWorldBounds(
-                    serverPosition,
-                    _mapManager.WorldWidth,
-                    _mapManager.WorldHeight))
-            {
-                return;
-            }
+            Vector2Int serverPosition = WorldCoordinateConverter.UnityToServerCellIncludingBoundary(
+                worldPos, _mapManager.WorldHeight);
 
             // ЛКМ по миру: строим клик-маршрут и ведём робота до цели
             // (пунктирная линия рисуется рендерером маршрута).
@@ -279,9 +272,9 @@ namespace Kern.Game.Player.Actions
             }
         }
 
-        private static bool IsLocallyHandledKey(Key key)
+        private bool IsLocallyHandledKey(Key key)
         {
-            return key is Key.W or Key.A or Key.S or Key.D or
+            return _clientConfig.Config.Interface.IsGameplayKey(key.ToString()) || key is Key.W or Key.A or Key.S or Key.D or
                           Key.UpArrow or Key.DownArrow or Key.LeftArrow or Key.RightArrow or
                           Key.Space or Key.E or Key.L or Key.G or Key.V or
                           Key.Y or Key.H or Key.F or Key.J or

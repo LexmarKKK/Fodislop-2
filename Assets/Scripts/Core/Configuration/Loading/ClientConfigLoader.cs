@@ -36,6 +36,11 @@ internal sealed class ClientConfigLoader
     private const int HandheldUIScaleCorrectionSchemaVersion = 42;
     private const int AndroidLightingPresetSchemaVersion = 43;
     private const int PhysicalUIScaleSchemaVersion = 44;
+    private const int MergedConfigSchemaVersion = 45;
+    private const int TerrainDepthSchemaVersion = 46;
+    private const int FisheyeSettingsSchemaVersion = 47;
+    private const int InputAndTextSettingsSchemaVersion = 48;
+    private const int PresentationTogglesSchemaVersion = 49; // Additive switches default off; strengths are preserved.
 
     private readonly ClientConfigRepository _repository;
     private readonly ClientConfigValidator _validator;
@@ -345,10 +350,31 @@ internal sealed class ClientConfigLoader
         // defaults supplies absent additive fields without replacing saved ones.
         if (schema == PhysicalUIScaleSchemaVersion)
         {
-            schema = ClientConfig.CurrentSchemaVersion;
+            schema = MergedConfigSchemaVersion;
         }
 
-        config.SchemaVersion = schema;
+        if (schema == MergedConfigSchemaVersion)
+        {
+            // 45 -> 46: additive tunnel-wall settings. Loading onto initialized
+            // defaults supplies 16 pixels / 35% darkening when absent, while
+            // preserving explicitly saved values, including zero depth.
+            schema = TerrainDepthSchemaVersion;
+        }
+
+        if (schema == TerrainDepthSchemaVersion)
+        {
+            // Initialized defaults supply scale 1 when absent; saved zero stays zero.
+            schema = FisheyeSettingsSchemaVersion;
+        }
+
+        if (schema == FisheyeSettingsSchemaVersion)
+        {
+            InputAndTextConfigMigration.Apply(config.Interface, sourceJson);
+            schema = InputAndTextSettingsSchemaVersion;
+        }
+
+        config.SchemaVersion = schema == InputAndTextSettingsSchemaVersion
+            ? PresentationTogglesSchemaVersion : schema;
     }
 
     private static void MigrateFlatVisualsToSections(ClientConfig config, string sourceJson)

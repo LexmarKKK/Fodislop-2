@@ -180,7 +180,7 @@ public sealed class GamePresentationStartup
         report.RunCritical("surface_settings", () => _surface.ApplyClientConfig());
         report.RunCritical("ui_scale", () =>
         {
-            Kern.UI.Screens.UIScreen.Bind(_uiDocument, _clientConfig.Config.Interface.UIScale);
+            Kern.UI.Screens.UIScreen.Bind(_uiDocument, _clientConfig.Config.Interface.UIScale, _clientConfig.Config.Interface.TextScale);
         });
         report.RunCritical("game_ui", _gameManager.EnsureUISetup);
         report.RunCritical("player_hud", _playerHud.EnsureInitialized);

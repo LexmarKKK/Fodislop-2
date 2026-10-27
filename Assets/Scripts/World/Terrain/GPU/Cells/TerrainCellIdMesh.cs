@@ -13,52 +13,12 @@ using Kern.Diagnostics.Frames;
 
 namespace Kern.World.Terrain;
 
-// Вершина меша идентификаторов: POSITION = (x, y, слой, номер угла квада)
-// в половинной точности — 8 байт. Половинка хранит целые до 2048 точно,
-// поэтому сетка ограничена TerrainCellIdVertex.MaxAddress по каждой оси.
-[StructLayout(LayoutKind.Sequential)]
-public readonly struct TerrainCellIdVertex
-{
-    public const int MaxAddress = 2048;
-
-    public readonly ushort X;
-    public readonly ushort Y;
-    public readonly ushort Layer;
-    public readonly ushort Corner;
-
-    public TerrainCellIdVertex(int x, int y, int layer, int corner)
-    {
-        X = Half(x);
-        Y = Half(y);
-        Layer = Half(layer);
-        Corner = Half(corner);
-    }
-
-    // Точная половинка неотрицательного целого не больше MaxAddress: без
-    // Mathf, чтобы Burst-джоб собирал меш сам.
-    public static ushort Half(int value)
-    {
-        if (value <= 0)
-        {
-            return 0;
-        }
-
-        int exponent = 0;
-        while ((value >> (exponent + 1)) != 0)
-        {
-            exponent++;
-        }
-
-        int mantissa = exponent <= 10 ? (value << (10 - exponent)) & 0x3FF : (value >> (exponent - 10)) & 0x3FF;
-        return (ushort)(((exponent + 15) << 10) | mantissa);
-    }
-}
-
 [BurstCompile]
 public struct GenerateCellIdMeshJob : IJobParallelFor
 {
     public int Width;
     public int Height;
+    public bool IncludeDepth;
     [NativeDisableParallelForRestriction]
     [WriteOnly] public NativeArray<TerrainCellIdVertex> Vertices;
     [NativeDisableParallelForRestriction]
@@ -67,7 +27,9 @@ public struct GenerateCellIdMeshJob : IJobParallelFor
     public void Execute(int quad)
     {
         int layerQuads = Width * Height;
-        int layer = quad / layerQuads;
+        int layerIndex = quad / layerQuads;
+        // Presentation order: background, depth carrier (address 3), foreground.
+        int layer = IncludeDepth ? (layerIndex == 1 ? 3 : layerIndex == 2 ? 1 : 0) : layerIndex;
         int rem = quad % layerQuads;
         int y = rem / Width;
         int x = rem % Width;
@@ -106,12 +68,15 @@ public sealed class TerrainCellIdMesh : IDisposable
         new(VertexAttribute.Position, VertexAttributeFormat.Float16, 4),
     };
 
+    private readonly bool _includeDepth;
     private Mesh? _mesh;
     private int _width;
     private int _height;
     private int _boundsWidth;
     private int _boundsHeight;
     private float _cellSize;
+
+    public TerrainCellIdMesh(bool includeDepth = false) => _includeDepth = includeDepth;
 
     public Mesh? Mesh => _mesh;
 
@@ -158,7 +123,8 @@ public sealed class TerrainCellIdMesh : IDisposable
         _boundsHeight = boundsHeight;
         _cellSize = cellSize;
 
-        int quads = meshWidth * meshHeight * TerrainCellData.LayersPerCell;
+        int layerCount = _includeDepth ? 3 : TerrainCellData.LayersPerCell;
+        int quads = meshWidth * meshHeight * layerCount;
         int vertexCount = quads * 4;
         int indexCount = quads * 6;
 
@@ -171,6 +137,7 @@ public sealed class TerrainCellIdMesh : IDisposable
             {
                 Width = meshWidth,
                 Height = meshHeight,
+                IncludeDepth = _includeDepth,
                 Vertices = vertices,
                 Indices = indices,
             };
@@ -194,8 +161,15 @@ public sealed class TerrainCellIdMesh : IDisposable
             var subMeshBounds = new Bounds(
                 new Vector3(boundsWidth * cellSize * 0.5f, boundsHeight * cellSize * 0.5f, 0f),
                 new Vector3((boundsWidth + 2) * cellSize, (boundsHeight + 2) * cellSize, 2f));
-            _mesh.subMeshCount = 1;
-            _mesh.SetSubMesh(0, new SubMeshDescriptor(0, indexCount, MeshTopology.Triangles) { bounds = subMeshBounds }, MeshUpdateFlags.DontRecalculateBounds);
+            _mesh.subMeshCount = _includeDepth ? 3 : 1;
+            int indicesPerDraw = indexCount / _mesh.subMeshCount;
+            for (int draw = 0; draw < _mesh.subMeshCount; draw++)
+            {
+                _mesh.SetSubMesh(draw, new SubMeshDescriptor(draw * indicesPerDraw, indicesPerDraw, MeshTopology.Triangles)
+                {
+                    bounds = subMeshBounds,
+                }, MeshUpdateFlags.DontRecalculateBounds);
+            }
         }
         finally
         {
@@ -214,7 +188,8 @@ public sealed class TerrainCellIdMesh : IDisposable
             : $"первая геометрия, границы {boundsWidth}×{boundsHeight}";
         FrameEventLog.Record(
             $"меш клеток {meshWidth}×{meshHeight} собран через Burst-Job ({reason}; " +
-            $"буфер {nativeBytes} Б, 0 GC)");
+            $"буфер {nativeBytes} Б, проходов {_mesh.subMeshCount}, " +
+            $"носителей стенок {(_includeDepth ? meshWidth * meshHeight : 0)}, 0 GC)");
         return true;
     }
 

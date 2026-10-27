@@ -1,0 +1,104 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Raised terrain volume: evidence</title>
+<style>body{font:16px/1.5 system-ui;margin:2rem auto;padding:0 1rem;max-width:80rem}table{border-collapse:collapse;width:100%;margin:1rem 0}td,th{border:1px solid #bac5cd;padding:.5rem;vertical-align:top;text-align:left}pre,code{font:13px/1.5 monospace;white-space:pre-wrap;overflow-wrap:anywhere}.pending{background:#fff0c7;padding:1rem}a{color:#075b9b}</style>
+<h1>Raised terrain volume — TL-CHANGE</h1>
+<p>2026-10-27. Owning domain: Terrain; stage: screen presentation. The user clarified the target: stationary ground,
+raised foreground blocks with camera-relative perspective, and real side surfaces. The earlier flat-face tunnel interpretation
+and supplied rejected screenshots are not acceptance evidence for this implementation.</p>
+<p class="pending">Local source, C# algorithm/mesh-backend, native HLSL and standalone HLSL syntax checks are recorded below.
+Unity production captures, full Metal pass compilation, GPU timings and emitted-fragment measurements have not been run by the agent.
+Required production verification gates remain unpassed. Unity operations require a direct user request under AGENTS.md.</p>
+<h2>TL-OWN / TL-API change contract</h2>
+<p>TerrainVolumeTopology derives exposed contour edges from the accepted cell/type buffers during commit.
+TerrainVolumeMesh uploads actual side quads, each with lower and upper edge vertices. Its submeshes are stationary ground,
+side geometry and raised foreground. TerrainDepth.hlsl projects height from the active camera using eye height H=32 cells,
+physical height h=DepthPixels/32, and a half-cell displacement cap. The face and wall top use the same forward vertex projection;
+homogeneous W preserves perspective interpolation of side UVs. No fragment-image copy or inverse silhouette sweep remains.</p>
+<p>Square/wavy blocks use exposed polygon sides. Round blocks use cached contours on the real 32-pixel occupancy lattice,
+including the production disk, connected quadrants and corner-exclusion rule. Collinear pixel edges merge without changing
+contour coverage. Camera-facing walls are selected by outward normals. UV tangent follows the edge; UV depth advances into
+the block material. Light/AO sample the original surface; no new light transport or source is introduced.</p>
+<p>Physics, navigation, cell packing, lighting field meshes and solver dispatches are unchanged. TerrainSettings.DepthPixels
+and DepthDarkening retain ranges 0–16 and 0–1, defaults 16 and .35. Their advanced-settings apply path updates presentation
+uniforms without a terrain/lighting reset. Schema 45 migrates to 46 through the existing defaults-overlay/backup pipeline;
+explicit saved values including zero are preserved, and incomplete current-schema files still fail validation.</p>
+<p>Dependency scans: <a href="terrain-depth-dependencies-2026-10-27.html">full output</a>; both have zero matches.
+Changed-line review found no new Terrain→Lighting implementation dependency, reverse dependency, aliases, reflection,
+service lookups or cross-domain event path. Existing unrelated architecture debt is not waived.</p>
+<h2>TL-LIFE lifecycle</h2>
+<table><tr><th>Owner/resource</th><th>Create / publish</th><th>Update / dispose</th></tr>
+<tr><td>TerrainWindowPublishedView / TerrainVolumeTopology</td><td>Reads buffers only at accepted commit, before GPU publication. Stores exact cell+halo and shape-bit snapshots, node scratch and contour edges. Version increments only after a successful changed-shape build.</td><td>Material-only row changes do not rebuild topology. Ready state and pending publication remain uncommitted until commit succeeds. Managed arrays/lists belong to the window; no new subscription or per-frame callback.</td></tr>
+<tr><td>TerrainPresentationWindow / TerrainVolumeMesh</td><td>Three ordered draws; mesh changes on topology version or quantized visible dimensions. Wall addresses are relative to the committed window, like door overlays.</td><td>Camera offset changes only globals; wall vertices outside the visible window exit before cell decoding. Buffers resize only when counts change. Mesh and counters reset on Dispose; a backend regression verifies recreation.</td></tr>
+<tr><td>TerrainMaterialManager / material arrays</td><td>One existing material; three references for screen submeshes. Physical-field consumers keep the existing one-element material array.</td><td>Existing atlas/material lifecycle; the material is destroyed once. Two presentation uniforms have no lighting revision.</td></tr>
+<tr><td>Door overlay</td><td>Uses the screen POSITION-only volume vertex format; its overlay addresses and sorting remain unchanged.</td><td>Existing owned mesh/GameObject lifecycle. Physical meshes retain POSITION-only vertex input.</td></tr></table>
+<h2>TL-REV invalidation and acknowledgement</h2>
+<table><tr><th>Input</th><th>Publisher / region / acknowledgement</th><th>Rebuilt</th><th>Untouched</th></tr>
+<tr><td>Cell/neighbour type, shape bits, window origin/dimensions, distortion mode</td><td>Existing accepted terrain commit and journal; topology consumes same committed facts and publishes a monotonic version. Existing lighting exchange acknowledgement is unchanged.</td><td>Changed-shape topology and screen mesh. A destruction regression verifies newly exposed edges and no internal faces.</td><td>No additional light invalidation or dispatch; physical mesh topology unchanged.</td></tr>
+<tr><td>Material-only bits / atlas facts with same shape</td><td>Commit compares exact cell+halo bytes and background/outline type bits; comparison occurs only on publication.</td><td>Existing material updates only; no topology version.</td><td>Side topology, screen mesh buffers, existing invalidation contracts.</td></tr>
+<tr><td>Camera travel / visible offset</td><td>Existing camera and view-offset globals; normal render submission.</td><td>GPU vertex projection and early view rejection. Quantized visible-size changes can resize the screen mesh.</td><td>No topology build or upload from smooth camera motion or integer view-offset changes.</td></tr>
+<tr><td>Depth / darkening</td><td>UpdateTerrainDepthSettings → ApplyDepthConfig, synchronous uniforms.</td><td>Subsequent presentation vertices/color.</td><td>Geometry journal, CPU topology, field resources and solves.</td></tr>
+<tr><td>Unchanged frame</td><td>No commit; dimension/version guard.</td><td>No topology work, allocation or mesh upload.</td><td>All existing cache/revision behavior.</td></tr></table>
+<h2>TL-STAGE / TL-DATA</h2>
+<table><tr><th>Pass</th><th>Reads</th><th>Writes / bounds / load</th><th>Owner and steady frame</th></tr>
+<tr><td>Universal2D screen draws 0/1/2</td><td>Existing cells/types/descriptors, atlases and animation/decal textures, published light/AO; active camera; depth uniforms; side endpoint vertex data; visible-window extent.</td><td>Existing active world color target and alpha blend, no clear, ZWrite Off. Actual wall quads bridge the two projected height planes. Vertex rejection bounds walls to the current presentation window; world-grid snap and final fisheye/output transform retain their owners.</td><td>Terrain presentation; normal draw each camera frame. No compute dispatch, DDA, new light resource or texture.</td></tr>
+<tr><td>LightingMaterialField / LightingAmbientOcclusionField</td><td colspan="3">Original POSITION-only input and two-layer physical mesh. Screen-only isDepth/materialCellSample fields are not referenced by these passes. Background culling, resource formats, clear/load behavior, raster bounds, revisions and dispatch order remain unchanged.</td></tr></table>
+<p>Every shader entry accepts POSITION only. Physical field vertices retain their half4 8-byte address.
+Screen vertices use one float4 (16 bytes): ordinary layer 0/1/2 addresses remain ordinary X/Y/layer/corner;
+side layer 3 encodes biased 7-bit 1/32-cell endpoints. X/Y = cell×128 + startPixel+32;
+Z = 3 + ((endPixelX+32)×128 + endPixelY+32)/16384; W = corner.
+All integers and binary fractions are exact in float32. Decoder output uses existing overlay layer 2 to read
+window-relative cells. Independent C# and HLSL tests share known wire values (924,708,3.501953125,2) with expected
+cell (7,5), endpoints (−.125,1.125)→(1,0). Out-of-range endpoints fail encoding. No optional UV stream or substitute data
+is needed for screen, physical, door or recorded warmup vertex declarations. Radiance remains scene-linear; no gamma conversion or HDR clamp is added.</p>
+<h2>TL-PERF cost and diagnostics</h2>
+<p>Let N be visible presentation cells, M committed backing-window cells, E committed exposed/merged side edges.
+Before the feature: 8N vertices, 12N indices, 112N payload bytes and one screen draw.
+Current: 8N+4E vertices, 12N+6E indices, 176N+88E payload bytes, three draws.
+This includes packed POSITION endpoint data; it excludes Unity bookkeeping and retained managed-list capacity.
+Square cells contribute at most four sides; round cells have at most 128 unmerged pixel sides and fewer merged runs.
+Physical field mesh storage is unchanged. No new texture, compute buffer or light dispatch is allocated.</p>
+<p>On commit, exact shape-input comparison is O(M+halo+256). A changed topology additionally visits the node lattice when
+needed and the cells/edges. Sixteen round-mask contour tables are built once from 32×32 occupancy and merge straight runs.
+Scratch storage: one Vector2 per node, one byte per cell+halo, 256 uint shape words, plus retained edge/list capacity.
+Mesh regeneration is O(N+E), and writes GPU buffers only on topology/visible-size changes.
+Stable camera travel does no CPU edge rebuilding and no mesh upload. All E side quads are submitted, but out-of-view vertices
+exit before cell-buffer reads. In-view side vertices add one existing cell decode per vertex; the native decoder check still
+reports 19 foreground and 27 background reads. Wall fragments no longer perform seventeen silhouette sweeps.</p>
+<p>FrameEventLog records topology version, cells/edges, CPU build milliseconds, mesh vertices, wall quads and payload bytes.
+SubmittedDepthCarrierQuads is retained as a compatibility diagnostic name and now reports actual submitted side quads,
+not visible fragments. GPU-facing work can grow with visible wall area. No performance improvement is claimed.</p>
+<table><tr><th>Measurement</th><th>Baseline / after</th><th>Acceptance / status</th></tr>
+<tr><td>New topology or uploads on stable camera travel</td><td>Expected zero</td><td>Backend no-reupload and source-condition checks pass; production profiler confirmation pending.</td></tr>
+<tr><td>Material-only updates</td><td>No new topology version</td><td>Executed regression passes.</td></tr>
+<tr><td>Mesh payload</td><td>112N → 176N+88E bytes</td><td>16-byte layout and indexed submesh tests pass; runtime native-memory capture pending.</td></tr>
+<tr><td>GPU time / emitted contours</td><td>Not captured</td><td>Compare identical scene, camera, resolution, lighting and fisheye at depth 0/16, stable and destructive frames. Proposed additional GPU budget ≤1 ms, subject to target-device acceptance; not established here.</td></tr></table>
+<h2>TL-VERIFY</h2>
+<table><tr><th>Command / test</th><th>Observed result and limits</th></tr>
+<tr><td><code>dotnet test tools/Kern.TerrainTests</code></td><td><a href="terrain-depth-managed-2026-10-27.html">Full output</a>: 153 passed, zero failed; one export fixture runs separately inside the raster runner. Six added volume tests execute real C# topology/mesh code with in-memory cell facts and a recording mesh-upload backend. They cover internal-face removal, destruction, area/grid correctness, negative origin, exact shape invalidation, layout, side indices, stable uploads and disposal/recreation. This does not exercise Unity uploads.</td></tr>
+<tr><td><code>dotnet run --project tools/Kern.TerrainRasterTests/RunRasterTests</code></td><td><a href="terrain-depth-raster-2026-10-27.html">Full output</a>. Actual HLSL helpers pass independent known-value tests for base/top vertices, perspective width, camera changes, outward normals, wall UV depth, face bounds and ground/field isolation. 59,188 physical decode vertices and existing 10,616,832 raster subpixels / 80,640 seam samples remain correct. All twelve injected mutations fail.</td></tr>
+<tr><td><code>glslangValidator -D -V -S vert -e Main -I. tools/Kern.TerrainRasterTests/Native/Terrain/volume-syntax.hlsl -o /tmp/kern-volume-syntax.spv</code></td><td>Passed standalone HLSL grammar/type check of the real include. This syntax shell is not the production camera/shader pass and does not prove Metal rendering.</td></tr>
+<tr><td><code>dotnet run --project tools/Kern.ArchitectureLinter -- --project-root .</code></td><td><a href="terrain-depth-linter-2026-10-27.html">Full output</a>; exit 0, 55 rules, existing unrelated warnings. Changed-file dependencies and layouts reviewed separately.</td></tr>
+<tr><td>Source checks / <code>git diff --check</code></td><td>Pass: physical inputs POSITION-only; volume vertex type screen-only; field passes cannot reference screen-only varyings; no reserved HLSL point/line/triangle/sample identifiers; every vertex entry is POSITION-only.</td></tr>
+<tr><td>Unity/MainGame/Metal/GPU</td><td>Not run by the agent. MainGame tests require the real TerrainVolumeMesh POSITION-only layout/side triangles and capture depth/darkening comparisons at two zooms and three camera offsets with production textures, lighting and fisheye. The final result and performance remain unverified.</td></tr></table>
+<h2>Reported regressions and their fixes</h2>
+<p>Schema-45 startup failure: version 46 and ordered migration; regression tests authored without weakening completeness validation.
+Expanded-carrier stripes: explicit face bounds, followed by replacement of inverse fragment sweeping with actual side geometry.
+Metal syntax error: renamed reserved HLSL point parameter. Field isDepth error: restored the field-only derivative expression and
+added pass-scope regression. Missing texcoord: removed the TEXCOORD vertex requirement entirely; screen side endpoints are exactly packed into POSITION, with independent CPU/GPU wire tests and matching door/screen fixtures. None of the rejected screenshots establishes final visual correctness.</p>
+<p>Full generated-project <code>dotnet build Kern.Runtime.csproj --no-restore</code> previously failed before valid compilation due to
+stale references to absent 6000.6.0f1 engine/analyzer files. A global taxonomy inventory check previously reported unrelated missing
+historical targets and authored-asset hash differences; it is not recorded as passing. Unrelated user changes are not modified by this work.</p>
+<h2>Review status</h2>
+<p>TL-OWN, TL-API, TL-LIFE, TL-REV, TL-STAGE, TL-DATA and local TL-VERIFY artifacts are recorded above.
+Measured TL-PERF and production-render TL-VERIFY gates remain outstanding. This bundle does not waive those gates or mark the feature fully verified.</p>
+<h2>GUI and persistence: schema 47</h2>
+<p>Effects → Camera now exposes FisheyeScale (0–10×): zero disables the existing distortion, one preserves the authored strength 0.001 at reference half-height 14 cells. Camera zoom scaling remains quadratic. Advanced → World materials exposes block depth (0–16 pixels) and side darkening (0–1). All four locales have updated block-volume labels.</p>
+<table><tr><th>Owner / producer</th><th>Consumer / invalidation</th></tr>
+<tr><td>EffectSettings.FisheyeScale; GUI → config manager → deferred save</td><td>PostProcessController.ApplyClientConfig → runtime state → PostProcessRenderPass. Scalar change only; no geometry or lighting invalidation. Subsystem reset restores scale 1.</td></tr>
+<tr><td>Terrain depth / darkening GUI</td><td>GraphicsSettingsController.UpdateTerrainDepthSettings → TerrainRenderer.ApplyDepthConfig; presentation uniforms only.</td></tr></table>
+<p>Schema chain 44 → 45 → 46 → 47 overlays saved JSON on initialized defaults. Missing fisheye scale defaults to 1; explicit zero and saved values survive. Strict current-schema presence validation remains. Repository backs up the previous JSON. Added NUnit cases cover missing scale in schemas 44/45/46, explicit zero/2.5, reload, backup and missing current-schema field. These migration tests have not run: Unity invocation is not authorized for this task.</p>
+<p>Local checks: dotnet test tools/Kern.TerrainTests passed 153, failed 0, skipped 1; these tests cover terrain, not the Unity config serializer or GUI. Locale JSON parsing, unique keys, required labels and git diff --check passed. Architecture linter exited 0 with 58 existing findings. No new light transport, geometry format or color-space changes. No production GPU timing or visual verification claimed. Enabled fisheye uses the existing pass; scale zero removes fisheye as a reason to schedule it.</p>
+<h2>Выключатели эффектов — схема 49</h2>
+<p>EffectSettings.FisheyeEnabled и TerrainSettings.DepthEnabled по умолчанию false. GUI: Effects/Camera и Advanced/World materials. Миграция 48 → 49 добавляет выключенные флаги, сохраняя прежние числовые параметры и backup; явные флаги при загрузке сохраняются штатным наложением JSON.</p>
+<p>GraphicsSettingsController.UpdateTerrainDepthEnabled сохраняет только флаг и вызывает ApplyDepthConfig. TerrainMaterialManager передаёт в _TerrainDepthPixels ноль, когда эффект выключен; DepthPixels/DepthDarkening в конфиге сохраняются. PostProcessController при FisheyeEnabled=false публикует нулевую runtime-силу; начальное значение и subsystem reset теперь также нулевые. При включении используется сохранённый FisheyeScale. Источники света, геометрия физики, построение меша и пересчёты освещения не изменены.</p>
+<p>Оба обязательных скана зависимостей Terrain/Lighting пустые. Локальные тесты, локализации и diff проверены; полная JSON-миграция дополнительно покрыта написанным Unity-тестом Schema48_DisablesNewPresentationSwitchesWithoutLosingStrengths, который не запускался. Unity/GPU-проверок не было по действующим указаниям пользователя. При нулевой глубине остаётся существующий путь отключения shader-эффекта; замеры стоимости меша и кадра не выполнялись.</p>
+</html>

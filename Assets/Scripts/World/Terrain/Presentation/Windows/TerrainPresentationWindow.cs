@@ -21,21 +21,27 @@ public sealed class TerrainPresentationWindow : IDisposable
 {
     private const int PresentationMarginCells = 4;
 
-    private readonly TerrainCellIdMesh _mesh = new();
+    private readonly TerrainVolumeMesh _mesh = new();
     private Vector4 _viewOffset;
+    private Vector4 _viewSize;
+    private static readonly int s_volumeViewSizeId = Shader.PropertyToID("_TerrainVolumeViewSize");
 
     public Mesh? Mesh => _mesh.Mesh;
 
     public Vector4 ViewOffset => _viewOffset;
 
-    public void Update(
+    // Submission count per camera frame, not a count of surviving wall fragments.
+    public int SubmittedDepthCarrierQuads => _mesh.WallQuadCount;
+
+    internal void Update(
         StreamingPolicy policy,
         RectInt cameraViewport,
         Vector2Int windowOrigin,
         int meshWidth,
         int meshHeight,
         float cellSize,
-        MeshFilter? meshFilter)
+        MeshFilter? meshFilter,
+        TerrainVolumeTopology topology)
     {
         // Backing grid is sized for the maximum supported zoom, while the
         // presentation mesh must match the current viewport. Retaining a
@@ -53,7 +59,13 @@ public sealed class TerrainPresentationWindow : IDisposable
         int offsetX = Mathf.Clamp(presentationMinX - windowOrigin.x, 0, meshWidth - width);
         int offsetY = Mathf.Clamp(presentationMinY - windowOrigin.y, 0, meshHeight - height);
 
-        _mesh.EnsureSize(width, height, cellSize, meshWidth, meshHeight);
+        _mesh.EnsureSize(width, height, cellSize, meshWidth, meshHeight, topology);
+        var viewSize = new Vector4(width, height, 0f, 0f);
+        if (_viewSize != viewSize)
+        {
+            _viewSize = viewSize;
+            Shader.SetGlobalVector(s_volumeViewSizeId, viewSize);
+        }
         var offset = new Vector4(offsetX, offsetY, 0f, 0f);
         if (offset != _viewOffset)
         {

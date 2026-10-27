@@ -232,7 +232,7 @@ namespace Kern.UI.Chat
 
             // Без клавиатуры (телефон) остальное — клавиши; открытие и
             // отправка приходят кнопками «Чат» и «>».
-            if (Keyboard.current == null)
+            if (!Application.isFocused || _uiInput.IsKeyCaptureInProgress || Keyboard.current == null)
             {
                 return;
             }
