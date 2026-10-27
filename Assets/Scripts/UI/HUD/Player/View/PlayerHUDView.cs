@@ -8,11 +8,8 @@ using Kern.Core.Interfaces;
 using Kern.Core.Localization;
 using Kern.Core.Models;
 using Kern.Networking;
-using Kern.Networking.Processors;
-using Kern.Player.Input;
 using Kern.Player.Interfaces;
-using Kern.Player.Logic;
-using Kern.UI.HUD.Player.Model;
+using Kern.Game.Player.Stats;
 using Kern.UI.Programmator;
 using MinesServer.Data;
 using MinesServer.Networking.Client.Packets.Actions;
@@ -23,8 +20,17 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using VContainer;
 
-namespace Kern.UI.HUD.Player.View
+using Kern.Game.Player.Input;
+using Kern.Networking.Processing;
+using Kern.UI.Chat;
+using Kern.UI.Input;
+using Kern.UI.Localization;
+using Kern.UI.Map;
+using Kern.UI.Tooltips;
+
+namespace Kern.UI.HUD
 {
+    [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "Kern.UI.HUD.Player.View", sourceAssembly: null, sourceClassName: "PlayerHUDView")]
     public class PlayerHUDView : MonoBehaviour, ILocalizableUI
     {
         private Color _hpBarFillColor = new Color(0.2f, 0.8f, 0.2f, 1f);
@@ -60,6 +66,8 @@ namespace Kern.UI.HUD.Player.View
         private Label? _geologyLabel;
         private Label? _basketPercentLabel;
         private VisualElement? _basketSeparator;
+        private VisualElement? _basketRow;
+        private Button? _dropBoxButton;
         private VisualElement? _basketContainer;
         private VisualElement? _skillContainer;
 
@@ -288,7 +296,7 @@ namespace Kern.UI.HUD.Player.View
         private void InitializeHUD()
         {
             _programmatorData ??= new ProgrammatorData();
-            _programmatorTextures ??= new ProgrammatorTextureRegistry();
+            _programmatorTextures ??= new ProgrammatorTextureRegistry(_assetLoader, _operations);
             _programmatorGrid ??= new ProgrammatorGrid(
                 _doc,
                 _loc,
@@ -344,9 +352,9 @@ namespace Kern.UI.HUD.Player.View
         private void LoadTemplate(VisualElement root)
         {
             VisualTreeAsset template = Resources.Load<VisualTreeAsset>(
-                ProjectRuntimeContracts.ResourcePaths.PlayerHudUxml) ??
+                ResourcePaths.PlayerHudUxml) ??
                 throw new InvalidOperationException(
-                    "[PlayerHUD] Resources/UI/Gameplay/PlayerHUD.uxml is required.");
+                    "[PlayerHUD] Resources/UI/HUD/Player/Templates/PlayerHUD.uxml is required.");
             TemplateContainer tree = template.Instantiate();
             tree.AddToClassList("ui-fullscreen");
             tree.pickingMode = PickingMode.Ignore;
@@ -381,6 +389,11 @@ namespace Kern.UI.HUD.Player.View
                 throw new InvalidOperationException("[PlayerHUD] BasketPercentLabel is missing from PlayerHUD.uxml.");
             _basketSeparator = tree.Q<VisualElement>("BasketSeparator") ??
                 throw new InvalidOperationException("[PlayerHUD] BasketSeparator is missing from PlayerHUD.uxml.");
+            _basketRow = tree.Q<VisualElement>("BasketRow") ??
+                throw new InvalidOperationException("[PlayerHUD] BasketRow is missing from PlayerHUD.uxml.");
+            _dropBoxButton = tree.Q<Button>("DropBoxButton") ??
+                throw new InvalidOperationException("[PlayerHUD] DropBoxButton is missing from PlayerHUD.uxml.");
+            _dropBoxButton.clicked += () => _networkService?.Send(new DropBoxClickPacket());
             _geologyLabel = tree.Q<Label>("GeologyLabel") ??
                 throw new InvalidOperationException("[PlayerHUD] GeologyLabel is missing from PlayerHUD.uxml.");
 
@@ -425,7 +438,11 @@ namespace Kern.UI.HUD.Player.View
                 Tooltip.AttachTo(bonusButton, () => _loc.Get("hud.tooltip.bonus"), _tooltip!);
             }
 
-            _popups = new PlayerHUDPopups(packet => _networkService?.SendAction(packet), packet => _networkService?.Send(packet));
+            _popups = new PlayerHUDPopups(
+                packet => _networkService?.SendAction(packet),
+                packet => _networkService?.Send(packet),
+                packet => _networkService?.Send(packet),
+                packet => _networkService?.Send(packet));
             _popups.Initialize(tree);
 
             _statusPanel.Initialize(tree);
@@ -434,7 +451,10 @@ namespace Kern.UI.HUD.Player.View
 
             _programmatorButton = tree.Q<Button>("ProgrammatorButton") ??
                 throw new InvalidOperationException("[PlayerHUD] ProgrammatorButton is missing from PlayerHUD.uxml.");
-            _programmatorButton.clicked += () => _programmatorGrid?.Show();
+            // G7-C: список программ рисует сервер (окно списка), клик по строке
+            // ходит ElementClickPacket'ом; грид открывается сам по
+            // OpenProgrammatorPacket (ProgrammatorGrid подписан на OpenRequested).
+            _programmatorButton.clicked += () => _programmatorProtocol.RequestProgramList();
 
             _programRunButton = tree.Q<Button>("ProgramRunButton") ??
                 throw new InvalidOperationException("[PlayerHUD] ProgramRunButton is missing from PlayerHUD.uxml.");
@@ -636,11 +656,12 @@ namespace Kern.UI.HUD.Player.View
 
             if (_basketPercentLabel != null)
             {
-                // Общий груз == 0 - груз и разделитель скрываются.
+                // Общий груз == 0 - груз, разделитель и кнопка выброса бокса скрываются.
                 bool showBasket = _isLoaded && stats.BasketMaxPercent > 0;
                 _basketPercentLabel.text = showBasket ? $"Груз: {stats.BasketMaxPercent}%" : string.Empty;
                 _basketPercentLabel.style.display = showBasket ? DisplayStyle.Flex : DisplayStyle.None;
                 SetDisplayed(_basketSeparator, showBasket);
+                SetDisplayed(_basketRow, showBasket);
             }
 
             _basketView.Refresh(stats);

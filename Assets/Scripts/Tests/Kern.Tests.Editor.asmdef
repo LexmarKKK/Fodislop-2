@@ -18,6 +18,7 @@
         "Kern.AssetPipeline",
         "Kern.Tests.Shared",
         "Kern.World",
+        "Unity.InputSystem",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime",
         "MinesServer.Data",
@@ -25,7 +26,9 @@
         "MinesServer.Networking.Connection",
         "MinesServer.Networking.Connection.Client",
         "UniTask",
-        "VContainer"
+        "VContainer",
+        "Kern.Diagnostics",
+        "Kern.Effects"
     ],
     "includePlatforms": [
         "Editor"

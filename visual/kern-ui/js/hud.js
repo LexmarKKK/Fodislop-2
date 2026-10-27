@@ -52,6 +52,16 @@
     m: { name: 'Добыча', level: 9, exp: .4, color: '#ff6600' },
     M: { name: 'Передвижение', level: 12, exp: 1, color: '#00ffe6' },
     l: { name: 'Защита', level: 12, exp: .6, color: '#ff00ff' },
+    A: { name: 'Строительство дорог', level: 8, exp: .3, color: '#aeb8c0' },
+    L: { name: 'Зелёное строительство', level: 15, exp: .7, color: '#5bcc7a' },
+    Y: { name: 'Жёлтое строительство', level: 6, exp: .1, color: '#f2c037' },
+    E: { name: 'Красное строительство', level: 4, exp: .5, color: '#ff5f5f' },
+    F: { name: 'Охлаждение', level: 7, exp: .8, color: '#5a9bff' },
+    t: { name: 'Передвижение по дороге', level: 10, exp: .2, color: '#c99b4f' },
+    p: { name: 'Упаковка', level: 5, exp: .4, color: '#b07cff' },
+    b: { name: 'Упаковка синих кристаллов', level: 3, exp: .6, color: '#6f8cff' },
+    c: { name: 'Упаковка голубых кристаллов', level: 2, exp: .9, color: '#45d3e6' },
+    r: { name: 'Упаковка красных кристаллов', level: 1, exp: .3, color: '#ff7a7a' },
   };
   window.kernSkills = skills;
   const SLOT_OF = { m: 0, d: 1, M: 2, l: 3 };
@@ -123,14 +133,35 @@
       { t: '18:44', nick: 'DVM_LEADER', c: '#e6ccff', text: 'голубые на 1200:840' }],
     DNO: [{ t: '18:20', nick: 'ШАХТЁР-305', c: '#d8ffc8', text: 'кто на дне?' }],
   };
+  // Личные сообщения: переписка с каждым игроком отдельно
+  const pm = {
+    'ШАХТЁР-102': { unread: 1, lines: [{ t: '17:58', nick: 'ШАХТЁР-102', c: '#ffd9a8', text: 'деньги закинул почтой' }, { t: '18:01', nick: 'ШАХТЁР-774', c: '#c8f0ff', text: 'спасибо, верну в субботу' }, { t: '18:40', nick: 'ШАХТЁР-102', c: '#ffd9a8', text: 'идёшь на сбор?' }] },
+    'DVM_LEADER': { unread: 0, lines: [{ t: 'вчера', nick: 'DVM_LEADER', c: '#e6ccff', text: 'возьми синих на пушку' }] },
+  };
+  state.pm = null;
+  const nickLink = (nick, c) => `<b class="nick-link" data-nick="${esc(nick)}" style="color:${c}">${esc(nick)}</b>`;
   const esc = s => s.replace(/[&<>]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
   function renderChat() {
-    const lines = chat[state.channel];
-    $('chatLog').innerHTML = lines.map(m => m.sys ? `<li class="sys">${esc(m.sys)}</li>`
-      : `<li><time>${m.t}</time><b style="color:${m.c}">${esc(m.nick)}</b>: ${esc(m.text)}</li>`).join('');
+    const line = m => m.sys ? `<li class="sys">${esc(m.sys)}</li>` : `<li><time>${m.t}</time>${nickLink(m.nick, m.c)}: ${esc(m.text)}</li>`;
+    let lines;
+    if (state.channel === 'PM' && !state.pm) {
+      // Список переписок: последний ответ и непрочитанное
+      lines = [];
+      $('chatLog').innerHTML = Object.entries(pm).map(([nick, th]) => { const last = th.lines.at(-1);
+        return `<li class="pm-thread${th.unread ? ' is-unread' : ''}"><button type="button" data-pm="${esc(nick)}"><b>${esc(nick)}</b><time>${last.t}</time><span>${esc(last.text)}</span>${th.unread ? `<i>${th.unread}</i>` : ''}</button></li>`; }).join('')
+        || '<li class="sys">Личных сообщений пока нет. Нажмите на ник игрока, чтобы написать ему.</li>';
+    } else {
+      if (state.channel === 'PM') { const th = pm[state.pm]; th.unread = 0; lines = th.lines; }
+      else lines = chat[state.channel];
+      $('chatLog').innerHTML = (state.channel === 'PM' ? `<li class="pm-head"><button type="button" class="pm-back" title="К списку">‹</button>${nickLink(state.pm, '#c8f0ff')}</li>` : '') + lines.map(line).join('');
+    }
     $('chatPeek3').innerHTML = lines.filter(m => !m.sys).slice(-3)
-      .map(m => `<li><b style="color:${m.c}">${esc(m.nick)}</b>: ${esc(m.text)}</li>`).join('');
-    $('chatPeekTag').textContent = state.channel;
+      .map(m => `<li>${nickLink(m.nick, m.c)}: ${esc(m.text)}</li>`).join('');
+    $('chatPeekTag').textContent = state.channel === 'PM' ? 'ЛС' : state.channel;
+    const unread = Object.values(pm).reduce((n, th) => n + th.unread, 0);
+    $('pmBadge').textContent = unread || '';
+    $('chatInput').placeholder = state.channel === 'PM' ? (state.pm ? `Сообщение для ${state.pm}…` : 'Выберите переписку') : 'Напишите сообщение…';
+    $('chatInput').disabled = state.channel === 'PM' && !state.pm;
     document.querySelectorAll('.chat-tab').forEach(b => b.classList.toggle('is-on', b.dataset.tag === state.channel));
   }
   function setChat(mode) {
@@ -141,13 +172,23 @@
   }
   $('chatPeek').onclick = () => setChat(1);
   $('chatClose').onclick = () => setChat(0);
-  document.querySelectorAll('.chat-tab').forEach(b => b.onclick = () => { state.channel = b.dataset.tag; renderChat(); });
+  document.querySelectorAll('.chat-tab').forEach(b => b.onclick = () => { state.channel = b.dataset.tag; if (b.dataset.tag === 'PM') state.pm = null; renderChat(); });
+  $('chatLog').addEventListener('click', e => {
+    const th = e.target.closest('[data-pm]'); if (th) { state.pm = th.dataset.pm; renderChat(); return; }
+    if (e.target.closest('.pm-back')) { state.pm = null; renderChat(); }
+  });
+  // Ник в чате, превью чата и списке клана — открыть профиль игрока
+  document.addEventListener('click', e => { const n = e.target.closest('.nick-link'); if (n && !n.closest('.pm-head')) { e.stopPropagation(); window.openProfile(n.dataset.nick); } }, true);
+  window.openPM = nick => {
+    pm[nick] ||= { unread: 0, lines: [] };
+    state.channel = 'PM'; state.pm = nick; renderChat(); setChat(1);
+  };
   $('chatForm').onsubmit = e => {
     e.preventDefault();
     const text = $('chatInput').value.trim();
     if (!text) return;
     const d = new Date();
-    chat[state.channel].push({ t: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`, nick: 'ШАХТЁР-774', c: '#c8f0ff', text });
+    (state.channel === 'PM' ? pm[state.pm].lines : chat[state.channel]).push({ t: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`, nick: 'ШАХТЁР-774', c: '#c8f0ff', text });
     $('chatInput').value = '';
     renderChat();
   };
@@ -220,7 +261,7 @@
     document.querySelectorAll('.inv-slots li').forEach(x => x.classList.remove('is-on'));
     li.classList.toggle('is-on', on);
     $('itemHint').hidden = !on;
-    if (on) $('itemHint').textContent = `${li.title}: Enter — применить, Esc — отмена`;
+    if (on) { const p = window.kernPad?.active && window.kernPad; $('itemHint').textContent = `${li.title}: ${p ? p.label('useItem') : 'Enter'} — применить, ${p ? p.label('cancel') : 'Esc'} — отмена`; }
   };
   // На ПК раскрытие — как было; на пальце — отдельное окно со всеми предметами
   let invSelected = -1;
@@ -238,7 +279,7 @@
   $('invDialog').querySelector('[data-close]').onclick = () => { $('invDialog').hidden = true; };
   window.openInventory = () => { invSelected = -1; renderInvWindow(); $('invDialog').hidden = false; };
   $('invExpand').onclick = () => {
-    if ($('frame').classList.contains('touch')) { window.openInventory(); return; }
+    if ($('frame').matches('.compact, .in-touch')) { window.openInventory(); return; }   // пальцем — окно с крупными ячейками
     const open = $('inventory').classList.toggle('is-open');
     $('invExpand').setAttribute('aria-expanded', String(open));
   };
@@ -252,8 +293,11 @@
     if (e.key === 'Escape') {
       if (!$('invDialog').hidden) $('invDialog').hidden = true;
       else if (!$('respawnDialog').hidden) $('respawnDialog').hidden = true;
+      else if (!$('menuDialog').hidden) $('menuDialog').hidden = true;
+      else if (document.querySelector('.dialog-layer:not([hidden])')) return;   // своё окно закроет свой обработчик
       else if (state.chat === 1) setChat(0);
-      else { document.querySelectorAll('.inv-slots li').forEach(x => x.classList.remove('is-on')); $('itemHint').hidden = true; }
+      else if (!$('itemHint').hidden) { document.querySelectorAll('.inv-slots li').forEach(x => x.classList.remove('is-on')); $('itemHint').hidden = true; }
+      else if (!frame.classList.contains('compact')) $('menuDialog').hidden = false;
       return;
     }
     if (typing) return;
@@ -264,7 +308,8 @@
   // ── Стенд: пропорция кадра, состояние данных, вписывание кадра в окно ──
   const frame = $('frame');
   function fit() {
-    const st = $('stage'), k = Math.min(st.clientWidth / frame.offsetWidth, st.clientHeight / frame.offsetHeight);
+    const st = $('stage'), pad = frame.classList.contains('bezel') ? 2 * 24 : 0;   // корпус устройства (тень 11px) и поле вокруг
+    const k = Math.min(st.clientWidth / (frame.offsetWidth + pad), st.clientHeight / (frame.offsetHeight + pad));
     frame.style.transform = `translate(-50%, -50%) scale(${k})`;
     window.kernWorld?.draw();                                     // холст перерисовать под новый масштаб
   }
@@ -295,51 +340,95 @@
     ipadmini: { w: 1112, h: 730, safe: [0, 0, 20, 0], form: 'tablet', corner: 22 },
     ipadpro: { w: 1668, h: 1251, safe: [0, 0, 24, 0], form: 'tablet', corner: 18 },
     foldin: { w: 924, h: 794, form: 'tablet', corner: 20 },
+    // Экран-телевизор у десктопа (Big Picture): 4K при масштабе 400% — смотрят с дивана; поля от обрезки кадра телевизором
+    tv: { w: 960, h: 540, px: '3840×2160', scale: 4, safe: [27, 48, 27, 48], input: 'xbox' },
   };
+  // Ступень размера — только по вьюпорту в dp
+  const sizeOf = (w, h) => w >= 2400 ? 'xl' : h < 500 ? 's' : h < 760 || w < 1100 ? 'm' : 'l';
   const sysOrig = {};
+  let input = 'mouse', inputSticky = false, compact = false, lastMonitor = 'd1080', resText = '';
+  // Итог стенда: вьюпорт, его размер и ввод — то, что решает вид
+  const INPUT_NAME = { mouse: 'мышь', touch: 'тач', pad: 'геймпад' };
+  const renderRes = () => { $('standRes').innerHTML = `${resText} · ввод <b>${INPUT_NAME[input]}</b>`; };
   function setDevice(name) {
-    const d = DEVICES[name] || DEVICES.d1080, touch = !!d.form;
-    document.querySelectorAll('[data-device]').forEach(x => x.classList.toggle('is-on', x.dataset.device === name));
+    const d = DEVICES[name] || DEVICES.d1080, size = sizeOf(d.w, d.h);
+    compact = size === 's' || size === 'm';
+
+    // Десктоп — одно устройство с разными экранами; экраны видны, только когда выбран он
+    const desktop = !d.form;
+    if (desktop) lastMonitor = name;
+    $('standDevice').value = desktop ? 'desktop' : name;
+    if (desktop) $('standMonitor').value = name;
+    $('standMonitors').hidden = !desktop;
     frame.dataset.device = name;
-    frame.classList.toggle('touch', touch);
-    frame.classList.toggle('phone', touch && d.form === 'phone');
-    frame.classList.toggle('tablet', touch && d.form === 'tablet');
-    const tier = d.form === 'phone' ? 'compact' : d.form === 'tablet' ? 'standard' : d.w < 900 ? 'compact' : d.w < 1600 ? 'standard' : 'wide';
+    // 1. Размер вьюпорта
+    ['s', 'm', 'l', 'xl'].forEach(z => frame.classList.toggle('size-' + z, z === size));
+    frame.classList.toggle('compact', compact);
+    frame.classList.toggle('bezel', !!d.form);
+    const tier = compact ? 'compact' : d.w < 1600 ? 'standard' : 'wide';
     ['compact', 'standard', 'wide'].forEach(t => frame.classList.toggle('tier-' + t, t === tier));
     ['--fw', '--fh', '--corner', '--st', '--sr', '--sb', '--sl'].forEach(v => frame.style.removeProperty(v));
     frame.style.setProperty('--fw', d.w + 'px'); frame.style.setProperty('--fh', d.h + 'px');
-    $('standRes').textContent = touch ? `${d.w}×${d.h} dp` : d.scale === 1 ? `${d.w}×${d.h}` : `${d.px} → ${d.w}×${d.h} при ${d.scale * 100}%`;
-    if (touch) {
-      frame.style.setProperty('--corner', d.corner + 'px');
-      (d.safe || [0, 0, 0, 0]).forEach((v, i) => frame.style.setProperty(['--st', '--sr', '--sb', '--sl'][i], v + 'px'));
-    }
-    // На пальце у миникарты — бонусы, «Сказать», чат и ☰; остальные системные кнопки и карта — в меню ☰.
+    const sizeName = { s: 'S', m: 'M', l: 'L', xl: 'XL' }[size];
+    resText = (d.form ? `${d.w}×${d.h} dp` : d.scale === 1 ? `${d.w}×${d.h}` : `${d.px} при ${d.scale * 100}% → ${d.w}×${d.h}`) + ` · размер <b>${sizeName}</b>`;
+    if (d.form) frame.style.setProperty('--corner', (d.corner || 0) + 'px');
+    (d.safe || [0, 0, 0, 0]).forEach((v, i) => frame.style.setProperty(['--st', '--sr', '--sb', '--sl'][i], v + 'px'));
+    // Компактная раскладка: у миникарты — бонусы, «Сказать», чат, ☰ и игровые функции; системное — в ☰; карта мира — миникартой.
     // Перенесённое помечено data-relocated: это ПК-элемент на новом месте, а не новый
     const touchNav = document.querySelector('.touch-sys'), pauseSys = $('pauseSys');
-    const mapBtn = sysOrig.map ||= touchNav.querySelector('[title="Карта мира"]');
     sysOrig.list ||= [...document.querySelector('.sysbuttons').children];
-    if (touch) {
+    if (compact) {
       touchNav.prepend($('bonus'));
-      pauseSys.append(mapBtn, ...sysOrig.list.filter(b => b.tagName === 'BUTTON'));
+      const game = sysOrig.list.filter(b => ['Почта', 'Консоль', 'Мои здания', 'Вернуться на респаун'].includes(b.title));
+      touchNav.append(...game);
+      pauseSys.append(...sysOrig.list.filter(b => b.tagName === 'BUTTON' && !game.includes(b)));
     } else {
       document.querySelector('.sysbuttons').append(...sysOrig.list);
-      touchNav.append(mapBtn);
       document.querySelector('.sysbar').prepend($('bonus'));     // бонусы — первыми в ряду системных кнопок
     }
-    // Программатор и автокопание: на пальце — над хотбаром и в дуге действий
-    const prog = document.querySelector('.prog');
-    if (touch) { $('lowRow').append(prog); $('touchBuild').after($('autodig')); }
-    else {
-      document.querySelector('.col-bottom').insertBefore(prog, document.querySelector('.col-bottom .minimap'));
-      document.querySelector('.col-bottom').insertBefore($('autodig'), prog);
-    }
-    [$('bonus'), prog, $('autodig'), $('miniSkills'), ...sysOrig.list, mapBtn].forEach(el => el.toggleAttribute('data-relocated', touch));
-    $('keyHint').style.visibility = touch ? 'hidden' : '';
-    const mm = $('minimap'), side = touch ? (d.form === 'tablet' ? 136 : 104) * 2 : 0;
-    mm.width = touch ? side : 264; mm.height = touch ? side : 264;
+    // Кнопка «Меню»: в компактной раскладке паузы нет, в ☰ она — «Настройки»
+    const sysMenu = $('sysMenu'), as = compact ? ['Настройки', '#i-settings'] : ['Меню', '#i-menu'];
+    sysMenu.title = as[0]; sysMenu.querySelector('use').setAttribute('href', as[1]);
+    const ml = sysMenu.querySelector('.control-label'); if (ml) ml.textContent = as[0];
+    // В узком блоке у миникарты подписи короче
+    const short = { 'Мои здания': 'Здания', 'Вернуться на респаун': 'Респаун' };
+    sysOrig.list.forEach(b => { const l = b.querySelector?.('.control-label'); if (l && short[b.title]) l.textContent = compact ? short[b.title] : b.title === 'Вернуться на респаун' ? 'На респаун' : b.title; });
+    [$('bonus'), $('miniSkills'), ...sysOrig.list].forEach(el => el.toggleAttribute('data-relocated', compact));
+    const mm = $('minimap'), side = compact ? (size === 'm' ? 136 : 104) * 2 : 0;
+    mm.width = compact ? side : 264; mm.height = compact ? side : 264;
+    // 2. Управление: устройство даёт его по умолчанию, пока на стенде не выбрано своё
+    if (!inputSticky) setInput(d.input || (d.form ? 'touch' : 'mouse'), true);
+    else placeByInput();
+    renderRes();
     fit();
   }
-  document.querySelectorAll('[data-device]').forEach(b => b.onclick = () => setDevice(b.dataset.device));
+  // Что зависит от управления внутри раскладки: автокопание и программатор
+  function placeByInput() {
+    const prog = document.querySelector('.prog'), touch = input === 'touch';
+    // Программатор — по размеру: в компактной раскладке над хотбаром, иначе в левой колонке
+    if (compact) $('lowRow').append(prog);
+    else document.querySelector('.col-bottom').insertBefore(prog, document.querySelector('.col-bottom .minimap'));
+    // Автокопание — по управлению: под пальцем в дуге действий; без тача — рядом с программатором
+    if (touch) $('touchBuild').after($('autodig'));
+    else if (compact) $('lowRow').prepend($('autodig'));
+    else document.querySelector('.col-bottom').insertBefore($('autodig'), prog);
+    prog.toggleAttribute('data-relocated', compact);
+    $('autodig').toggleAttribute('data-relocated', compact || touch);
+    $('keyHint').style.visibility = input === 'mouse' && !compact ? '' : 'hidden';
+  }
+  // Ввод: mouse | touch | pad (семейство пада — у модуля геймпада)
+  function setInput(kind, auto) {
+    if (!auto) inputSticky = true;
+    input = kind === 'xbox' || kind === 'ps' || kind === 'switch' ? 'pad' : kind;
+    ['mouse', 'touch', 'pad'].forEach(k => frame.classList.toggle('in-' + k, k === input));
+    $('standInput').value = input === 'pad' ? (kind === 'pad' ? window.kernPad?.family || 'xbox' : kind) : kind;
+    placeByInput(); renderRes();
+    frame.dispatchEvent(new CustomEvent('kern-input', { detail: { input, family: input === 'pad' && kind !== 'pad' ? kind : null } }));
+  }
+  window.kernInput = { set: setInput, get input() { return input; }, get compact() { return compact; }, get sticky() { return inputSticky; } };
+  $('standInput').onchange = e => setInput(e.target.value);
+  $('standDevice').onchange = e => setDevice(e.target.value === 'desktop' ? lastMonitor : e.target.value);
+  $('standMonitor').onchange = e => setDevice(e.target.value);
 
   $('statusBar').append(document.querySelector('.diag'), $('assetLoad'));
 
@@ -374,6 +463,18 @@
     tick(); assetTimer = setInterval(tick, 120);
   };
 
+  // ── Стик (сенсорный и левый у геймпада): небольшое отклонение — повернуть робота, сильное — идти ──
+  const TURN = .25, MOVE = .7;            // доли полного хода стика
+  let stickDir = '', stickTimer = 0;
+  const stopWalk = () => { clearInterval(stickTimer); stickTimer = 0; };
+  window.kernStick = (nx, ny) => {
+    const m = Math.min(1, Math.hypot(nx, ny));
+    if (m < TURN) { stopWalk(); stickDir = ''; return; }
+    stickDir = Math.abs(nx) > Math.abs(ny) ? (nx > 0 ? 'right' : 'left') : (ny > 0 ? 'down' : 'up');
+    if (m < MOVE) { stopWalk(); window.kernWorld.face(stickDir); return; }
+    if (!stickTimer) { window.kernWorld.step(stickDir); stickTimer = setInterval(() => window.kernWorld.step(stickDir), 160); }
+  };
+
   // ── Сенсорное управление (PlayerHUD MobileControls) ──
   const pad = $('pad'), knob = $('padKnob');
   pad.onpointerdown = e => {
@@ -383,10 +484,11 @@
       let x = (ev.clientX - r.left - r.width / 2) * k, y = (ev.clientY - r.top - r.height / 2) * k;
       const len = Math.hypot(x, y); if (len > max) { x *= max / len; y *= max / len; }
       knob.style.transform = `translate(${x}px, ${y}px)`;
+      window.kernStick(x / max, y / max);
     };
     move(e);
     pad.onpointermove = move;
-    pad.onpointerup = pad.onpointercancel = () => { pad.onpointermove = null; knob.style.transform = ''; };
+    pad.onpointerup = pad.onpointercancel = () => { pad.onpointermove = null; knob.style.transform = ''; window.kernStick(0, 0); };
   };
   const toggleBtn = b => press(b, b.getAttribute('aria-pressed') !== 'true');
   $('fastMove').onclick = () => toggleBtn($('fastMove'));
@@ -410,11 +512,100 @@
   $('touchChat').onclick = () => { setSay(false); setChat(state.chat === 1 ? 0 : 1); };
   $('touchSay').onclick = () => setSay($('sayForm').hidden);
   $('sayForm').onsubmit = e => { e.preventDefault(); $('sayInput').value = ''; setSay(false); };
+  // ── Клан — по знаку клана ──
+  const MEMBERS = [['DVM_LEADER', 'Глава', 92, 1], ['ШАХТЁР-102', 'Заместитель', 61, 1], ['ШАХТЁР-774', 'Участник', 47, 1], ['ГЛУБИНА', 'Участник', 55, 1],
+    ['ROCKBOT', 'Участник', 38, 1], ['KOPATEL_9', 'Участник', 44, 1], ['ЖЕЛЕЗО', 'Участник', 29, 1], ['SANDMAN', 'Участник', 51, 0], ['МИНЁР', 'Новичок', 12, 0],
+    ['BLUE_HUNTER', 'Участник', 33, 0], ['ДРОН-7', 'Участник', 40, 0], ['ORE_KING', 'Участник', 66, 0]];
+  const BANK = [['+ $120 000', 'ШАХТЁР-102 · взнос', 'сегодня 18:40'], ['− $45 000', 'Постройка: Рынок', 'сегодня 14:02'], ['+ $80 500', 'Налог с добычи', 'вчера'], ['+ ₢ 2 000', 'DVM_LEADER · взнос', 'вчера'], ['− $210 000', 'Постройка: Пушка', '24.10']];
+  $('clanMembers').innerHTML = MEMBERS.map(([n, r, l, on]) => `<li class="${on ? 'is-online' : ''}"><i></i>${nickLink(n, 'var(--bone)')}<em class="${r === 'Участник' || r === 'Новичок' ? '' : 'role'}">${r}</em><em>ур.${l}</em></li>`).join('');
+  $('clanBank').innerHTML = BANK.map(([v, w, t]) => `<li><i></i><b>${w}</b><em class="${v[0] === '+' ? 'plus' : 'minus'}">${v}</em><em>${t}</em></li>`).join('');
+  // Объявления: пишут глава и заместители, читают все
+  const BOARD = [
+    { who: 'DVM_LEADER', role: 'Глава', time: 'вчера 21:10', pin: true, text: 'Сбор в субботу в 20:00 у Рынка на 1200:840. Строим пушку — каждому принести по 500 синих.' },
+    { who: 'ШАХТЁР-102', role: 'Заместитель', time: '24.10', text: 'Налог с добычи с понедельника 5%. Деньги идут на ремонт клановых зданий.' },
+    { who: 'DVM_LEADER', role: 'Глава', time: '20.10', text: 'Не копайте под нашими опорами на 1180:860 — там клановая база.' },
+  ];
+  const REQUESTS = [['ГЕОЛОГ_42', 34, 'Копаю каждый день, есть свои дороги'], ['NEWBIE_MINER', 9, ''], ['STONEFACE', 51, 'Ушёл из клана DNO, ищу активный клан']];
+  let clanRole = 'member';
+  function renderClanBoard() {
+    $('clanBoard').innerHTML = BOARD.map(p => `<li class="${p.pin ? 'is-pin' : ''}"><header>${nickLink(p.who, 'var(--bone)')}<em class="role">${p.role}</em><time>${p.time}</time>${p.pin ? '<span class="pin">Закреплено</span>' : ''}</header><p>${esc(p.text)}</p></li>`).join('');
+  }
+  function renderRequests() {
+    $('clanRequests').innerHTML = REQUESTS.map(([n, l, msg], i) => `<li class="req"><i></i>${nickLink(n, 'var(--bone)')}<em>ур.${l}</em><span class="req-act"><button type="button" class="btn btn--primary" data-accept="${i}">Принять</button><button type="button" class="btn" data-decline="${i}">Отклонить</button></span>${msg ? `<small>${esc(msg)}</small>` : ''}</li>`).join('')
+      || '<li class="clan-empty">Новых заявок нет</li>';
+    $('reqBadge').textContent = REQUESTS.length || '';
+  }
+  $('clanRequests').onclick = e => {
+    const a = e.target.closest('[data-accept]'), d = e.target.closest('[data-decline]');
+    if (!a && !d) return;
+    const [n] = REQUESTS.splice(+(a || d).dataset[a ? 'accept' : 'decline'], 1);
+    $('clanInviteNote').textContent = a ? `${n} принят в клан` : `Заявка ${n} отклонена`;
+    renderRequests();
+  };
+  $('clanInviteForm').onsubmit = e => {
+    e.preventDefault();
+    const id = $('clanInviteId').value.replace(/\D/g, '');
+    $('clanInviteNote').textContent = id ? `Приглашение отправлено игроку #${id}` : 'Введите ID игрока';
+    $('clanInviteId').value = '';
+  };
+  $('clanPostForm').onsubmit = e => {
+    e.preventDefault();
+    const text = $('clanPostText').value.trim(); if (!text) return;
+    BOARD.unshift({ who: 'ШАХТЁР-774', role: 'Глава', time: 'сейчас', text });
+    $('clanPostText').value = ''; renderClanBoard();
+  };
+  function setClanTab(tab) {
+    $('clanTabs').querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x.dataset.tab === tab)));
+    $('clanDialog').querySelectorAll('[data-page]').forEach(p => { p.hidden = p.dataset.page !== tab; });
+  }
+  $('clanTabs').onclick = e => { const b = e.target.closest('button'); if (b) setClanTab(b.dataset.tab); };
+  // Роль игрока в клане: заявки и объявления пишет только глава (и заместители)
+  function setClanRole(role) {
+    clanRole = role;
+    $('clanDialog').classList.toggle('is-lead', role === 'leader');
+    document.querySelectorAll('#standClanRole button').forEach(b => b.classList.toggle('is-on', b.dataset.role === role));
+    if (role !== 'leader' && $('clanTabs').querySelector('[data-tab="requests"]').getAttribute('aria-checked') === 'true') setClanTab('members');
+  }
+  document.querySelectorAll('#standClanRole button').forEach(b => b.onclick = () => setClanRole(b.dataset.role));
+  renderClanBoard(); renderRequests();
+  $('clanBtn').onclick = () => { $('clanDialog').hidden = false; };
+  $('clanDialog').querySelector('[data-close]').onclick = () => { $('clanDialog').hidden = true; };
+
+  // ── Почта: письма сервера и игроков, подарки забираются кнопкой ──
+  const MAIL = [
+    { from: 'Сервер', title: 'Награда за неделю', time: 'сегодня 09:00', unread: true, text: 'Спасибо, что играете! За активность на этой неделе вам начислена награда.', gift: ['img/items/upgradeBooster.png', 'Прокачка x3 · 1 шт.'] },
+    { from: 'DVM_LEADER', title: 'Сбор у Рынка', time: 'вчера 21:14', unread: true, text: 'В субботу в 20:00 собираемся у клановского Рынка на 1200:840. Берите синие кристаллы — будем строить пушку.' },
+    { from: 'Сервер', title: 'Обновление 0.9.0', time: '24.10', text: 'Вышло обновление 0.9.0: поезда на рельсах и переработанные клановые войны. Подробности — в Discord.' },
+    { from: 'ШАХТЁР-102', title: 'Перевод', time: '22.10', text: 'Держи на ремонт, вернёшь когда сможешь.', gift: ['img/crystals/green.png', '$25 000'], taken: true },
+  ];
+  let mailSel = 0;
+  function renderMail() {
+    $('mailList').innerHTML = MAIL.map((m, i) => `<li><button type="button" class="${m.unread ? 'is-unread' : ''}${i === mailSel ? ' is-on' : ''}" data-i="${i}"><i></i><b>${m.title}</b><time>${m.time}</time><span>${m.from}</span></button></li>`).join('');
+    const m = MAIL[mailSel];
+    $('mailRead').innerHTML = `<h3>${m.title}</h3><p class="from">${m.from} · ${m.time}</p><p>${m.text}</p>`
+      + (m.gift ? `<div class="mail-gift"><img src="${m.gift[0]}" alt=""><span>${m.gift[1]}</span><button type="button" class="btn btn--primary" id="mailTake"${m.taken ? ' disabled' : ''}>${m.taken ? 'Получено' : 'Забрать'}</button></div>` : '');
+    if ($('mailTake')) $('mailTake').onclick = () => { m.taken = true; renderMail(); };
+    const n = MAIL.filter(x => x.unread).length;
+    $('mailBadge').textContent = n || '';
+  }
+  $('mailList').onclick = e => { const b = e.target.closest('button'); if (!b) return; mailSel = +b.dataset.i; MAIL[mailSel].unread = false; renderMail(); };
+  window.openMail = () => { MAIL[mailSel].unread = false; renderMail(); $('mailDialog').hidden = false; };
+  $('mailBtn').addEventListener('click', () => window.openMail());
+  $('mailDialog').querySelector('[data-close]').onclick = () => { $('mailDialog').hidden = true; };
+  renderMail();
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('clanDialog').hidden = true; $('mailDialog').hidden = true; } });
+
+  // Профиль — по ID игрока у знака клана
+  $('profileBtn').onclick = () => window.openProfile();
+  $('profileDialog').querySelector('[data-close]').onclick = () => { $('profileDialog').hidden = true; };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') $('profileDialog').hidden = true; });
   // Мои здания — пустое окно сервера
   document.querySelector('[title="Мои здания"]').addEventListener('click', () => { $('buildingsDialog').hidden = false; });
   $('buildingsDialog').querySelector('[data-close]').onclick = () => { $('buildingsDialog').hidden = true; };
   document.addEventListener('keydown', e => { if (e.key === 'Escape') $('buildingsDialog').hidden = true; });
   $('touchMenu').onclick = () => { $('pauseDialog').hidden = false; };
+  // «Меню» на ПК открывает паузу; на пальце паузы нет — та же кнопка в ☰ открывает настройки
+  $('sysMenu').onclick = () => frame.classList.contains('compact') ? window.openSettings() : ($('menuDialog').hidden = false);
   $('pauseSys').addEventListener('click', e => { if (e.target.closest('button')) $('pauseDialog').hidden = true; });
   $('pauseDialog').querySelector('[data-close]').onclick = () => { $('pauseDialog').hidden = true; };
   $('touchDig').onclick = () => autodigTick();
@@ -425,11 +616,18 @@
   const q = new URLSearchParams(location.search);
   window.kernWorld.ready.then(() => {
     setDevice(q.get('device') || 'd1080');
+    if (q.get('input')) setInput(q.get('input'));
     renderPlayer(); renderCargo(); renderChat(); showMini('M');
     if (q.get('state')) document.querySelector(`[data-state="${q.get('state')}"]`)?.click();
     if (q.get('chat')) setChat(Number(q.get('chat')));
     if (q.get('build')) $('buildFan').hidden = false;
     if (q.get('pause')) $('pauseDialog').hidden = false;
+    if (q.get('profile')) window.openProfile(q.get('profile') === '1' ? undefined : q.get('profile'));
+    if (q.get('pm')) window.openPM(q.get('pm'));
+    if (q.get('clanrole')) setClanRole(q.get('clanrole'));
+    if (q.get('clan')) { $('clanBtn').click(); if (q.get('clan') !== '1') setClanTab(q.get('clan')); }
+    if (q.get('mail')) window.openMail();
+    if (q.get('menu')) $('menuDialog').hidden = false;
     if (q.get('buildings')) $('buildingsDialog').hidden = false;
     if (q.get('assets')) window.kernAssets(148, Number(q.get('assets')));
     if (q.get('inv')) { $('invExpand').click(); if (q.get('inv') !== '1') document.querySelector(`.inv-cell[data-i="${q.get('inv')}"]`)?.click(); }

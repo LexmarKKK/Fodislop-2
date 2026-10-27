@@ -1,0 +1,58 @@
+#nullable enable
+
+using System;
+using System.IO;
+using Kern.Core;
+using UnityEditor;
+
+using Kern.UI.Menu;
+
+namespace Kern.Editor;
+
+// Порядок production-сцен в Build Settings: Bootstrap первой, дальше Gateway,
+// MainMenu, MainGame. Проверяется перед сборкой; правится руками в Build
+// Settings, а не молча чинится кодом.
+public static class BuildSceneOrder
+{
+    private static readonly string[] s_requiredScenePaths =
+    new[] {
+
+        ScenePath(SceneNames.Bootstrap),
+        ScenePath(SceneNames.Gateway),
+        ScenePath(SceneNames.MainMenu),
+        ScenePath(SceneNames.MainGame),
+
+    };
+
+    public static string ScenePath(string sceneName) => $"Assets/Scenes/{sceneName}.unity";
+
+    public static void Validate()
+    {
+        EditorBuildSettingsScene[] scenes = EditorBuildSettings.scenes;
+        if (scenes.Length < s_requiredScenePaths.Length)
+        {
+            throw new InvalidOperationException(
+                $"Build Settings contain {scenes.Length} scene(s); " +
+                $"at least {s_requiredScenePaths.Length} production scenes are required.");
+        }
+
+        for (int index = 0; index < s_requiredScenePaths.Length; index++)
+        {
+            string requiredPath = s_requiredScenePaths[index];
+            if (!File.Exists(requiredPath))
+            {
+                throw new FileNotFoundException("Required production scene is missing.", requiredPath);
+            }
+
+            EditorBuildSettingsScene scene = scenes[index];
+            if (scene == null || !scene.enabled || scene.path != requiredPath)
+            {
+                string actual = scene == null
+                    ? "<null>"
+                    : $"{scene.path} (enabled={scene.enabled})";
+                throw new InvalidOperationException(
+                    $"Build Settings scene {index} must be '{requiredPath}' and enabled; actual: {actual}.");
+            }
+        }
+    }
+}

@@ -1,18 +1,18 @@
 # Хвост робота
 
 Краткая памятка о том, как устроен хвост и почему он такой. Подробности реализации —
-в коде: `Assets/Scripts/Game/VFX/TentacleGeometry.cs` (геометрия), `TailChain.cs`
+в коде: `Assets/Scripts/Game/VisualEffects/Tentacles/Geometry/TentacleGeometry.cs` (геометрия), `TailChain.cs`
 (симуляция), `Tentacle.cs` (одна прядь), `RobotVisuals.cs` (владение и отладочные режимы).
 
 ## Из чего состоит
 
 | Слой | Файл |
 |---|---|
-| Симуляция цепочки | `Assets/Scripts/Game/VFX/TailChain.cs` |
-| Геометрия ленты | `Assets/Scripts/Game/VFX/TentacleGeometry.cs` |
-| Одна прядь | `Assets/Scripts/Game/VFX/Tentacle.cs` |
-| Владение, отладочные режимы | `Assets/Scripts/Game/Entities/Robot/RobotVisuals.cs` |
-| Сборка меша | `Assets/Scripts/Game/Rendering/WorldEntityBatchRenderer.cs` |
+| Симуляция цепочки | `Assets/Scripts/Game/VisualEffects/Tails/Simulation/TailChain.cs` |
+| Геометрия ленты | `Assets/Scripts/Game/VisualEffects/Tentacles/Geometry/TentacleGeometry.cs` |
+| Одна прядь | `Assets/Scripts/Game/VisualEffects/Tentacles/Geometry/Tentacle.cs` |
+| Владение, отладочные режимы | `Assets/Scripts/Game/Entities/Robots/Presentation/RobotVisuals.cs` |
+| Сборка меша | `Assets/Scripts/Game/Rendering/Entities/Batching/WorldEntityBatchRenderer.cs` |
 
 Одна прядь — цепочка из 5 точек: робот плюс 4 узла. Прядей 4, как четыре
 `LineRenderer` в prefab робота старого клиента. Каждая отличается только инерцией,

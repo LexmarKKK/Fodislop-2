@@ -44,11 +44,11 @@ public sealed class TerrainLightingBoundaryRule : IRule
         CancellationToken cancellationToken)
     {
         string absoluteRoot = Path.Combine(context.ProjectRoot, domainRoot);
-        foreach (string sourcePath in SourceScanner.EnumerateCsFiles(absoluteRoot))
+        foreach (string sourcePath in CSharpSourceFiles.EnumerateCsFiles(absoluteRoot))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            string relativePath = SourceScanner.GetProjectRelativePath(context.ProjectRoot, sourcePath);
-            string source = SourceScanner.StripComments(File.ReadAllText(sourcePath));
+            string relativePath = ProjectSourcePaths.GetProjectRelativePath(context.ProjectRoot, sourcePath);
+            string source = CSharpSourceText.StripComments(File.ReadAllText(sourcePath));
             source = StringLiteral.Replace(source, match => new string(' ', match.Length));
             List<(int Start, int End)> usingRanges = [];
             Dictionary<string, string> aliases = UsingDirective.Matches(source)

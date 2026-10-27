@@ -9,7 +9,7 @@ Specializations are implemented as skills and auto-load based on task triggers. 
 | Domain | Skill | Triggers |
 |--------|-------|---------|
 | C#, namespaces, DI, assembly layers | `csharp-conventions` | MonoBehaviour, VContainer, asmdef, nullable, SA1513 |
-| Coordinates, UI positioning, camera, RenderTexture, fallbacks, profiler | `critical-invariants` | CoordinateUtils, RuntimePanelUtils, LifetimeScope, VSync, EditorLoop |
+| Coordinates, UI positioning, camera, RenderTexture, fallbacks, profiler | `critical-invariants` | WorldCoordinateConverter, RuntimePanelUtils, LifetimeScope, VSync, EditorLoop |
 | Lighting shaders, bloom, tonemapping, HDR, post-processing, calibration | `hdr-color-contract` | saturate, ARGBHalf, HDROutputReconciler, paper white, CompositeFinal |
 | Lighting compute, DDA, cascades, bounce | `lighting-guide` | CascadeTrace, DDA.hlsl, TraceLightSegment, IFrameTelemetry |
 | Scenes, DI, startup pipeline | sections 2–3 of [`project-context.md`](.agents/project-context.md) | |
@@ -29,9 +29,21 @@ facade.
 
 Code is the source of truth if reference context is stale. Don't read everything — only what the task requires.
 
+## Repository taxonomy
+
+Use module → feature → responsibility folders. Put every project source file in
+its owning responsibility folder, including a single file. Do not mix source
+files with child categories or collect unowned code in Utils, Helpers, Common,
+Misc, Support, or Managers. Split unrelated operations and name their owners.
+Keep neutral contracts beside their domain with the correct asmref; folder
+hierarchy does not replace assembly boundaries. Move Unity files with their
+metadata and migrate resource keys, namespace strings and tool paths together.
+See `.agents/repository-map.md` and `tools/Kern.RepositoryTaxonomy/Inventory/`.
+
 ## Authority boundaries
 
 - Unity CLI is available as `unity`. The agent runs it on its own, without asking, whenever a task needs proof that only Unity can give: compiling scripts and shaders, EditMode/PlayMode tests, production-path render captures written as tests. Run it headless in batch mode (`-batchmode`, `-runTests`/`-executeMethod`, `-logFile`), one run at a time. A visual or GPU fix is not done until such a run has checked it; "verify it in the game yourself" is not an acceptable hand-off. If an open editor locks the project, report that blocker instead of closing the editor.
+- Clones and copies of the project are forbidden: never copy, clone, or duplicate the project or its `Assets`/`Library`/`Temp` to another path (scratchpad, `/tmp`, APFS clone) to work around an open editor, a project lock, or a failed check, and never run tests or builds against such a copy. Stay inside the working tree; when the open Unity Editor blocks a headless run, report that blocker.
 - Android verification builds must use Development mode by default so device logs and debugging are available. For `Kern.Editor.BuildScript.BuildAndroid`, pass `-kernDev` through Unity's command-line arguments (for example, `unity build --target Android --execute-method Kern.Editor.BuildScript.BuildAndroid --args "-kernDev"`). Build Release only when the user explicitly requests a Release/store build.
 - For Android launch or world-entry investigations, trace the complete startup path in project code and inspect existing logs first; do not start ADB/device sessions or build an APK unless the user explicitly requests that action in the current task. A request to investigate or fix the failure alone does not authorize repeated builds. When a build is explicitly requested, use Development mode as specified above.
 - During code-only Android launch investigations, preserve existing timeout values. Never increase a timeout just to defer a failure or make startup appear successful; first identify its owner, start point, covered phase, and failure behavior, then fix the underlying cause. Do not run a build as an indirect way to validate a code-only investigation.

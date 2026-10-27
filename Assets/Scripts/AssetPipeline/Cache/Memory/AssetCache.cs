@@ -1,0 +1,300 @@
+#nullable enable
+
+using System;
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Kern.Core;
+using UnityEngine;
+
+namespace Kern.AssetPipeline.Cache;
+public sealed class AssetCache
+{
+    private readonly ConcurrentDictionary<string, AssetCacheEntry> _entries = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, long> _entrySizes = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentQueue<string> _accessOrder = new();
+    private readonly ConcurrentDictionary<string, long> _decodedEntrySizes = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentQueue<string> _decodedAccessOrder = new();
+    private readonly Func<string, CancellationToken, int, UniTask<byte[]?>> _bytesLoader;
+
+    // Asked for at call time, not stored at construction: the cache is built
+    // in the loader's Awake, while the supervisor is injected by Start.
+    private readonly Func<IAsyncOperationSupervisor?> _operations;
+    private long _totalBytes;
+    private long _maxBytes = AssetStreamingLimits.AssetCacheCapacityBytes;
+    private long _maxDecodedBytes = AssetStreamingLimits.DecodedAssetCacheCapacityBytes;
+    private long _totalDecodedBytes;
+    private int _unloadUnusedAssetsRequested;
+
+    // Wall clock rather than Time.unscaledTime: cache maintenance runs from
+    // asset-decode continuations that are not guaranteed to be on the main
+    // thread, and Unity's time API is.
+    private static readonly System.Diagnostics.Stopwatch s_unusedAssetsClock =
+        System.Diagnostics.Stopwatch.StartNew();
+    private const double MinimumSecondsBetweenUnusedAssetCollections = 30.0;
+    private double _nextUnusedAssetsCollectionSeconds;
+
+    public AssetCache(
+        Func<string, CancellationToken, int, UniTask<byte[]?>> bytesLoader,
+        Func<IAsyncOperationSupervisor?> operations)
+    {
+        _bytesLoader = bytesLoader ?? throw new ArgumentNullException(nameof(bytesLoader));
+        _operations = operations ?? throw new ArgumentNullException(nameof(operations));
+    }
+
+    public UniTask<byte[]?> GetBytesAsync(
+        string filename,
+        CancellationToken ct = default,
+        int timeoutSeconds = AssetStreamingLimits.AssetRequestTimeoutSeconds)
+    {
+        var entry = _entries.GetOrAdd(filename, name => new AssetCacheEntry(name, this));
+        return entry.GetBytesAsync(() => _bytesLoader(filename, ct, timeoutSeconds));
+    }
+
+    public UniTask<Texture2D?> GetTextureAsync(
+        string filename,
+        CancellationToken ct = default,
+        int timeoutSeconds = AssetStreamingLimits.AssetRequestTimeoutSeconds)
+    {
+        var entry = _entries.GetOrAdd(filename, name => new AssetCacheEntry(name, this));
+        return entry.GetTextureAsync(() => _bytesLoader(filename, ct, timeoutSeconds));
+    }
+
+    public UniTask<AudioClip?> GetAudioAsync(
+        string filename,
+        CancellationToken ct = default,
+        int timeoutSeconds = AssetStreamingLimits.LargeAssetRequestTimeoutSeconds)
+    {
+        var entry = _entries.GetOrAdd(filename, name => new AssetCacheEntry(name, this));
+        return entry.GetAudioAsync(() => _bytesLoader(filename, ct, timeoutSeconds));
+    }
+
+    public UniTask<Sprite[]?> GetSpritesAsync(
+        string filename,
+        CancellationToken ct = default,
+        int timeoutSeconds = AssetStreamingLimits.LargeAssetRequestTimeoutSeconds)
+    {
+        var entry = _entries.GetOrAdd(filename, name => new AssetCacheEntry(name, this));
+        return entry.GetSpritesAsync(() => _bytesLoader(filename, ct, timeoutSeconds));
+    }
+
+    public UniTask<AnimatedSpriteData> GetAnimatedSpritesAsync(
+        string filename,
+        CancellationToken ct = default,
+        int timeoutSeconds = AssetStreamingLimits.LargeAssetRequestTimeoutSeconds)
+    {
+        var entry = _entries.GetOrAdd(filename, name => new AssetCacheEntry(name, this));
+        return entry.GetAnimatedSpritesAsync(() => _bytesLoader(filename, ct, timeoutSeconds));
+    }
+    /// <param name="collectUnusedAssets">
+    /// Whether to schedule Unity's unused-assets collection after releasing
+    /// the cached references. Teardown callers must pass <see langword="false" />
+    /// because the operation supervisor can already be disposed.
+    /// </param>
+    public void Clear(bool collectUnusedAssets = true)
+    {
+        foreach (var entry in _entries.Values.ToArray())
+        {
+            entry.ReleaseAllReferences();
+        }
+
+        _entries.Clear();
+        _entrySizes.Clear();
+        _decodedEntrySizes.Clear();
+        while (_accessOrder.TryDequeue(out _))
+        {
+        }
+
+        while (_decodedAccessOrder.TryDequeue(out _))
+        {
+        }
+
+        Interlocked.Exchange(ref _totalBytes, 0);
+        Interlocked.Exchange(ref _totalDecodedBytes, 0);
+
+        if (collectUnusedAssets)
+        {
+            RequestUnusedAssetsCollection(force: true);
+        }
+    }
+    // Предупреждение ОС о нехватке памяти: декодированные копии отпускаются
+    // целиком — их восстанавливают из байтов при следующем обращении, а
+    // байты и сами ассеты на экране остаются.
+    public void ReleaseDecodedForLowMemory()
+    {
+        long previous = _maxDecodedBytes;
+        _maxDecodedBytes = 0;
+        try
+        {
+            TrimDecodedIfNeeded();
+        }
+        finally
+        {
+            _maxDecodedBytes = previous;
+        }
+    }
+
+    internal void TrackAccess(string filename, long byteSize)
+    {
+        if (_entrySizes.TryAdd(filename, byteSize))
+        {
+            _accessOrder.Enqueue(filename);
+            Interlocked.Add(ref _totalBytes, byteSize);
+        }
+
+        EvictIfNeeded();
+    }
+
+    internal void TrackDecoded(string filename, long decodedSize)
+    {
+        if (decodedSize <= 0)
+        {
+            return;
+        }
+
+        if (_decodedEntrySizes.TryAdd(filename, decodedSize))
+        {
+            _decodedAccessOrder.Enqueue(filename);
+            Interlocked.Add(ref _totalDecodedBytes, decodedSize);
+        }
+
+        TrimDecodedIfNeeded();
+    }
+
+    private void TrimDecodedIfNeeded()
+    {
+        bool trimmed = false;
+        while (Interlocked.Read(ref _totalDecodedBytes) > _maxDecodedBytes &&
+               _decodedAccessOrder.TryDequeue(out var oldest))
+        {
+            if (!_decodedEntrySizes.TryRemove(oldest, out var size))
+            {
+                continue;
+            }
+
+            if (_entries.TryGetValue(oldest, out var entry))
+            {
+                entry.ReleaseDecodedReference();
+            }
+
+            Interlocked.Add(ref _totalDecodedBytes, -size);
+            trimmed = true;
+        }
+
+        if (trimmed)
+        {
+            RequestUnusedAssetsCollection();
+        }
+    }
+
+    private void RequestUnusedAssetsCollection(bool force = false)
+    {
+        double now = s_unusedAssetsClock.Elapsed.TotalSeconds;
+        if (!force && now < _nextUnusedAssetsCollectionSeconds)
+        {
+            return;
+        }
+
+        if (Interlocked.Exchange(ref _unloadUnusedAssetsRequested, 1) != 0)
+        {
+            return;
+        }
+
+        _nextUnusedAssetsCollectionSeconds =
+            now + MinimumSecondsBetweenUnusedAssetCollections;
+
+        // The explicit UniTask wrap lets GC roots settle and gives the
+        // engine a deterministic frame boundary to drop unused objects,
+        // instead of the implicit completion of AsyncOperation.completed,
+        // which runs on the main thread outside any frame boundary. The
+        // supervisor owns that wait: an unsupervised one would keep calling
+        // into the engine after teardown has begun.
+        IAsyncOperationSupervisor? operations = _operations();
+        if (operations == null)
+        {
+            // Before the supervisor is injected there is nobody to own the
+            // wait. Collection is an optimisation, so the request is dropped
+            // rather than run unattended; the flag is cleared so the next
+            // trim can ask again.
+            Interlocked.Exchange(ref _unloadUnusedAssetsRequested, 0);
+            return;
+        }
+
+        try
+        {
+            operations.Run("asset_cache_unload_unused", RunUnusedAssetsCollectionAsync);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Disposal can win the race after the supervisor is resolved.
+            // Collection is only a maintenance optimisation, so dropping it
+            // during teardown is safe and lets a later live request retry.
+            Interlocked.Exchange(ref _unloadUnusedAssetsRequested, 0);
+        }
+    }
+
+    private async UniTask RunUnusedAssetsCollectionAsync(CancellationToken cancellationToken)
+    {
+        // Временный замер: сборка идёт на главном потоке и способна дать
+        // секундный фриз — её время должно быть видно в логе рядом
+        // с открытиями окон (репорт: лаг при первом заходе в маркет).
+        var collectionWatch = System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            var op = Resources.UnloadUnusedAssets();
+            await op.ToUniTask(cancellationToken: cancellationToken);
+            await UniTask.Yield(cancellationToken);
+            UnityEngine.Debug.Log(
+                $"[AssetCache] UnloadUnusedAssets завершён за {collectionWatch.ElapsedMilliseconds} мс.");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[AssetCache] UnloadUnusedAssets failed: {ex.Message}");
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _unloadUnusedAssetsRequested, 0);
+        }
+    }
+
+    internal void RemoveTrackedSize(string filename)
+    {
+        if (_entrySizes.TryRemove(filename, out var size))
+        {
+            Interlocked.Add(ref _totalBytes, -size);
+        }
+    }
+
+    private void RebuildAccessOrder()
+    {
+        while (_accessOrder.TryDequeue(out _))
+        {
+        }
+
+        foreach (var filename in _entrySizes.Keys)
+        {
+            _accessOrder.Enqueue(filename);
+        }
+    }
+
+    private void EvictIfNeeded()
+    {
+        while (Interlocked.Read(ref _totalBytes) > _maxBytes && _accessOrder.Count > 0)
+        {
+            if (!_accessOrder.TryDequeue(out var oldest))
+            {
+                break;
+            }
+
+            if (_entries.TryGetValue(oldest, out var entry))
+            {
+                entry.ReleaseRawBytes();
+            }
+            else
+            {
+                RemoveTrackedSize(oldest);
+            }
+        }
+    }
+}

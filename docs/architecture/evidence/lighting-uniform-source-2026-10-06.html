@@ -17,7 +17,7 @@ The editor was not controlled or closed. Standalone compiler and C++ tests do no
 
 <h2>TL-CHANGE: scope and decision</h2>
 <p>Owner: Lighting, dynamic transport, <code>GatherDynamicSource</code> in
-<a href="../../../Assets/Resources/Shaders/Lighting/Dynamic/DynamicPolar.hlsl">DynamicPolar.hlsl</a>.
+<a href="../../../Assets/Resources/Shaders/Lighting/Dynamic/Polar/DynamicPolar.hlsl">DynamicPolar.hlsl</a>.
 Consumer: <code>SolveDynamicLighting</code> near-source receivers. Current per-cell DDA repeats geometry traversal for every angular sample.
 The experiment proves a complete receiver/emitter bounding box once using the existing clean-cell summed-area table, then integrates the same continuous emitter in a uniform medium.</p>
 <p>The box includes the existing cell-plus-texel corner guard. Clean air requires zero occupancy and emission throughout; clean stone requires full occupancy, zero emission and an entirely in-field box.
@@ -36,7 +36,7 @@ JFA and additional distance-field resources are deferred: the existing exact pro
 Output: empty (rg exit 1).
 
 rg -n '\b(TerrainRenderer|TerrainViewportCalculator|TerrainCellCache|TerrainCellBuilder|TerrainCellBuffers|TerrainMeshManager|TerrainMaterialManager|TerrainLook)\b|Kern\.World\.Terrain' Assets/Scripts/World/Lighting --glob '*.cs'
-Assets/Scripts/World/Lighting/Core/LightingRegionCalculator.cs:54: /// Террейн уже держит окно на этот кадр (TerrainViewportCalculator). Регион
+Assets/Scripts/World/Lighting/Fields/Regions/LightingRegionCalculator.cs:54: /// Террейн уже держит окно на этот кадр (TerrainViewportCalculator). Регион
 Classification: pre-existing documentation comment, outside the diff; no code dependency.
 
 dotnet run --project tools/Kern.ArchitectureLinter/Kern.ArchitectureLinter.csproj -- --project-root . --rule KERN-TERRAIN-LIGHTING-BOUNDARY --source-only
@@ -65,9 +65,9 @@ Rules: 1; Total violations: 0; exit 0.</pre>
 <tr><td>TraceDynamicPolar / compose / static transport</td><td>No new tracing or output format; no changes to polar radial storage or static cascade algorithm.</td><td>Unchanged dispatch counts. This experiment does not accelerate polar writes.</td></tr>
 </table>
 <p>Dispatch locations:
-<a href="../../../Assets/Scripts/World/Lighting/Solvers/DynamicLightingSolver.cs">DynamicLightingSolver.Record</a>;
+<a href="../../../Assets/Scripts/World/Lighting/Solvers/Dynamic/DynamicLightingSolver.cs">DynamicLightingSolver.Record</a>;
 kernel entry:
-<a href="../../../Assets/Resources/Shaders/Lighting/Dynamic/DynamicLightTrace.hlsl">SolveDynamicLighting</a>.
+<a href="../../../Assets/Resources/Shaders/Lighting/Dynamic/Trace/DynamicLightTrace.hlsl">SolveDynamicLighting</a>.
 GPU marker: <code>Kern.Lighting.DynamicReceiverTrace</code>; existing dynamic dispatch-pixel telemetry and DDA segment/visit counters retain their meaning.
 Analytic paths contribute no DDA visits. The supplementary native harness counts prefix-buffer reads as well as material/texture reads, so a proof is not treated as free.</p>
 

@@ -39,33 +39,15 @@ WorldLightTexture
 
 Окно terrain и окно lighting связаны координатами world region, но имеют разные кэши и разные invalidation rules. Новый origin нельзя публиковать в presentation, пока все используемые terrain и lighting resources не готовы.
 
-## Debug-сравнение источников эмиссии (2026-10-26)
+## Источник эмиссии террейна
 
-В F1 → «Отладка террейна» доступны три локальных shader-варианта:
-исходный цвет текстуры (по умолчанию), общий порог peak-channel яркости
-0.25–0.60 linear и адаптивная маска по гистограмме исходной текстуры.
-Ни один вариант не выбирается по имени/цвету блока или SurfaceEffect.
-Terrain владеет подготовкой маски и шестью уровнями коэффициентов; Lighting
-по прежнему контракту получает material/occupancy и HDR glow field.
-Адаптивный режим извлекает загруженный source rect одним compute-dispatch,
-асинхронно читает его и анализирует на worker; максимум две подготовки
-одновременно. Гистограмма отделяет тёмную основу от ярких деталей общим
-для RGB коэффициентом, транспортный gain сохраняет суммарную линейную
-светимость исходного изображения. Это не семантическая маска кристаллов.
-Поверхность получает отдельную эмиссию силы 1; транспортный GlowScale 12
-не применяется к этой добавке. Исходный режим новой добавки не имеет.
-
-Запрос режима и завершение подготовки используют существующий terrain
-configuration change journal и выставляют TerrainWindow.NeedsRefresh: одна
-revision не запускает публикацию материала при неподвижном окне. Решения
-о перестройке lighting принадлежат
-Lighting. Загруженная/заменённая текстура инвалидирует только её анализ;
-поколение мира заменяет кэш. Старые GPU-ресурсы удерживаются до нового
-material binding, чтобы held view не ссылался на освобождённые буферы.
-На неизменном кадре анализа, readback и extraction-dispatch нет.
-Контракты стадий, ресурсные размеры, ограничения, production-path проверки
-и результаты сравнения записаны в
-[самодостаточном отчёте](evidence/terrain-source-emission-2026-10-25.html).
+Свечение клетки берётся из её исходной текстуры одним способом: peak-channel
+яркость в linear пространстве проходит через `smoothstep(0.25…0.60)`,
+коэффициент умножается на альфу источника и на авторский glow клетки. Выбора
+по имени блока или SurfaceEffect нет. Material/glow field интегрирует исходные
+тексели (до 16×16 на field-тексель при 2 пикселях на клетку), поверхность
+получает отдельную добавку силы 1; транспортный GlowScale 12 к ней не
+применяется. Переключателя методов и кэшированных масок в отладке нет.
 
 ## Статус миграции границы
 
@@ -708,7 +690,7 @@ Terrain requests its actual target plus halo through the optional `IWorldRegionR
 - DDA ownership stays in transport stages only.
 - Static lighting must not be limited by frequency or cell transitions.
 - Dynamic light tracing follows exact smooth dynamic light position.
-- Server Y-down and Unity Y-up conversion goes through `CoordinateUtils`.
+- Server Y-down and Unity Y-up conversion goes through `WorldCoordinateConverter`.
 - A new terrain/lighting window is published only after its required resources are resident and coherent.
 - Dirty regions retain their identity until the consuming stage has used them.
 - Telemetry distinguishes frame-local deltas from cumulative counters.

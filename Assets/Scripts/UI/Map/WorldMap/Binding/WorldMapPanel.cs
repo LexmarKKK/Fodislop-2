@@ -1,0 +1,273 @@
+#nullable enable
+
+using System;
+using Kern.Core.Localization;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+using Kern.UI.Screens;
+
+namespace Kern.UI.Map;
+
+/// <summary>Owns WorldMap's UI Toolkit bindings and presentation-only panel state.</summary>
+internal sealed class WorldMapPanel : IDisposable
+{
+    private const float PositionWriteEpsilon = 0.5f;
+
+    private UIDocument? _document;
+    private VisualElement? _overlay;
+    private VisualElement? _playerMarker;
+    private Image? _image;
+    private Image? _pathOverlay;
+    private Button? _closeButton;
+    private Button? _followButton;
+    private Label? _status;
+    private EventCallback<WheelEvent>? _wheelCallback;
+    private EventCallback<GeometryChangedEvent>? _geometryCallback;
+    private Action _closeRequested = null!;
+    private Action _followPlayer = null!;
+    private Action? _geometryChanged;
+    private bool _bindingFailureReported;
+    private float _lastMarkerLeft = float.MinValue;
+    private float _lastMarkerTop = float.MinValue;
+
+    public VisualElement? Overlay => _overlay;
+
+    public Image? Image => _image;
+
+    /// <summary>Прозрачный слой поверх карты: нить клик-маршрута.</summary>
+    public Image? PathOverlay => _pathOverlay;
+
+    public bool IsBound => _overlay != null && _image != null;
+
+    public bool IsDocumentDisabled => _document != null && !_document.enabled;
+
+    public bool TryBind(
+        UIDocument? document,
+        Action closeRequested,
+        Action followPlayer,
+        EventCallback<WheelEvent> wheelCallback,
+        Action? geometryChanged = null)
+    {
+        if (IsBound)
+        {
+            return true;
+        }
+
+        _document = document;
+        if (_document == null)
+        {
+            ReportBindingFailure("World map panel cannot bind because its UIDocument was not injected.");
+            return false;
+        }
+
+        if (_document.rootVisualElement.panel == null)
+        {
+            // Панель ещё не привязана к UI Toolkit; WorldMapRenderer подписывается на AttachToPanelEvent и повторит привязку.
+            return false;
+        }
+
+        VisualElement? overlay = _document.rootVisualElement.Q<VisualElement>("WorldMapOverlay");
+        if (overlay == null)
+        {
+            ReportBindingFailure("World map panel cannot bind because WorldMapOverlay is missing from its UIDocument.");
+            return false;
+        }
+
+        Image? image = overlay.Q<Image>("WorldMapImage");
+        Button? closeButton = overlay.Q<Button>("WorldMapCloseButton");
+        Button? followButton = overlay.Q<Button>("WorldMapFollowPlayerButton");
+        Label? status = overlay.Q<Label>("WorldMapStatus");
+        if (image == null || closeButton == null || followButton == null || status == null)
+        {
+            ReportBindingFailure(
+                "World map panel cannot bind because a required map control is missing.");
+            return false;
+        }
+
+        _overlay = overlay;
+        _playerMarker = overlay.Q<VisualElement>("WorldMapPlayerMarker");
+        _image = image;
+        _closeButton = closeButton;
+        _followButton = followButton;
+        _status = status;
+        _image.image = null;
+
+        // Прозрачный слой поверх карты: нить клик-маршрута рисуется в отдельной
+        // текстуре, чтобы не вмешиваться в инкрементальный рендер самой карты.
+        _pathOverlay = new Image { name = "WorldMapPathOverlay", pickingMode = PickingMode.Ignore };
+        _pathOverlay.style.position = Position.Absolute;
+        _pathOverlay.style.left = 0f;
+        _pathOverlay.style.top = 0f;
+        _pathOverlay.style.width = Length.Percent(100f);
+        _pathOverlay.style.height = Length.Percent(100f);
+        image.Add(_pathOverlay);
+
+        _closeRequested = closeRequested;
+        _followPlayer = followPlayer;
+        _closeButton.clicked += _closeRequested;
+        _followButton.clicked += _followPlayer;
+        _wheelCallback = wheelCallback;
+        _geometryChanged = geometryChanged;
+        if (_geometryChanged != null)
+        {
+            _geometryCallback = _ => _geometryChanged();
+            _image.RegisterCallback(_geometryCallback);
+        }
+
+        _bindingFailureReported = false;
+        _document.rootVisualElement.RegisterCallback(
+            _wheelCallback,
+            TrickleDown.TrickleDown);
+        return true;
+    }
+
+    public void Show()
+    {
+        if (_overlay != null)
+        {
+            UIState.Show(_overlay);
+        }
+    }
+
+    public void Hide()
+    {
+        if (_overlay != null)
+        {
+            UIState.Hide(_overlay);
+        }
+    }
+
+    public void UpdatePreparationStatus(
+        bool mipReady,
+        bool mipRequired,
+        bool failed,
+        int progress,
+        int total,
+        ILocalizationService localization)
+    {
+        if (_status == null)
+        {
+            return;
+        }
+
+        bool visible = !mipReady && mipRequired;
+        _status.EnableInClassList("is-hidden", !visible);
+        if (!visible)
+        {
+            return;
+        }
+
+        _status.text = failed
+            ? localization.Get("hud.map_prepare_failed")
+            : total > 0
+                ? localization.Get("hud.map_preparing_progress", (int)(100f * progress / total))
+                : localization.Get("hud.map_preparing");
+    }
+
+    public void UpdatePlayerMarker(
+        float playerX,
+        float playerY,
+        float viewCenterX,
+        float viewCenterY,
+        float cellsPerPixel,
+        int texWidth,
+        int texHeight,
+        bool blinkVisible)
+    {
+        if (_playerMarker == null)
+        {
+            return;
+        }
+
+        if (!blinkVisible || (_image != null && (_image.layout.width <= 0f || _image.layout.height <= 0f)))
+        {
+            UIState.SetHidden(_playerMarker, true);
+            return;
+        }
+
+        float halfW = texWidth * 0.5f * cellsPerPixel;
+        float halfH = texHeight * 0.5f * cellsPerPixel;
+        float leftX = viewCenterX - halfW;
+        float rightX = viewCenterX + halfW;
+        float topServerY = viewCenterY - halfH;
+        float bottomServerY = viewCenterY + halfH;
+
+        if (playerX + 1f < leftX || playerX > rightX ||
+            playerY + 1f < topServerY || playerY > bottomServerY)
+        {
+            UIState.SetHidden(_playerMarker, true);
+            return;
+        }
+
+        UIState.SetHidden(_playerMarker, false);
+
+        // The map RenderTexture is capped (MapViewportBounds) and the Image scales
+        // it to the panel, so texture pixels must be mapped to panel pixels.
+        float texLeft = (playerX + 0.5f - viewCenterX) / cellsPerPixel + texWidth * 0.5f;
+        float texTop = (playerY + 0.5f - viewCenterY) / cellsPerPixel + texHeight * 0.5f;
+
+        Rect imageRect = _image?.layout ?? new Rect(0f, 0f, texWidth, texHeight);
+        float scaleX = imageRect.width > 0f && texWidth > 0 ? imageRect.width / texWidth : 1f;
+        float scaleY = imageRect.height > 0f && texHeight > 0 ? imageRect.height / texHeight : 1f;
+        float screenX = imageRect.x + (texLeft * scaleX);
+        float screenY = imageRect.y + (texTop * scaleY);
+
+        if (Mathf.Abs(screenX - _lastMarkerLeft) > PositionWriteEpsilon ||
+            Mathf.Abs(screenY - _lastMarkerTop) > PositionWriteEpsilon)
+        {
+            _playerMarker.style.left = screenX;
+            _playerMarker.style.top = screenY;
+            _lastMarkerLeft = screenX;
+            _lastMarkerTop = screenY;
+        }
+    }
+
+    public void HidePlayerMarker()
+    {
+        if (_playerMarker != null)
+        {
+            UIState.SetHidden(_playerMarker, true);
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_image != null && _geometryCallback != null)
+        {
+            _image.UnregisterCallback(_geometryCallback);
+            _geometryCallback = null;
+        }
+
+        if (_document?.rootVisualElement != null && _wheelCallback != null)
+        {
+            _document.rootVisualElement.UnregisterCallback(
+                _wheelCallback,
+                TrickleDown.TrickleDown);
+        }
+
+        if (_closeButton != null)
+        {
+            _closeButton.clicked -= _closeRequested;
+        }
+
+        if (_followButton != null)
+        {
+            _followButton.clicked -= _followPlayer;
+        }
+
+        _pathOverlay?.RemoveFromHierarchy();
+        _pathOverlay = null;
+    }
+
+    private void ReportBindingFailure(string message)
+    {
+        if (_bindingFailureReported)
+        {
+            return;
+        }
+
+        _bindingFailureReported = true;
+        Debug.LogError(message);
+    }
+}

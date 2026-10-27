@@ -19,7 +19,7 @@ public sealed class LightingSetterInvalidationRule : IRule
     public RuleSeverity Severity => RuleSeverity.Warning;
     public bool RequiresAssemblies => false;
 
-    private const string LightingPath = "Assets/Scripts/World/Lighting/Core/LightingEngine.cs";
+    private const string LightingPath = "Assets/Scripts/World/Lighting/Runtime/Orchestration/LightingEngine.cs";
 
     private static readonly Regex SetterPattern = new(@"^\s*public\s+void\s+(Set[A-Za-z0-9_]+)\s*\(", RegexOptions.Multiline);
     private static readonly Regex DirtyFlagPattern = new(

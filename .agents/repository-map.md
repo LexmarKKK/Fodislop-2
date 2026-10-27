@@ -30,11 +30,12 @@ definitions are:
 
 | Assembly | Definition location | Responsibility |
 | --- | --- | --- |
-| `Kern.Contracts` | `Core/Interfaces/Contracts` | Lowest-level shared contracts and data types |
-| `Kern.Core` | `Core` | Shared runtime services, configuration, lifecycle, and rendering services |
-| `Kern.Bootstrap` | `Core/Bootstrap` | Scene scopes, startup, and scene transitions |
+| `Kern.Contracts` | `Contracts` | Neutral contracts; module-local Contracts folders join through asmref |
+| `Kern.Core` | `Core` | Shared configuration, lifecycle, localization, platform and resource services |
+| `Kern.Bootstrap` | `Bootstrap` | Scene scopes, startup, scene transitions and domain wiring |
 | `Kern.AssetPipeline` | `AssetPipeline` | Runtime asset loading, caching, and animation decoding |
-| `Kern.Infrastructure` | `Audio` | Audio and Effekseer infrastructure adapters |
+| `Kern.Infrastructure` | `Infrastructure` | Audio and Effekseer infrastructure adapters |
+| `Kern.Diagnostics` | `Diagnostics` | Runtime capture, telemetry, logging and world diagnostic primitives |
 | `Kern.Application` | `Game` | Game and player application behavior |
 | `Kern.Networking` | `Networking` | Transport, packet processing, and network-facing models |
 | `Kern.Presentation` | `Rendering` | Rendering and post-processing presentation code |
@@ -67,12 +68,15 @@ reference game assemblies, use reflection, or modify camera components or assets
   that production code loads dynamically from `Resources`. Do not move between
   these roots without checking material references and every runtime load path.
 - `Assets/Resources/UI/` contains runtime-loaded UXML and its referenced USS.
-  `Assets/Resources/Styles/` contains shared USS resources; shared theme assets
-  stay under `Assets/UI Toolkit/`. Keep UXML structure with its corresponding UI
-  feature.
+  Shared tokens and styles live in `Assets/Resources/UI/Theme/`; panel and theme
+  assets stay under `Assets/UI/Toolkit/`. Each feature owns its Templates,
+  Styles, Icons, and Sprites categories as needed.
 - `Assets/Textures/` contains authored, directly referenced/imported art. Group
   by stable domain (cells, items, UI, VFX, etc.). Numeric or legacy names that
   are identifiers must be mapped/documented rather than renamed for aesthetics.
+  `Assets/Settings/Build/Textures/TextureStagingCatalog.json` maps categorized
+  authoring paths to stable published/server names. RuntimeAssetPaths uses the
+  same catalog in the Editor; TextureStagingWriter exports those identities.
 - `Assets/StreamingAssets/` is for files that must remain directly addressable
   in the built player. It is not a second general-purpose Resources directory.
 - Always move Unity assets with their `.meta` files. Do not hand-edit scenes,
@@ -87,6 +91,25 @@ reference game assemblies, use reflection, or modify camera components or assets
   when production Unity behavior is the subject of verification.
 - `scripts/` is for small entry points; reusable or multi-file implementation
   belongs under `tools/`.
+
+## Taxonomy
+
+Use module → feature → responsibility. Intermediate categories contain child
+categories; source files live in responsibility leaves, including singleton
+files. Name the folder after the operation or concept, not after its file count.
+Do not introduce Common, Utils, Utilities, Helpers, Misc, Support, or Managers
+bags. Give a shared operation an explicit owner or split its responsibilities.
+Assembly definitions and references remain at the boundary they establish.
+
+Contracts contain neutral APIs/data; implementations stay with their runtime
+owner. Player stats belong to Game/Player, not HUD. Audio and visual-effect
+adapters belong to Infrastructure; generic diagnostics do not belong to World
+or Contracts. Composition roots own wiring rather than implementation.
+
+The architecture linter enforces source placement and assembly ownership.
+`python3 tools/Kern.RepositoryTaxonomy/Validation/validate.py` checks the move
+inventory, original script metadata, asset GUIDs/bytes, catalog completeness,
+UI references and project shader includes. Inventories live beside that tool.
 
 ## Documentation navigation
 

@@ -18,6 +18,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Reference Include="Microsoft.CodeAnalysis">
+      <HintPath>$(MSBuildToolsPath)/Roslyn/bincore/Microsoft.CodeAnalysis.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.CSharp">
+      <HintPath>$(MSBuildToolsPath)/Roslyn/bincore/Microsoft.CodeAnalysis.CSharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
   </ItemGroup>
 
@@ -43,21 +52,21 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(UnityManagedPath)' != ''">
-    <Compile Include="..\..\Assets\Scripts\Core\Configuration\Contracts\SettingAttributes.cs" />
-    <Compile Include="..\..\Assets\Scripts\Core\Configuration\Contracts\SettingSchema.cs" />
-    <Compile Include="..\..\Assets\Scripts\Audio\Core\Contracts\AudioBusRegistry.cs" />
-    <Compile Include="..\..\Assets\Scripts\Audio\Core\Contracts\AudioLayer.cs" />
+    <Compile Include="..\..\Assets\Scripts\Core\Configuration\Contracts\Schema\SettingAttributes.cs" />
+    <Compile Include="..\..\Assets\Scripts\Core\Configuration\Contracts\Schema\SettingSchema.cs" />
+    <Compile Include="..\..\Assets\Scripts\Infrastructure\Audio\Contracts\Mixing\AudioBusRegistry.cs" />
+    <Compile Include="..\..\Assets\Scripts\Infrastructure\Audio\Contracts\Mixing\AudioLayer.cs" />
     <Compile Include="..\..\Assets\Scripts\World\Lighting\Quality\Contracts\LightingQualityMode.cs" />
     <Compile Include="..\..\Assets\Scripts\World\Lighting\Quality\Contracts\LightingQualityTuning.cs" />
-    <Compile Include="..\..\Assets\Scripts\Rendering\Settings\Contracts\GraphicsQualitySettings.cs" />
-    <Compile Include="..\..\Assets\Scripts\World\Common\Contracts\RenderingConstants.cs" />
-    <Compile Include="..\..\Assets\Scripts\World\Common\Contracts\PixelGrid.cs" />
-    <Compile Include="..\..\Assets\Scripts\Core\Interfaces\Contracts\PixelSamplingMode.cs" />
-    <Compile Include="..\..\Assets\Scripts\Core\Interfaces\Contracts\ProjectRuntimeContracts.cs" />
-    <Compile Include="..\..\Assets\Scripts\Core\Configuration\Contracts\ClientConfig.cs" />
-    <Compile Include="..\..\Assets\Scripts\Core\Interfaces\Contracts\Core\IClientConfigManager.cs" />
-    <Compile Include="..\..\Assets\Scripts\Core\Interfaces\Contracts\Settings\*.cs" />
-    <Compile Include="..\..\Assets\Scripts\Rendering\PostProcessing\ColorGrading\Contracts\VisualTuning.cs" />
+    <Compile Include="..\..\Assets\Scripts\Rendering\Display\Contracts\Quality\GraphicsQualitySettings.cs" />
+    <Compile Include="..\..\Assets\Scripts\World\Rendering\Contracts\Grid\RenderingConstants.cs" />
+    <Compile Include="..\..\Assets\Scripts\World\Rendering\Contracts\Grid\PixelGrid.cs" />
+    <Compile Include="..\..\Assets\Scripts\World\Rendering\Contracts\Sampling\PixelSamplingMode.cs" />
+    <Compile Include="..\..\Assets\Scripts\World\Coordinates\Contracts\Grid\WorldGridDefaults.cs" />
+    <Compile Include="..\..\Assets\Scripts\Core\Configuration\Contracts\Client\ClientConfig.cs" />
+    <Compile Include="..\..\Assets\Scripts\Core\Configuration\Contracts\Management\IClientConfigManager.cs" />
+    <Compile Include="..\..\Assets\Scripts\Core\Configuration\Contracts\Settings\*.cs" />
+    <Compile Include="..\..\Assets\Scripts\Game\Rendering\Entities\Contracts\Coverage\WorldRenderConfigHolder.cs" />
   </ItemGroup>
 
   <ItemGroup>

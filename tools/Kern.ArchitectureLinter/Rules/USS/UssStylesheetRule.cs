@@ -70,7 +70,7 @@ public sealed class UssStylesheetRule : IRule
     {
         var violations = new List<RuleViolation>();
         var projectRoot = context.ProjectRoot;
-        var stylesDir = Path.Combine(projectRoot, "Assets", "Resources", "Styles");
+        var stylesDir = Path.Combine(projectRoot, "Assets/Resources/UI");
 
         if (!Directory.Exists(stylesDir))
         {
@@ -78,7 +78,7 @@ public sealed class UssStylesheetRule : IRule
             return Task.FromResult<IReadOnlyList<RuleViolation>>(violations);
         }
 
-        var ussFiles = SourceScanner.EnumerateUssFiles(stylesDir).ToList();
+        var ussFiles = UnitySourceFiles.EnumerateUssFiles(stylesDir).ToList();
         if (ussFiles.Count == 0)
         {
             violations.Add(new RuleViolation { RuleId = Id, Message = "No .uss files found.", Severity = Severity, AssemblyName = stylesDir });
@@ -92,7 +92,7 @@ public sealed class UssStylesheetRule : IRule
         {
             cancellationToken.ThrowIfCancellationRequested();
             var content = File.ReadAllText(file);
-            var relative = SourceScanner.GetProjectRelativePath(projectRoot, file);
+            var relative = ProjectSourcePaths.GetProjectRelativePath(projectRoot, file);
             var body = Regex.Replace(content, @"/\*[\s\S]*?\*/", m => new string('\n', m.Value.Split('\n').Length - 1));
 
             // Brace balance

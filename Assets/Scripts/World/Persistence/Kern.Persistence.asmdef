@@ -3,7 +3,8 @@
     "rootNamespace": "Kern.Persistence",
     "references": [
         "UniTask",
-        "Kern.Contracts"
+        "Kern.Contracts",
+        "Kern.Diagnostics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -45,7 +45,7 @@
     }
     map.push(row);
   }
-  const PX = 110, PY = 70;                 // игрок
+  let PX = 110, PY = 70;                   // игрок
   const carve = (x, y) => { if (map[y] && map[y][x]) map[y][x] = 'empty'; };
   for (let x = PX - 40; x <= PX + 10; x++) { carve(x, PY); carve(x, PY + 1); }       // штрек
   for (let y = PY - 24; y <= PY; y++) { carve(PX + 10, y); carve(PX + 11, y); }      // шахта вверх
@@ -86,6 +86,13 @@
     }
     ctx.imageSmoothingEnabled = false;
     if (robot.complete) cell(robot, PX - ox, PY - oy);
+    // Куда смотрит робот — треугольник у края его клетки
+    const [fx, fy] = STEP[world.facing], cx = offX + (PX - ox + .5) * CELL, cy = offY + (PY - oy + .5) * CELL, e = CELL * .62, w = CELL * .18;
+    ctx.fillStyle = '#e8b04a'; ctx.beginPath();
+    ctx.moveTo(px(cx + fx * (e + w)), px(cy + fy * (e + w)));
+    ctx.lineTo(px(cx + fx * e - fy * w), px(cy + fy * e + fx * w));
+    ctx.lineTo(px(cx + fx * e + fy * w), px(cy + fy * e - fx * w));
+    ctx.fill();
     world.drawMinimap();
   };
   world.drawMinimap = () => {
@@ -106,6 +113,16 @@
     return map[y] && map[y][x] ? { x, y, type: map[y][x] } : null;
   };
   world.dig = (x, y) => { const t = TYPES[map[y][x]]; map[y][x] = 'empty'; world.draw(); return t; };
+  // Стик: малое отклонение — повернуться, сильное — шаг (в пустоту; в породу — только поворот)
+  const STEP = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  world.facing = 'right';
+  world.face = dir => { if (world.facing !== dir) { world.facing = dir; world.draw(); } };
+  world.step = dir => {
+    world.facing = dir;
+    const [dx, dy] = STEP[dir];
+    if (map[PY + dy]?.[PX + dx] === 'empty') { PX += dx; PY += dy; world.PX = PX; world.PY = PY; }
+    world.draw();
+  };
   world.ready = Promise.all(load);
   window.kernWorld = world;
 })();

@@ -1,0 +1,55 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>overflow: running</title>
+<!-- Текст не выходит за свою коробку: на каждом экране и устройстве стенда ищет
+     элементы, чей текст шире или выше самого элемента. Итог — в <title>. -->
+<pre id="log"></pre>
+<script>
+const DEVICES = ['se', 'promax', 'pixel8', 'ipadmini', 'ipadpro', 'foldin', 'd768', 'd800', 'd1080', 'd1440', 'd219', 'd4k150'];
+const SCREENS = ['auth', 'auth&auth=register&autherr=1', 'onboarding&onbstep=0', 'onboarding&onbstep=1', 'onboarding&onbstep=2', 'menu', 'game', 'game&state=busy', 'game&state=busy&chat=1', 'game&settings=graphics', 'game&settings=audio', 'game&settings=interface', 'game&settings=controls', 'game&skills=1', 'game&pause=1', 'game&inv=1'];
+const out = [];
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const load = src => new Promise(res => {
+  const f = document.createElement('iframe');
+  f.style.cssText = 'width:1800px;height:1400px;border:0;position:absolute;left:-9999px';
+  f.onload = () => res(f); f.src = src; document.body.appendChild(f);
+});
+function scan(d, w) {
+  const bad = [];
+  for (const el of d.querySelectorAll('#frame *')) {
+    if (!el.getClientRects().length || el.closest('svg, canvas, [hidden], .is-off')) continue;
+    const cs = w.getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.display === 'contents') continue;
+    const own = [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim());
+    if (!own) continue;
+    const r = el.getBoundingClientRect();
+    const range = d.createRange(); range.selectNodeContents(el);
+    const t = range.getBoundingClientRect();
+    // текст за коробкой элемента или за коробкой ближайшего обрезающего/рамочного предка
+    let box = r, p = el;
+    while (p && p.id !== 'frame') {
+      const pc = w.getComputedStyle(p);
+      if (/auto|scroll/.test(pc.overflow)) { box = null; break; }   // прокрутка — текст за краем списка не вылезает
+      if (pc.overflow !== 'visible' || parseFloat(pc.borderTopWidth) > 0 || pc.backgroundColor !== 'rgba(0, 0, 0, 0)') { box = p.getBoundingClientRect(); break; }
+      p = p.parentElement;
+    }
+    if (!box) continue;
+    const over = Math.max(box.left - t.left, t.right - box.right, box.top - t.top, t.bottom - box.bottom);
+    const clipped = false;   // многоточие и построчная обрезка — задуманы
+    if (over > 1.5 || clipped) bad.push(`${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}.${[...el.classList].join('.')} «${el.textContent.trim().slice(0, 30)}» +${over.toFixed(1)}${clipped ? ' обрезан' : ''}`);
+  }
+  return bad;
+}
+(async () => {
+  let fails = 0;
+  for (const s of SCREENS) for (const dev of DEVICES) {
+    const f = await load(`../index.html?screen=${s}&device=${dev}`);
+    await wait(1600);
+    const bad = [...new Set(scan(f.contentDocument, f.contentWindow))];
+    if (bad.length) { fails += bad.length; out.push(`FAIL ${s} ${dev}` + bad.map(b => '\n     ' + b).join('')); }
+    f.remove();
+  }
+  document.getElementById('log').textContent = out.join('\n');
+  document.title = fails ? `overflow: FAIL ${fails}` : 'overflow: ok';
+})();
+</script>

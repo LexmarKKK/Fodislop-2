@@ -133,9 +133,9 @@
       а правила фильтрации и HDR остаются явными.</li>
   </ul>
   <p>В исходниках уже есть основа:
-    <a href="../../Assets/Shaders/Terrain/TerrainGeometryContract.hlsl">TerrainGeometryContract.hlsl</a>
+    <a href="../../Assets/Shaders/Terrain/Geometry/TerrainGeometryContract.hlsl">TerrainGeometryContract.hlsl</a>
     задаёт сетку 32 и две операции для узлов и центров;
-    <a href="../../Assets/Shaders/Terrain/TerrainGeometry.hlsl">TerrainGeometry.hlsl</a>
+    <a href="../../Assets/Shaders/Terrain/Geometry/TerrainGeometry.hlsl">TerrainGeometry.hlsl</a>
     применяет её к итоговым углам и bend points. Это не доказывает соблюдение требования всеми
     кастомными материалами и проходами. Их полный аудит и production-проверка остаются необходимыми.</p>
 
@@ -294,19 +294,19 @@
   <div class="table-wrap"><table>
     <thead><tr><th>Существующая часть</th><th>Что уже есть</th><th>Чего это ещё не доказывает</th></tr></thead>
     <tbody>
-      <tr><td><a href="../../Assets/Scripts/World/Terrain/GPU/TerrainWindow.cs">TerrainWindow</a> и <a href="../../Assets/Scripts/World/Terrain/GPU/TerrainWindowPublishedView.cs">PublishedView</a></td><td>Условия rebuild и пропуска upload; опубликованная content revision. Terrain уже имеет кеширование.</td><td>Фактическую частоту invalidation и стоимость кадра.</td></tr>
-      <tr><td><a href="../../Assets/Scripts/World/Common/FrameTelemetry.cs">IFrameTelemetry / FrameTelemetry</a></td><td>Terrain timings, rebuild counters, причины lighting rebuild, static/dynamic work, latency; часть счётчиков cumulative, часть frame-local.</td><td>Полный причинный trace и GPU timings. CPU command-recording timings явно отделены в контракте.</td></tr>
-      <tr><td><a href="../../Assets/Scripts/Tests/PlayMode/PlayModeHarness.cs">PlayModeHarness</a></td><td>Настоящий startup на offline transport и доступ к сервисам сцен.</td><td>Готовый replay всех S0–S7 и независимый visual oracle.</td></tr>
-      <tr><td><a href="../../Assets/Scripts/Tests/PlayMode/FrameBenchmarkPlayModeTests.cs">FrameBenchmarkPlayModeTests</a></td><td>Запуск мира, frame percentiles, CPU markers, варианты с bypass terrain; теперь каждый сценарий автоматически экспортирует frame-local lighting dispatch/DDA/atlas и terrain/GC telemetry.</td><td>Проверки принципов и бюджеты: текущий assert проверяет лишь положительное среднее время. Нет scripted движения/копания/света, полной input/workload identity, frame-correlated GPU timings и независимого visual oracle; это диагностический capture, не performance verdict.</td></tr>
-      <tr><td><a href="../../tools/Kern.TerrainBench/Suites.cs">TerrainBench.GlobalFrame</a> и <a href="../../tools/Kern.TerrainBench/Kern.TerrainBench.csproj">его source inputs</a></td><td>Синтетическая CPU-последовательность; часть production-функций, подменённый TerrainCellCache, SyntheticVertices и копирование массивов.</td><td>Production build/commit/render, texture upload и lighting. Название global не делает его бенчмарком игры; allocation value=0 здесь задано, а не измерено.</td></tr>
+      <tr><td><a href="../../Assets/Scripts/World/Terrain/GPU/Window/TerrainWindow.cs">TerrainWindow</a> и <a href="../../Assets/Scripts/World/Terrain/GPU/Window/TerrainWindowPublishedView.cs">PublishedView</a></td><td>Условия rebuild и пропуска upload; опубликованная content revision. Terrain уже имеет кеширование.</td><td>Фактическую частоту invalidation и стоимость кадра.</td></tr>
+      <tr><td><a href="../../Assets/Scripts/Diagnostics/World/Frames/Telemetry/FrameTelemetry.cs">IFrameTelemetry / FrameTelemetry</a></td><td>Terrain timings, rebuild counters, причины lighting rebuild, static/dynamic work, latency; часть счётчиков cumulative, часть frame-local.</td><td>Полный причинный trace и GPU timings. CPU command-recording timings явно отделены в контракте.</td></tr>
+      <tr><td><a href="../../Assets/Scripts/Tests/PlayMode/Harness/Scenes/PlayModeHarness.cs">PlayModeHarness</a></td><td>Настоящий startup на offline transport и доступ к сервисам сцен.</td><td>Готовый replay всех S0–S7 и независимый visual oracle.</td></tr>
+      <tr><td><a href="../../Assets/Scripts/Tests/PlayMode/Diagnostics/Frames/FrameBenchmarkPlayModeTests.cs">FrameBenchmarkPlayModeTests</a></td><td>Запуск мира, frame percentiles, CPU markers, варианты с bypass terrain; теперь каждый сценарий автоматически экспортирует frame-local lighting dispatch/DDA/atlas и terrain/GC telemetry.</td><td>Проверки принципов и бюджеты: текущий assert проверяет лишь положительное среднее время. Нет scripted движения/копания/света, полной input/workload identity, frame-correlated GPU timings и независимого visual oracle; это диагностический capture, не performance verdict.</td></tr>
+      <tr><td><a href="../../tools/Kern.TerrainBench/Runtime/Suites/Suites.cs">TerrainBench.GlobalFrame</a> и <a href="../../tools/Kern.TerrainBench/Kern.TerrainBench.csproj">его source inputs</a></td><td>Синтетическая CPU-последовательность; часть production-функций, подменённый TerrainCellCache, SyntheticVertices и копирование массивов.</td><td>Production build/commit/render, texture upload и lighting. Название global не делает его бенчмарком игры; allocation value=0 здесь задано, а не измерено.</td></tr>
       <tr><td><a href="../../tools/Kern.LightingTests/README.md">Kern.LightingTests</a>, <a href="../../tools/Kern.WorldLightingExchangeTests/Kern.WorldLightingExchangeTests.csproj">exchange tests</a>, <a href="../../tools/Kern.ArchitectureLinter/Kern.ArchitectureLinter.csproj">ArchitectureLinter</a></td><td>Standalone fixtures, проверки shader math/контрактов и границ исходников.</td><td>Production GPU/визуальное поведение и выигрыш времени кадра.</td></tr>
     </tbody>
   </table></div>
 
   <h2 id="implementation">6. Порядок реализации harness</h2>
   <p>Исполняемая часть: <a href="../../tools/Kern.FrameHarness/README.md">Kern.FrameHarness</a>;
-    контракт <a href="../../tools/Kern.FrameHarness/CaptureSchema.cs">CaptureSchema.cs</a> и
-    <a href="../../tools/Kern.FrameHarness.Tests/CaptureAnalyzerTests.cs">независимые fixtures</a>.
+    контракт <a href="../../tools/Kern.FrameHarness/Runtime/CaptureSchema/CaptureSchema.cs">CaptureSchema.cs</a> и
+    <a href="../../tools/Kern.FrameHarness.Tests/Scenarios/CaptureAnalyzer/CaptureAnalyzerTests.cs">независимые fixtures</a>.
     <code>validate</code> проверяет capture, <code>compare</code> сравнивает compatible baseline/candidate
     с шестью явно заданными CPU/frame и GPU допусками p95/p99/max. Выход — текст или JSON;
     exit 1 означает нарушение, 3 — INCOMPLETE. Известный FAIL не скрывается отсутствием GPU-замера.</p>

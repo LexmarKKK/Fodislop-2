@@ -28,7 +28,8 @@
         "Unity.RenderPipelines.Universal.2D.Runtime",
         "FMODUnity",
         "UniTask",
-        "VContainer"
+        "VContainer",
+        "Kern.Diagnostics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

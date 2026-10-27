@@ -21,20 +21,20 @@ internal static class Program
     {
         string root = FindProjectRoot();
         // HLSL round uses nearest-even; std::round rounds ties away from zero.
-        string shim = Read(root, "tools/Kern.LightingTests/NativeTransportShim.cpp")
+        string shim = Read(root, "tools/Kern.LightingTests/Native/Transport/Shims/NativeTransportShim.cpp")
             .Replace("std::round(a.x)", "std::nearbyint(a.x)", StringComparison.Ordinal)
             .Replace("std::round(a.y)", "std::nearbyint(a.y)", StringComparison.Ordinal);
-        string format = Read(root, "Assets/Shaders/Terrain/TerrainCellFormat.hlsl");
-        string loader = Read(root, "Assets/Shaders/Terrain/TerrainCellData.hlsl");
-        string terrainContour = Read(root, "Assets/Shaders/Terrain/TerrainContour.hlsl");
-        string terrainGeometryContract = Read(root, "Assets/Shaders/Terrain/TerrainGeometryContract.hlsl");
-        string terrainGeometry = Read(root, "Assets/Shaders/Terrain/TerrainGeometry.hlsl");
-        string terrainShader = Read(root, "Assets/Shaders/Terrain/Terrain.shader");
-        string scenario = Read(root, "tools/Kern.TerrainRasterTests/scenario.cpp");
-        string aoShim = Read(root, "tools/Kern.TerrainRasterTests/ao-field.cpp");
-        string ao = Read(root, "Assets/Shaders/Terrain/TerrainAmbientOcclusion.hlsl");
-        string terrainSampling = Read(root, "Assets/Shaders/Terrain/TerrainSampling.hlsl");
-        string lighting = Read(root, "Assets/Shaders/Terrain/TerrainLightingData.hlsl");
+        string format = Read(root, "Assets/Shaders/Terrain/Cells/TerrainCellFormat.hlsl");
+        string loader = Read(root, "Assets/Shaders/Terrain/Cells/TerrainCellData.hlsl");
+        string terrainContour = Read(root, "Assets/Shaders/Terrain/Geometry/TerrainContour.hlsl");
+        string terrainGeometryContract = Read(root, "Assets/Shaders/Terrain/Geometry/TerrainGeometryContract.hlsl");
+        string terrainGeometry = Read(root, "Assets/Shaders/Terrain/Geometry/TerrainGeometry.hlsl");
+        string terrainShader = Read(root, "Assets/Shaders/Terrain/Rendering/Terrain.shader");
+        string scenario = Read(root, "tools/Kern.TerrainRasterTests/Native/Terrain/scenario.cpp");
+        string aoShim = Read(root, "tools/Kern.TerrainRasterTests/Native/AmbientOcclusion/ao-field.cpp");
+        string ao = Read(root, "Assets/Shaders/Terrain/Occlusion/TerrainAmbientOcclusion.hlsl");
+        string terrainSampling = Read(root, "Assets/Shaders/Terrain/Textures/TerrainSampling.hlsl");
+        string lighting = Read(root, "Assets/Shaders/Terrain/Lighting/TerrainLightingData.hlsl");
         string terrainGeometryUv = SliceBetween(
                 terrainSampling,
                 "float TerrainUvCross(",
@@ -57,7 +57,7 @@ internal static class Program
             return Fail("Expected exactly one surface parse in each terrain pass");
         }
 
-        if (Regex.Matches(terrainShader + Read(root, "Assets/Shaders/Terrain/TerrainLightingFieldCommon.hlsl"), "PixelArtSampleUV\\(").Count != 2)
+        if (Regex.Matches(terrainShader + Read(root, "Assets/Shaders/Terrain/Lighting/TerrainLightingFieldCommon.hlsl"), "PixelArtSampleUV\\(").Count != 2)
         {
             return Fail("Visible and field albedo paths must share the pixel-grid UV correction");
         }
@@ -307,7 +307,7 @@ internal static class Program
         DirectoryInfo? directory = new(Directory.GetCurrentDirectory());
         while (directory is not null)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "Assets/Shaders/Terrain/Terrain.shader"))) return directory.FullName;
+            if (File.Exists(Path.Combine(directory.FullName, "Assets/Shaders/Terrain/Rendering/Terrain.shader"))) return directory.FullName;
             directory = directory.Parent;
         }
         throw new DirectoryNotFoundException("Could not locate the repository root.");

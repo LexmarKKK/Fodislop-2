@@ -4,21 +4,38 @@
 html, body { height: 100%; }
 body { background: #07090b; color: var(--bone); font: var(--t-body)/1.4 var(--font); font-variant-numeric: tabular-nums; display: flex; flex-direction: column; overflow: hidden; }
 
-.stand-bar { flex: none; display: flex; align-items: center; gap: 20px; padding: 10px 16px; border-bottom: 1px solid #1a1f24; background: #0c0f12; font-size: 13px; }
-.stand-group { display: flex; align-items: center; gap: 4px; }
-.stand-label { color: var(--smoke); margin-right: 6px; }
-.stand-group button { font: inherit; color: var(--ash); background: transparent; border: 1px solid #222a31; border-radius: 3px; padding: 4px 10px; cursor: pointer; }
-.stand-group button:hover { color: var(--bone); }
-.stand-group button.is-on { color: var(--on-signal); background: var(--signal); border-color: var(--signal); }
+/* Два ряда: «что смотреть» (экран и данные) и «где смотреть» (устройство › монитор › ввод) */
+.stand-bar { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 8px 16px; border-bottom: 1px solid #1a1f24; background: #0c0f12; font-size: 12px; }
+.stand-row { display: flex; align-items: center; gap: 8px 22px; flex-wrap: wrap; min-height: 28px; }
+.stand-group { display: flex; align-items: center; gap: 8px; }
+.stand-group[hidden] { display: none; }
+.stand-label { color: var(--smoke); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.stand-step { color: #3a444b; font-size: 16px; margin-right: -2px; }
+/* Сегмент: кнопки одной группы — одной плашкой, выбранная подсвечена */
+.stand-seg { display: flex; padding: 2px; gap: 2px; border-radius: 5px; background: #12171b; border: 1px solid #1e252b; }
+.stand-seg button, .stand-act { font: inherit; color: var(--ash); background: transparent; border: 0; border-radius: 3px; padding: 4px 10px; cursor: pointer; white-space: nowrap; }
+.stand-seg button:hover, .stand-act:hover { color: var(--bone); background: #1a2127; }
+.stand-seg button.is-on { color: var(--on-signal); background: var(--signal); font-weight: 600; }
+.stand-act { border: 1px solid #222a31; }
+/* Цепочка «устройство › монитор › ввод» — списками */
+.stand-chain { flex-wrap: nowrap; gap: 14px; }
+.stand-pick { display: flex; align-items: center; gap: 8px; }
+.stand-pick[hidden] { display: none; }
+.stand-pick select { font: inherit; color: var(--bone); background: #12171b; border: 1px solid #1e252b; border-radius: 5px; padding: 5px 28px 5px 10px; cursor: pointer;
+  appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ash) 50%), linear-gradient(135deg, var(--ash) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+.stand-pick select:hover { border-color: #2e373e; }
+.stand-res { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* Итог выбора: что получилось — разрешение, размер, ввод */
+.stand-res { margin-left: auto; color: var(--ash); font-variant-numeric: tabular-nums; }
+.stand-res b { color: var(--bone); font-weight: 600; }
 .stand-hint { margin-left: auto; display: flex; gap: 16px; color: var(--smoke); }
 
 .stand-stage { flex: 1; min-height: 0; position: relative; overflow: hidden; }
 .frame { position: relative; height: var(--fh, 1080px); width: var(--fw, calc(1080px * var(--aspect, 1.7778))); overflow: hidden; position: absolute; left: 50%; top: 50%; transform-origin: center; background: #000; }
-.stand-bar { flex-wrap: wrap; row-gap: 8px; white-space: nowrap; }
 @media (max-width: 2400px) { .stand-hint { display: none !important; } }
 /* Устройство: кадр в dp экрана (паспорт из MobileDeviceMatrix), углы и вырез камеры — часть стенда */
-.frame.touch { border-radius: var(--corner, 0); box-shadow: 0 0 0 10px #15191d, 0 0 0 11px #262d33; }
+.frame.bezel { border-radius: var(--corner, 0); box-shadow: 0 0 0 10px #15191d, 0 0 0 11px #262d33; }
 .cutout { display: none; position: absolute; z-index: 50; pointer-events: none; background: #000; }
 .frame[data-device="promax"] .cutout { display: block; left: 11px; top: 50%; width: 37px; height: 126px; margin-top: -63px; border-radius: 19px; }
 .frame[data-device="pixel8"] .cutout { display: block; left: 18px; top: 50%; width: 13px; height: 13px; margin-top: -6px; border-radius: 50%; }
-.stand-res { color: var(--smoke); }

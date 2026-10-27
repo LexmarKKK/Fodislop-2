@@ -5,7 +5,7 @@
 ## Быстрый старт
 
 ```bash
-git clone https://github.com/MinesReborn/Kern.git
+git clone https://github.com/MinesReborn/Fodislop.git
 ```
 
 Открой через **Unity Hub** → `Open` → выбери папку. Unity сам подтянет зависимости. Открой `Assets/Scenes/Bootstrap.unity` и жми **Play**: Bootstrap (build index 0) грузит `MainMenu`, а тот — `MainGame` аддитивно.

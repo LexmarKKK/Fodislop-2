@@ -2,7 +2,7 @@
 (() => {
   const $ = id => document.getElementById(id);
   const dlg = $('settingsDialog');
-  const tabs = [...dlg.querySelectorAll('.settings-tabs button')], pages = [...dlg.querySelectorAll('.set-page')];
+  const tabs = [...dlg.querySelectorAll('.settings-tabs [data-tab]')], pages = [...dlg.querySelectorAll('.set-page')];
   function setTab(name) {
     tabs.forEach(t => { t.classList.toggle('is-on', t.dataset.tab === name); t.setAttribute('aria-selected', t.dataset.tab === name); });
     pages.forEach(p => p.classList.toggle('is-on', p.dataset.tab === name));
@@ -28,7 +28,7 @@
   let listening = null;
   const keyName = e => e.code === 'Space' ? 'Space' : e.key.length === 1 ? e.key.toUpperCase() : e.key;
   function stopListen() { if (listening) { listening.textContent = listening.dataset.key; listening.classList.remove('is-listening'); listening = null; } }
-  dlg.querySelectorAll('button.keycap').forEach(k => k.onclick = () => {
+  dlg.querySelectorAll('button.keycap:not(.padcap)').forEach(k => k.onclick = () => {
     stopListen(); listening = k; k.textContent = 'Нажмите клавишу…'; k.classList.add('is-listening');
   });
   document.addEventListener('keydown', e => {
@@ -40,12 +40,16 @@
     } else if (e.key === 'Escape') close();
   }, true);
   const DEFAULTS = ['Space', 'E', 'G', 'V', 'Y', 'H', 'F', 'J'];
-  $('keysReset').onclick = () => { stopListen(); dlg.querySelectorAll('button.keycap').forEach((k, i) => { k.dataset.key = k.textContent = DEFAULTS[i]; }); };
+  $('keysReset').onclick = () => { stopListen(); dlg.querySelectorAll('button.keycap:not(.padcap)').forEach((k, i) => { k.dataset.key = k.textContent = DEFAULTS[i]; }); };
+
+  // «Управление»: клавиатура или геймпад
+  $('ctlSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    dlg.querySelectorAll('.ctl-view').forEach(v => { v.hidden = v.dataset.view !== b.dataset.view; });
+  });
 
   // Входы: шестерёнка HUD (на пальце — в ☰), «Настройки» в паузе и в меню
   document.querySelectorAll('[title="Настройки"]').forEach(b => b.addEventListener('click', () => open()));
-  [...document.querySelectorAll('#pauseDialog .btn')].find(b => b.textContent === 'Настройки')
-    ?.addEventListener('click', () => { $('pauseDialog').hidden = true; open(); });
 
   const q = new URLSearchParams(location.search).get('settings');
   if (q) open(q === '1' ? 'graphics' : q);

@@ -118,13 +118,13 @@ public sealed class HardcodedTextRule : IRule
         var projectRoot = context.ProjectRoot;
 
         // 1. UXML hardcoded text
-        var uiDir = Path.Combine(projectRoot, "Assets", "Resources", "UI");
+        var uiDir = Path.Combine(projectRoot, "Assets/Resources/UI");
         if (Directory.Exists(uiDir))
         {
-            foreach (var file in Directory.EnumerateFiles(uiDir, "*.uxml"))
+            foreach (var file in Directory.EnumerateFiles(uiDir, "*.uxml", SearchOption.AllDirectories))
             {
                 var content = File.ReadAllText(file);
-                var relative = SourceScanner.GetProjectRelativePath(projectRoot, file);
+                var relative = ProjectSourcePaths.GetProjectRelativePath(projectRoot, file);
 
                 foreach (Match m in Regex.Matches(content, @"(?:text|tooltip)=""([^""]*[А-Яа-яЁё][^""]*)"""))
                 {
@@ -141,14 +141,14 @@ public sealed class HardcodedTextRule : IRule
         }
 
         // 2. UI code hardcoded text
-        var uiSrc = Path.Combine(projectRoot, "Assets", "Scripts", "UI");
+        var uiSrc = Path.Combine(projectRoot, "Assets/Scripts/UI");
         if (Directory.Exists(uiSrc))
         {
-            foreach (var file in SourceScanner.EnumerateCsFiles(uiSrc, "Tests"))
+            foreach (var file in CSharpSourceFiles.EnumerateCsFiles(uiSrc, "Tests"))
             {
                 var content = BlankLogCalls(File.ReadAllText(file));
                 var lines = content.Split('\n');
-                var relative = SourceScanner.GetProjectRelativePath(projectRoot, file);
+                var relative = ProjectSourcePaths.GetProjectRelativePath(projectRoot, file);
                 var inLogContext = false;
 
                 for (var i = 0; i < lines.Length; i++)

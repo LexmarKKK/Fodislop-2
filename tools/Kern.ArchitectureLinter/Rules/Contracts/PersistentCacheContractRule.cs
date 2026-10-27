@@ -30,7 +30,7 @@ public sealed class PersistentCacheContractRule : IRule
         var projectRoot = context.ProjectRoot;
 
         // PersistentAssetCache
-        var cachePath = Path.Combine(projectRoot, "Assets/Scripts/AssetPipeline/Cache/PersistentAssetCache.cs");
+        var cachePath = Path.Combine(projectRoot, "Assets/Scripts/AssetPipeline/Cache/Persistence/Storage/PersistentAssetCache.cs");
         if (File.Exists(cachePath))
         {
             var cache = File.ReadAllText(cachePath);
@@ -45,13 +45,13 @@ public sealed class PersistentCacheContractRule : IRule
                     RuleId = Id,
                     Message = "PersistentAssetCache должен сериализовать per-entry access и atomically persist verified payload/manifest pairs.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/AssetPipeline/Cache/PersistentAssetCache.cs"
+                    TypeName = "Assets/Scripts/AssetPipeline/Cache/Persistence/Storage/PersistentAssetCache.cs"
                 });
             }
         }
 
         // Manifest
-        var manifestPath = Path.Combine(projectRoot, "Assets/Scripts/AssetPipeline/Cache/PersistentAssetCacheEntryManifest.cs");
+        var manifestPath = Path.Combine(projectRoot, "Assets/Scripts/AssetPipeline/Cache/Persistence/Manifest/PersistentAssetCacheEntryManifest.cs");
         if (File.Exists(manifestPath))
         {
             var manifest = File.ReadAllText(manifestPath);
@@ -64,13 +64,13 @@ public sealed class PersistentCacheContractRule : IRule
                     RuleId = Id,
                     Message = "Persistent cache entries должны валидировать schema v2 length и SHA-256 перед использованием.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/AssetPipeline/Cache/PersistentAssetCacheEntryManifest.cs"
+                    TypeName = "Assets/Scripts/AssetPipeline/Cache/Persistence/Manifest/PersistentAssetCacheEntryManifest.cs"
                 });
             }
         }
 
         // Format
-        var formatPath = Path.Combine(projectRoot, "Assets/Scripts/AssetPipeline/Cache/PersistentAssetCacheFormat.cs");
+        var formatPath = Path.Combine(projectRoot, "Assets/Scripts/AssetPipeline/Cache/Persistence/Manifest/PersistentAssetCacheFormat.cs");
         if (File.Exists(formatPath))
         {
             var format = File.ReadAllText(formatPath);
@@ -85,7 +85,7 @@ public sealed class PersistentCacheContractRule : IRule
                     RuleId = Id,
                     Message = "Persistent cache format должен штамповать маркер текущей схемы без миграций, бэкапов и staging.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/AssetPipeline/Cache/PersistentAssetCacheFormat.cs"
+                    TypeName = "Assets/Scripts/AssetPipeline/Cache/Persistence/Manifest/PersistentAssetCacheFormat.cs"
                 });
             }
         }

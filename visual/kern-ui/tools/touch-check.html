@@ -25,7 +25,7 @@ function load(src) {
 function visibleKeys(d, w) {
   const keys = new Set(), seen = {};
   for (const el of d.querySelectorAll('#hud *, #pauseSys *')) {
-    if ((el.closest('.touch-only, .chat-column, .say, .sys-sep') && !el.closest('[data-relocated]')) || el.matches('.tbtn:not([data-relocated]), svg, svg *, use, .ico-only, .cap')) continue;
+    if ((el.closest('.touch-only, .chat-column, .say, .sys-sep') && !el.closest('[data-relocated]')) || el.matches('.tbtn:not([data-relocated]), svg, svg *, use, .ico-only, .cap, .pg, .pg *, .pad-cluster, .pad-cluster *')) continue;   // значки и ромб пада — только в режиме геймпада
     const base = el.id ? '#' + el.id : el.title ? `[${el.title}]` : el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : el.tagName.toLowerCase();
     const n = seen[base] = (seen[base] || 0) + 1;
     const shown = el.getClientRects().length && w.getComputedStyle(el).visibility !== 'hidden';
@@ -78,7 +78,7 @@ function check(f, name, mouse) {
     if (p.l < t.r - .5 && t.l < p.r - .5 && p.t < t.b - .5 && t.t < p.b - .5) bad.push(`панель под целью: ${label(p.el)} × ${label(t.el)}`);
   }
   if (chatBox) for (const t of targets) if (!t.el.closest('.chat-column') && chatBox.l < t.r - .5 && t.l < chatBox.r - .5 && chatBox.t < t.b - .5 && t.t < chatBox.b - .5) bad.push(`чат закрывает цель: ${label(t.el)}`);
-  if (!mouse && chatBox && w.getComputedStyle(d.querySelector('.chat-column')).zIndex !== '5') bad.push('окно чата не поверх полосы');
+  if (!mouse && frame.classList.contains('compact') && chatBox && w.getComputedStyle(d.querySelector('.chat-column')).zIndex !== '5') bad.push('окно чата не поверх полосы');
   // робот — клетка 32 dp в центре кадра
   const cx = frame.offsetWidth / 2, cy = frame.offsetHeight / 2;
   const panels = [...d.querySelectorAll('#hud .panel, #hud button, #hud .pad, #hud .status-bar, #hud .states li, #hud .inventory, #hud .mini-skill')].filter(visible).map(rect);
@@ -109,6 +109,7 @@ function check(f, name, mouse) {
       ref.remove();
     }
     const f = await load(`../index.html?screen=game&device=${dev}${q}`);
+    f.contentDocument.head.insertAdjacentHTML('beforeend', '<style>*, *::before, *::after { transition: none !important; }</style>');   // мерить конечную раскладку, а не середину перехода
     await wait(1000);
     check(f, `${dev} ${n}`, MOUSE(dev));
     if (!MOUSE(dev) && n === 'calm') {

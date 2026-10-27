@@ -10,51 +10,82 @@
 <link rel="stylesheet" href="css/skill-sprites.css">
 <link rel="stylesheet" href="css/screens.css">
 <link rel="stylesheet" href="css/touch.css">
+<link rel="stylesheet" href="css/pad.css">
 </head>
 <body>
 
 <!-- Стенд: управление вне кадра игры — ничего не перекрывает интерфейс -->
 <header class="stand-bar">
-  <div class="stand-group" role="group" aria-label="Экран игры">
-    <span class="stand-label">Экран</span>
-    <button type="button" data-screen="boot">Загрузка</button>
-    <button type="button" data-screen="auth">Вход</button>
-    <button type="button" data-screen="onboarding">Онбординг</button>
-    <button type="button" data-screen="menu">Меню</button>
-    <button type="button" data-screen="descent">Спуск</button>
-    <button type="button" data-screen="game" class="is-on">Игра</button>
+  <!-- Ряд 1 — что смотреть: экран игры и его данные -->
+  <div class="stand-row">
+    <div class="stand-group" role="group" aria-label="Экран игры">
+      <span class="stand-label">Экран</span>
+      <div class="stand-seg">
+        <button type="button" data-screen="boot">Загрузка</button>
+        <button type="button" data-screen="auth">Вход</button>
+        <button type="button" data-screen="onboarding">Онбординг</button>
+        <button type="button" data-screen="menu">Меню</button>
+        <button type="button" data-screen="descent">Спуск</button>
+        <button type="button" data-screen="game" class="is-on">Игра</button>
+      </div>
+    </div>
+    <div class="stand-group" role="group" aria-label="Состояние" data-for="game">
+      <span class="stand-label">Данные</span>
+      <div class="stand-seg">
+        <button type="button" data-state="calm" class="is-on">Обычные</button>
+        <button type="button" data-state="busy">Все</button>
+      </div>
+      <button type="button" class="stand-act" id="openSkills">Окно навыков</button>
+    </div>
+    <div class="stand-group" role="group" aria-label="Роль в клане" data-for="game">
+      <span class="stand-label">В клане</span>
+      <div class="stand-seg" id="standClanRole">
+        <button type="button" data-role="member" class="is-on">Участник</button>
+        <button type="button" data-role="leader">Глава</button>
+      </div>
+    </div>
+    <div class="stand-group" role="group" aria-label="Обновление" data-for="menu">
+      <span class="stand-label">Клиент</span>
+      <div class="stand-seg">
+        <button type="button" data-update="0" class="is-on">Актуален</button>
+        <button type="button" data-update="1">Устарел</button>
+      </div>
+    </div>
+    <p class="stand-hint" data-for="game" id="keyHint"><span>Клик по породе — копать</span><span>Enter — чат</span><span>Tab — режим чата</span><span>E — автокопание</span></p>
   </div>
-  <div class="stand-group" role="group" aria-label="Монитор">
-    <span class="stand-label">Монитор</span>
-    <button type="button" data-device="d768">1366×768</button>
-    <button type="button" data-device="d800">1280×800</button>
-    <button type="button" data-device="d1080" class="is-on">1920×1080</button>
-    <button type="button" data-device="d1440">2560×1440</button>
-    <button type="button" data-device="d219">2560×1080</button>
-    <button type="button" data-device="d4k150">4K · 150%</button>
-    <button type="button" data-device="d4k200">4K · 200%</button>
+  <!-- Где смотреть, по иерархии: устройство › монитор (у десктопа) › ввод; вид решают размер и ввод.
+       Списками — цепочка всегда в одну строку при любой ширине окна -->
+  <div class="stand-row stand-chain">
+    <label class="stand-pick"><span class="stand-label">Устройство</span>
+      <select id="standDevice">
+        <option value="desktop">Десктоп</option>
+        <option value="promax">iPhone 15 Pro Max</option>
+        <option value="pixel8">Pixel 8</option>
+        <option value="ipadmini">iPad mini</option>
+        <option value="ipadpro">iPad Pro 13</option>
+        <option value="foldin">Z Fold6</option>
+      </select></label>
+    <label class="stand-pick" id="standMonitors"><span class="stand-step" aria-hidden="true">›</span><span class="stand-label">Монитор</span>
+      <select id="standMonitor">
+        <option value="d768">1366×768</option>
+        <option value="d800">1280×800</option>
+        <option value="d1080" selected>1920×1080</option>
+        <option value="d1440">2560×1440</option>
+        <option value="d219">2560×1080</option>
+        <option value="d4k150">4K · 150%</option>
+        <option value="d4k200">4K · 200%</option>
+        <option value="tv">ТВ 4K</option>
+      </select></label>
+    <label class="stand-pick"><span class="stand-step" aria-hidden="true">›</span><span class="stand-label">Ввод</span>
+      <select id="standInput">
+        <option value="mouse">Мышь</option>
+        <option value="touch">Тач</option>
+        <option value="xbox">Геймпад Xbox</option>
+        <option value="ps">Геймпад PlayStation</option>
+        <option value="switch">Геймпад Nintendo</option>
+      </select></label>
+    <p class="stand-res" id="standRes"></p>
   </div>
-  <div class="stand-group" role="group" aria-label="Устройство">
-    <span class="stand-label">Устройство</span>
-    <button type="button" data-device="promax">iPhone 15 Pro Max</button>
-    <button type="button" data-device="pixel8">Pixel 8</button>
-    <button type="button" data-device="ipadmini">iPad mini</button>
-    <button type="button" data-device="ipadpro">iPad Pro 13</button>
-    <button type="button" data-device="foldin">Z Fold6</button>
-  </div>
-  <p class="stand-res" id="standRes"></p>
-  <div class="stand-group" role="group" aria-label="Состояние" data-for="game">
-    <span class="stand-label">Данные</span>
-    <button type="button" data-state="calm" class="is-on">Обычные</button>
-    <button type="button" data-state="busy">Все</button>
-    <button type="button" id="openSkills">Окно навыков</button>
-  </div>
-  <div class="stand-group" role="group" aria-label="Обновление" data-for="menu">
-    <span class="stand-label">Клиент</span>
-    <button type="button" data-update="0" class="is-on">Актуален</button>
-    <button type="button" data-update="1">Устарел</button>
-  </div>
-  <p class="stand-hint" data-for="game" id="keyHint"><span>Клик по породе — копать</span><span>Enter — чат</span><span>Tab — режим чата</span><span>E — автокопание</span></p>
 </header>
 
 <main class="stand-stage" id="stage">
@@ -70,13 +101,14 @@
           <div class="chat-tabs" role="tablist">
             <button type="button" role="tab" class="chat-tab is-on" data-tag="FED">Федеральный чат</button>
             <button type="button" role="tab" class="chat-tab" data-tag="DNO">Дно</button>
+            <button type="button" role="tab" class="chat-tab" data-tag="PM">Личные<b class="badge chat-badge" id="pmBadge"></b></button>
           </div>
           <button type="button" class="icon-btn" id="chatClose" title="Свернуть чат (Tab)"><svg><use href="#i-collapse"/></svg></button>
         </div>
         <ol class="chat-log" id="chatLog"></ol>
         <form class="chat-form" id="chatForm" autocomplete="off">
           <input id="chatInput" class="chat-input" placeholder="Напишите сообщение…" maxlength="200">
-          <button type="submit" class="icon-btn chat-send touch-only" title="Отправить"><svg><use href="#i-send"/></svg></button>
+          <button type="submit" class="icon-btn chat-send compact-only" title="Отправить"><svg><use href="#i-send"/></svg></button>
         </form>
       </aside>
 
@@ -87,7 +119,8 @@
           <div class="player-row">
             <article class="panel player">
               <header class="player-head">
-                <img class="clan" src="img/clan.png" alt="Клан" width="13" height="13">
+                <button type="button" class="clan-btn" id="clanBtn" title="Клан"><img class="clan" src="img/clan.png" alt="Клан" width="13" height="13"></button>
+                <button type="button" class="pid" id="profileBtn" title="Профиль"><span>#10482</span></button>
                 <h1 class="nick">ШАХТЁР-774</h1>
                 <span class="level" id="level">ур.47</span>
               </header>
@@ -131,12 +164,12 @@
 
         <!-- Левый низ: режимы, программатор, миникарта -->
         <section class="col-bottom">
-          <button type="button" class="toggle" id="autodig" aria-pressed="false" title="Автокопание"><span class="dot"></span><span class="lbl">Автокопание</span><svg class="ico-only"><use href="#i-autodig"/></svg><span class="cap">Авто</span><kbd>E</kbd></button>
+          <button type="button" class="toggle" id="autodig" aria-pressed="false" title="Автокопание"><span class="dot"></span><span class="lbl">Автокопание</span><svg class="ico-only"><use href="#i-autodig"/></svg><span class="cap">Авто</span><kbd>E</kbd><span class="pg" data-act="autodig"></span></button>
           <div class="panel prog">
             <button type="button" class="prog-open" title="Открыть программатор"><svg><use href="#i-prog"/></svg><span id="progName">Программатор</span></button>
             <button type="button" class="icon-btn prog-run" id="progRun" title="Запустить программу"><svg><use href="#i-play"/></svg></button>
           </div>
-          <div class="panel minimap" title="Карта мира">
+          <div class="panel minimap" title="Карта мира" role="button" tabindex="0">
             <canvas id="minimap" width="264" height="264"></canvas>
             <span class="coords" id="coords">1184:902</span>
           </div>
@@ -153,13 +186,15 @@
       <section class="top-right">
         <div class="sysbar">
           <nav class="sysbuttons" aria-label="Система">
-            <button type="button" class="icon-btn" title="Помощь"><svg><use href="#i-help"/></svg></button>
-            <button type="button" class="icon-btn" title="Консоль"><svg><use href="#i-console"/></svg></button>
+            <!-- Игровое: после «Бонусов» — почта, здания, респаун; за разделителем системное — консоль, помощь, меню -->
+            <button type="button" class="icon-btn" title="Почта" id="mailBtn"><svg><use href="#i-mail"/></svg><b class="badge" id="mailBadge">2</b></button>
             <button type="button" class="icon-btn" title="Мои здания"><svg><use href="#i-buildings"/></svg></button>
             <button type="button" class="icon-btn" title="Вернуться на респаун" id="respawnBtn"><svg><use href="#i-respawn"/></svg></button>
             <span class="sys-sep"></span>
-            <!-- Звук, музыка и режим экрана — в настройках, как и все прочие настройки -->
-            <button type="button" class="icon-btn" title="Настройки"><svg><use href="#i-settings"/></svg></button>
+            <button type="button" class="icon-btn" title="Консоль"><svg><use href="#i-console"/></svg></button>
+            <button type="button" class="icon-btn" title="Помощь"><svg><use href="#i-help"/></svg></button>
+            <!-- Меню паузы: продолжить, настройки, выход. На пальце эта кнопка — плитка «Настройки» в ☰, выход — внизу настроек -->
+            <button type="button" class="icon-btn" title="Меню" id="sysMenu"><svg><use href="#i-menu"/></svg></button>
           </nav>
         </div>
         <p class="diag">v0.8.14 · 60 FPS</p>
@@ -178,12 +213,11 @@
         <input class="chat-input" id="sayInput" maxlength="200" aria-label="Сказать">
         <button type="submit" class="icon-btn" title="Отправить"><svg><use href="#i-send"/></svg></button>
       </form>
-      <div class="low-row touch-only" id="lowRow">
+      <div class="low-row compact-only" id="lowRow">
         <button type="button" class="tbtn fast-move" id="fastMove" aria-pressed="false" title="Бег"><svg><use href="#i-run"/></svg><span class="cap">Бег</span></button>
       </div>
       <div class="pad touch-only" id="pad" title="Движение"><i class="pad-ring"></i><i class="pad-knob" id="padKnob"></i></div>
-      <nav class="touch-sys touch-only" aria-label="Управление">
-        <button type="button" class="tbtn" title="Карта мира"><svg><use href="#i-map"/></svg></button>
+      <nav class="touch-sys compact-only" aria-label="Управление">
         <button type="button" class="tbtn" id="touchChat" aria-pressed="false" title="Открыть чат"><svg><use href="#i-chat"/></svg><span>Чат</span></button>
         <button type="button" class="tbtn" id="touchSay" aria-pressed="false" title="Сказать рядом"><svg><use href="#i-chat"/></svg><span>Рядом</span></button>
         <button type="button" class="tbtn" id="touchMenu" title="Меню"><svg><use href="#i-menu"/></svg><span>Меню</span></button>
@@ -251,8 +285,103 @@
       </section>
     </div>
 
-    <!-- Пауза (PauseMenu): на пальце сюда уходят настройки, звук и выход -->
     <!-- Мои здания: окно сервера; содержимое строит GUI-протокол, макет показывает только рамку -->
+    <!-- Карта мира: открывается миникартой (на ПК ещё клавишей M) -->
+    <div class="dialog-layer" id="mapDialog" hidden>
+      <section class="panel map-win" role="dialog" aria-labelledby="mapTitle">
+        <header class="srv-head map-head">
+          <h2 id="mapTitle">Карта мира</h2>
+          <span class="map-coords" id="mapCoords"></span>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="map-body">
+          <div class="map-view" id="mapView">
+            <canvas id="mapCanvas"></canvas>
+            <div class="map-pins" id="mapPins"></div>
+            <div class="map-tools">
+              <button type="button" class="icon-btn" id="mapZoomIn" title="Приблизить"><svg><use href="#i-plus"/></svg></button>
+              <button type="button" class="icon-btn" id="mapZoomOut" title="Отдалить"><svg><use href="#i-minus"/></svg></button>
+              <button type="button" class="icon-btn" id="mapHome" title="К себе"><svg><use href="#i-target"/></svg></button>
+            </div>
+            <span class="map-scale" id="mapScale"></span>
+          </div>
+          <aside class="map-side">
+            <h3>Показывать</h3>
+            <div class="map-filters" id="mapFilters">
+              <label class="check"><input type="checkbox" data-kind="me" checked><i class="pin-dot pin-dot--me"></i>Я</label>
+              <label class="check"><input type="checkbox" data-kind="clan" checked><i class="pin-dot pin-dot--clan"></i>Клан в сети</label>
+              <label class="check"><input type="checkbox" data-kind="build" checked><i class="pin-dot pin-dot--build"></i>Мои здания</label>
+              <label class="check"><input type="checkbox" data-kind="spawn" checked><i class="pin-dot pin-dot--spawn"></i>Респаун</label>
+            </div>
+            <h3>Места</h3>
+            <ul class="map-places" id="mapPlaces"></ul>
+          </aside>
+        </div>
+      </section>
+    </div>
+
+    <!-- Клан: открывается знаком клана -->
+    <div class="dialog-layer" id="clanDialog" hidden>
+      <section class="panel srv-window clan-win" role="dialog" aria-labelledby="clanTitle">
+        <header class="srv-head">
+          <h2 id="clanTitle">Клан</h2>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="srv-body clan-body">
+          <div class="clan-card">
+            <div class="clan-emblem"><img src="img/clan.png" alt=""></div>
+            <div class="clan-who">
+              <p class="clan-name">FED <span>Федерация</span></p>
+              <p class="profile-meta"><span>Участников <b>24 / 30</b></span><span>В сети <b>7</b></span><span>Глава <b>DVM_LEADER</b></span></p>
+            </div>
+            <div class="clan-bank"><small>Казна</small><b>$1 240 500</b><span>₢ 18 300</span></div>
+          </div>
+          <div class="clan-tabs seg" role="tablist" id="clanTabs">
+            <button type="button" role="tab" aria-checked="true" data-tab="members">Участники</button>
+            <button type="button" role="tab" aria-checked="false" data-tab="board">Объявления</button>
+            <button type="button" role="tab" aria-checked="false" data-tab="bank">Казна</button>
+            <button type="button" role="tab" aria-checked="false" data-tab="requests" class="lead-only">Заявки<b class="badge chat-badge" id="reqBadge"></b></button>
+          </div>
+          <ul class="clan-list" data-page="members" id="clanMembers"></ul>
+          <div class="clan-page" data-page="board" hidden>
+            <form class="clan-post lead-only" id="clanPostForm"><textarea class="input" id="clanPostText" rows="2" maxlength="300" placeholder="Объявление для клана…"></textarea><button type="submit" class="btn btn--primary">Опубликовать</button></form>
+            <ul class="clan-board" id="clanBoard"></ul>
+          </div>
+          <ul class="clan-list" data-page="bank" id="clanBank" hidden></ul>
+          <div class="clan-page" data-page="requests" hidden>
+            <form class="clan-invite" id="clanInviteForm"><input class="input" id="clanInviteId" placeholder="ID игрока, например 10482" inputmode="numeric"><button type="submit" class="btn btn--primary">Пригласить</button></form>
+            <p class="clan-note" id="clanInviteNote"></p>
+            <ul class="clan-list" id="clanRequests"></ul>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Почта: письма от сервера и игроков -->
+    <div class="dialog-layer" id="mailDialog" hidden>
+      <section class="panel srv-window mail-win" role="dialog" aria-labelledby="mailTitle">
+        <header class="srv-head">
+          <h2 id="mailTitle">Почта</h2>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="mail-body">
+          <ul class="mail-list" id="mailList"></ul>
+          <article class="mail-read" id="mailRead"></article>
+        </div>
+      </section>
+    </div>
+
+    <!-- Профиль: открывается ID игрока рядом со знаком клана -->
+    <div class="dialog-layer" id="profileDialog" hidden>
+      <section class="panel srv-window profile" role="dialog" aria-labelledby="profileTitle">
+        <header class="srv-head">
+          <h2 id="profileTitle">Профиль</h2>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="srv-body profile-body" id="profileBody"></div>
+      </section>
+    </div>
+
     <div class="dialog-layer" id="buildingsDialog" hidden>
       <section class="panel srv-window" role="dialog" aria-labelledby="buildingsTitle">
         <header class="srv-head">
@@ -263,13 +392,25 @@
       </section>
     </div>
 
+    <!-- Меню ☰ на пальце: только системное — настройки, помощь, выход. Игровые функции — в блоке у миникарты -->
     <div class="dialog-layer" id="pauseDialog" hidden>
       <section class="panel dialog pause" role="dialog" aria-labelledby="pauseTitle">
-        <h2 id="pauseTitle">Пауза</h2>
+        <header class="pause-head">
+          <h2 id="pauseTitle">Меню</h2>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
         <div class="pause-sys" id="pauseSys"></div>
+        <button type="button" class="btn" id="pauseExit">Выход в меню</button>
+      </section>
+    </div>
+
+    <!-- Пауза на ПК: кнопка «Меню» и Esc -->
+    <div class="dialog-layer" id="menuDialog" hidden>
+      <section class="panel dialog pause" role="dialog" aria-labelledby="menuTitle">
+        <h2 id="menuTitle">Пауза</h2>
         <button type="button" class="btn btn--primary" data-close>Продолжить</button>
-        <button type="button" class="btn">Настройки</button>
-        <button type="button" class="btn">Выход в меню</button>
+        <button type="button" class="btn" id="menuSettings">Настройки</button>
+        <button type="button" class="btn" id="menuExit">Выход в меню</button>
       </section>
     </div>
    </section>
@@ -290,14 +431,31 @@
         <img src="img/ui/mm_logo.png" alt="" width="56" height="56">
         <div><b class="wordmark">Project Kern</b><span class="brand-sub">Экспедиция в недра планеты</span></div>
       </header>
+      <div class="seg seg--auth" id="authTabs" role="radiogroup" aria-label="Вход или регистрация">
+        <button type="button" role="radio" aria-checked="true" data-tab="login">Вход</button>
+        <button type="button" role="radio" aria-checked="false" data-tab="register">Регистрация</button>
+      </div>
+      <div class="auth-stack">
       <form class="auth-form" id="authForm" autocomplete="on" novalidate>
-        <input class="input" id="authLogin" name="login" placeholder="Логин" aria-label="Логин" autocomplete="username">
-        <input class="input" id="authPassword" name="password" type="password" placeholder="Пароль" aria-label="Пароль" autocomplete="current-password">
+        <div class="fld"><input class="input" id="authLogin" name="login" placeholder="Логин" aria-label="Логин" autocomplete="username"><small class="fld-err"></small></div>
+        <div class="fld"><input class="input" id="authPassword" name="password" type="password" placeholder="Пароль" aria-label="Пароль" autocomplete="current-password"><small class="fld-err"></small></div>
+        <div class="auth-row">
+          <label class="check"><input type="checkbox" checked>Запомнить меня</label>
+          <button type="button" class="link" id="authForgot">Забыли пароль?</button>
+          <small class="auth-note" id="authForgotNote" aria-live="polite"></small>
+        </div>
         <button type="submit" class="btn btn--primary btn--big" id="authSubmit">Войти</button>
       </form>
+      <form class="auth-form is-off" id="regForm" autocomplete="on" novalidate inert>
+        <div class="fld"><input class="input" id="regLogin" name="new-login" placeholder="Логин" aria-label="Логин" autocomplete="username"><small class="fld-err"></small></div>
+        <div class="fld"><input class="input" id="regPassword" name="new-password" type="password" placeholder="Пароль" aria-label="Пароль" autocomplete="new-password"><small class="fld-err"></small></div>
+        <div class="fld"><input class="input" id="regRepeat" name="repeat-password" type="password" placeholder="Повторите пароль" aria-label="Повторите пароль" autocomplete="new-password"><small class="fld-err"></small></div>
+        <div class="fld"><label class="check"><input type="checkbox" id="regTerms">Принимаю <a class="link" href="#" onclick="return false">правила игры</a></label><small class="fld-err"></small></div>
+        <button type="submit" class="btn btn--primary btn--big" id="regSubmit">Создать аккаунт</button>
+      </form>
+      </div>
       <div class="or"><span>или</span></div>
       <button type="button" class="btn btn--big btn--vk" id="authVk"><img src="img/ui/mm_icon_vk.png" alt="" width="20" height="20">Войти через VK</button>
-      <p class="gate-hint" id="authHint" aria-live="polite"></p>
     </div>
    </section>
 
@@ -364,9 +522,9 @@
         <button type="button" class="btn btn--primary btn--hero" id="descendBtn">Играть</button>
         <!-- Обязательное обновление стоит на месте кнопки спуска (OutdatedClientPacket) -->
         <div class="update" id="updateBlock" hidden>
-          <button type="button" class="btn btn--primary btn--hero" id="updateBtn">Обновить до 0.9.0</button>
-          <p class="update-note">Без обновления игра недоступна. У вас версия 0.8.14.</p>
+          <button type="button" class="btn btn--hero btn--update" id="updateBtn">Обновить до 0.9.0</button>
         </div>
+        <button type="button" class="btn btn--big menu-settings" title="Настройки">Настройки</button>
       </div>
     </div>
 
@@ -380,11 +538,11 @@
       <ol class="phases" id="descentPhases">
         <li>Подключение к серверу</li><li>Загрузка ресурсов</li><li>Получение позиции</li><li>Построение мира</li><li>Загрузка текстур</li>
       </ol>
+      <p class="descent-tip" id="descentTip" aria-live="polite"></p>
       <button type="button" class="btn btn--wide" id="descentCancel">Отмена</button>
     </div>
 
     <nav class="menu-rail" aria-label="Меню">
-      <button type="button" class="rail-btn" title="Настройки"><img src="img/ui/mm_icon_settings.png" alt=""></button>
       <button type="button" class="rail-btn" id="railHealth" title="Проверить ресурсы" aria-label="Проверить ресурсы">
         <svg class="rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 20 7v5.2c0 4.4-3.2 7.5-8 9.3-4.8-1.8-8-4.9-8-9.3V7z"/><path d="m8.5 12.2 2.2 2.2 4.8-5"/></svg>
       </button>
@@ -396,6 +554,8 @@
       <button type="button" class="rail-btn" title="Выход из игры"><img src="img/ui/mm_icon_exit.png" alt=""></button>
     </nav>
     <footer class="menu-foot" aria-label="Информация о сборке">
+      <button type="button" class="menu-news" id="menuNews"><small>НОВОЕ</small><span>0.9.0 — поезда на рельсах, переработанные клановые войны</span></button>
+      <span class="menu-meta menu-online"><i></i><small>В СЕТИ</small><b>1 284</b></span>
       <span class="menu-meta"><small>ВЕРСИЯ</small><b id="versionLabel">0.8.14</b></span>
       <span class="menu-meta"><small>СБОРКА</small><code id="buildHash">fb8e0225</code></span>
     </footer>
@@ -451,7 +611,9 @@
         <button type="button" role="tab" class="is-on" data-tab="graphics">Графика</button>
         <button type="button" role="tab" data-tab="audio">Звук</button>
         <button type="button" role="tab" data-tab="interface">Интерфейс</button>
+        <button type="button" role="tab" data-tab="profile">Профиль</button>
         <button type="button" role="tab" data-tab="controls">Управление</button>
+        <button type="button" class="settings-exit" id="setExit">Выход в меню</button>
       </nav>
       <div class="settings-body">
         <div class="set-page is-on" data-tab="graphics">
@@ -477,6 +639,9 @@
           <label class="field"><span><b>Голос</b></span><span class="range"><input type="range" min="0" max="100" value="100"><output>100%</output></span></label>
           <label class="field"><span><b>Звук в фоне</b></span><input type="checkbox" class="switch" checked></label>
         </div>
+        <div class="set-page" data-tab="profile">
+          <label class="field"><span><b>Скрыть профиль</b><small>Другие игроки увидят только ник, клан, ID и уровень</small></span><input type="checkbox" class="switch" id="setHideProfile"></label>
+        </div>
         <div class="set-page" data-tab="interface">
           <label class="field"><span><b>Язык</b></span>
             <select><option>Русский</option><option>English</option><option>Китайский (упрощ.)</option><option>Китайский (традиц.)</option></select></label>
@@ -488,18 +653,30 @@
             <select><option>Выкл.</option><option>Протанопия</option><option>Дейтеранопия</option><option>Тританопия</option></select></label>
         </div>
         <div class="set-page" data-tab="controls">
-          <div class="field"><span><b>Движение</b></span><span class="keycap is-fixed">W A S D / ← ↑ ↓ →</span></div>
-          <div class="field"><span><b>Копать</b></span><button type="button" class="keycap" data-key="Space">Space</button></div>
-          <div class="field"><span><b>Автокопание</b></span><button type="button" class="keycap" data-key="E">E</button></div>
-          <div class="field"><span><b>Геология</b></span><button type="button" class="keycap" data-key="G">G</button></div>
-          <div class="field"><span><b>Лечение</b></span><button type="button" class="keycap" data-key="V">V</button></div>
-          <div class="field"><span><b>Военный блок</b></span><button type="button" class="keycap" data-key="Y">Y</button></div>
-          <div class="field"><span><b>Дорога</b></span><button type="button" class="keycap" data-key="H">H</button></div>
-          <div class="field"><span><b>Блок</b></span><button type="button" class="keycap" data-key="F">F</button></div>
-          <div class="field"><span><b>Опора</b></span><button type="button" class="keycap" data-key="J">J</button></div>
-          <div class="field"><span><b>Движение мышью</b></span><span class="keycap is-fixed">ПКМ (удержание)</span></div>
-          <div class="field"><span><b>Маршрут</b></span><span class="keycap is-fixed">ЛКМ</span></div>
-          <div class="set-foot"><button type="button" class="btn set-btn" id="keysReset">Сбросить до стандартных</button></div>
+          <div class="field"><span><b>Устройство</b></span><div class="seg" id="ctlSeg" role="radiogroup"><button type="button" role="radio" aria-checked="true" data-view="keys">Клавиатура</button><button type="button" role="radio" aria-checked="false" data-view="pad">Геймпад</button></div></div>
+          <div class="ctl-view" data-view="keys">
+            <div class="field"><span><b>Движение</b></span><span class="keycap is-fixed">W A S D / ← ↑ ↓ →</span></div>
+            <div class="field"><span><b>Копать</b></span><button type="button" class="keycap" data-key="Space">Space</button></div>
+            <div class="field"><span><b>Автокопание</b></span><button type="button" class="keycap" data-key="E">E</button></div>
+            <div class="field"><span><b>Геология</b></span><button type="button" class="keycap" data-key="G">G</button></div>
+            <div class="field"><span><b>Лечение</b></span><button type="button" class="keycap" data-key="V">V</button></div>
+            <div class="field"><span><b>Военный блок</b></span><button type="button" class="keycap" data-key="Y">Y</button></div>
+            <div class="field"><span><b>Дорога</b></span><button type="button" class="keycap" data-key="H">H</button></div>
+            <div class="field"><span><b>Блок</b></span><button type="button" class="keycap" data-key="F">F</button></div>
+            <div class="field"><span><b>Опора</b></span><button type="button" class="keycap" data-key="J">J</button></div>
+            <div class="field"><span><b>Движение мышью</b></span><span class="keycap is-fixed">ПКМ (удержание)</span></div>
+            <div class="field"><span><b>Маршрут</b></span><span class="keycap is-fixed">ЛКМ</span></div>
+            <div class="set-foot"><button type="button" class="btn set-btn" id="keysReset">Сбросить до стандартных</button></div>
+          </div>
+          <div class="ctl-view" data-view="pad" hidden>
+            <label class="field"><span><b>Значки кнопок</b></span>
+              <select id="padGlyphs"><option value="auto">Как у геймпада</option><option value="xbox">Xbox</option><option value="ps">PlayStation</option><option value="switch">Nintendo</option></select></label>
+            <label class="field"><span><b>Вибрация</b></span><input type="checkbox" class="switch" checked></label>
+            <label class="field"><span><b>Чувствительность стика</b></span><span class="range"><input type="range" min="0" max="100" value="50"><output>50%</output></span></label>
+            <h3 class="set-sec">Кнопки</h3>
+            <div id="padBinds"></div>
+            <div class="set-foot"><button type="button" class="btn set-btn" id="padReset">Сбросить до стандартных</button></div>
+          </div>
         </div>
       </div>
     </section>
@@ -555,11 +732,15 @@
 <!-- Иконки: один набор, линия 1.75 на сетке 24 -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="1.5"/><path d="M3.5 6.5 12 13l8.5-6.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
     <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.4"/><path d="M12 17h.01"/></symbol>
     <symbol id="i-console" viewBox="0 0 24 24"><path d="M5 7l5 5-5 5"/><path d="M12 17h7"/></symbol>
     <symbol id="i-buildings" viewBox="0 0 24 24"><path d="M4 20V9l6-4 6 4v11"/><path d="M16 12h4v8"/><path d="M8 20v-5h4v5"/><path d="M3 20h18"/></symbol>
     <symbol id="i-respawn" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></symbol>
-    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
     <symbol id="i-box" viewBox="0 0 24 24"><path d="M5 5l7-3.5L19 5v6.5L12 15 5 11.5z"/><path d="M5 5l7 3.5L19 5M12 8.5V15"/><path d="M12 17v5.5M9.5 20L12 22.5l2.5-2.5"/></symbol>
     <symbol id="i-prog" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/><path d="M10 7h4a3 3 0 0 1 3 3v4"/></symbol>
     <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
@@ -568,7 +749,6 @@
     <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 11v6M14 11v6M7 7l1 13h8l1-13M9 7V4h6v3"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
-    <symbol id="i-map" viewBox="0 0 24 24"><path d="M4 6l5-2 6 2 5-2v14l-5 2-6-2-5 2z"/><path d="M9 4v14M15 6v14"/></symbol>
     <symbol id="i-chat" viewBox="0 0 24 24"><path d="M5 5h14v10H10l-5 4z"/></symbol>
     <symbol id="i-autodig" viewBox="0 0 24 24"><path d="M14 4l6 6-3 3-6-6z"/><path d="M11 7l-7 7 3 3 7-7"/><path d="M4 21a3 3 0 0 0 5 0"/></symbol>
     <symbol id="i-geo" viewBox="0 0 24 24"><g transform="rotate(180 12 12)"><path d="M17 2.5L15 7.5"/><path d="M5 7.5h14v4a7 7 0 0 1-7 7H5z"/><path d="M5 18.5l1.2 2.5 1.3-2.5 1.2 2.5 1.3-2.5"/><path d="M7 7.5l1.6-3 2.4 1.2 1.6-2.2 2.4 4"/></g></symbol>
@@ -588,5 +768,7 @@
 <script src="js/screens.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/calibration.js"></script>
+<script src="js/map.js"></script>
+<script src="js/gamepad.js"></script>
 </body>
 </html>

@@ -13,9 +13,9 @@ public sealed class PostProcessRuntimeContractRule : IRule
     private static readonly MethodContract[] Contracts =
     [
         new(
-            "Kern.Tools.ImGui.ToolWindows",
+            "Kern.Rendering.Diagnostics.Tools.ToolWindows",
             "Unregister",
-            [new("Kern.Tools.ImGui.ToolWindows", "ReleaseInputCapture", 1)]),
+            [new("Kern.Rendering.Diagnostics.Tools.ToolWindows", "ReleaseInputCapture", 1)]),
         new(
             "Kern.Rendering.PostProcessing.PostProcessController",
             "OnDisable",
@@ -39,11 +39,11 @@ public sealed class PostProcessRuntimeContractRule : IRule
                 new("UnityEngine.Object", "op_Inequality", 1),
             ]),
         new(
-            "Kern.Rendering.DisplayManager",
+            "Kern.Rendering.Display.DisplayManager",
             "SetHDREnabled",
             [
-                new("Kern.Rendering.HDROutput", "SetEnabled", 1),
-                new("Kern.Rendering.HDROutput", "ConfigureCamera", 1),
+                new("Kern.Rendering.Display.HDROutput", "SetEnabled", 1),
+                new("Kern.Rendering.Display.HDROutput", "ConfigureCamera", 1),
             ]),
     ];
 

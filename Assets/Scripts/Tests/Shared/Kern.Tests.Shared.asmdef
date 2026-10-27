@@ -6,7 +6,8 @@
     ],
     "references": [
         "Kern.Contracts",
-        "Kern.Core"
+        "Kern.Core",
+        "Kern.Diagnostics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -6,28 +6,28 @@
 
 | Симптом | Файл | Точка входа |
 | - | - | - |
-| Фриз при переходе через границу окна | `Assets/Scripts/Networking/Connection/Client/Systems/DummyMapStreamer.cs` | `SendMapChunksAroundAsync` |
-| Чанк применяется и вызывает каскад событий | `Assets/Scripts/World/Persistence/WorldLayer.cs` | `SetRegion`, `BeginChunkLoadBatch`, `EndChunkLoadBatch` |
-| Packet batch применяется | `Assets/Scripts/Networking/Processors/World/MapRegionProcessor.cs` | `Process`, `BeginBatch`, `EndBatch` |
-| Почему пришла lighting invalidation | `Assets/Scripts/World/Terrain/Core/TerrainRenderer.cs` | `HandleRegionChanged`, `OnCellLayerChunkLoaded` |
-| Почему static solve полный | `Assets/Scripts/World/Lighting/Core/LightingUpdateCoordinator.cs` | `regionChanged`, `geometryChanged`, `FieldDirty`, `RecordLightingFrame` |
+| Фриз при переходе через границу окна | `Assets/Scripts/Networking/Offline/World/Streaming/DummyMapStreamer.cs` | `SendMapChunksAroundAsync` |
+| Чанк применяется и вызывает каскад событий | `Assets/Scripts/World/Persistence/Layers/Data/WorldLayer.cs` | `SetRegion`, `BeginChunkLoadBatch`, `EndChunkLoadBatch` |
+| Packet batch применяется | `Assets/Scripts/Networking/Processing/World/MapRegion/MapRegionProcessor.cs` | `Process`, `BeginBatch`, `EndBatch` |
+| Почему пришла lighting invalidation | `Assets/Scripts/World/Terrain/Presentation/Rendering/TerrainRenderer.cs` | `HandleRegionChanged`, `OnCellLayerChunkLoaded` |
+| Почему static solve полный | `Assets/Scripts/World/Lighting/Runtime/Orchestration/LightingUpdateCoordinator.cs` | `regionChanged`, `geometryChanged`, `FieldDirty`, `RecordLightingFrame` |
 | Dependency mask | `Assets/Scripts/World/Lighting/Core/StaticLightingSolver.cs` | `ShouldUseDependencyMask`, `RecordCascade` |
 | Почему atlas scroll сломал свет | `Assets/Scripts/World/Lighting/Core/StaticLightingSolver.cs` | `RecordScroll`, `RecordCascadeStrips` |
-| Scroll kernel | `Assets/Resources/Shaders/Lighting/Cascades/CascadeTrace.hlsl` | `ScrollRadianceAtlas` |
-| Как считается resident terrain window | `Assets/Scripts/World/Terrain/Core/TerrainRenderer.cs` | `IsTerrainWindowResident` |
-| Размер и origin terrain window | `Assets/Scripts/World/Terrain/Core/TerrainViewportCalculator.cs` | `CalculateDimensions`, `ResolveGridPosition` |
-| Governor и quantum | `Assets/Scripts/World/Streaming/StreamingGovernor.cs` | `SelectTargetOrigin`, `Plan` |
-| Политика quantum/padding | `Assets/Scripts/World/Streaming/StreamingPolicy.cs` | `Default`, `ResolvePrefetchMarginCells` |
-| Ring cache scroll | `Assets/Scripts/World/Terrain/Cache/TerrainCellCache.cs` | `ScrollAndFill` |
-| Incremental mesh band | `Assets/Scripts/World/Terrain/GPU/TerrainCellBuilder.cs` | `ScrollAndBuildBand` |
-| Cell data upload | `Assets/Scripts/World/Terrain/GPU/TerrainCellBuffers.cs` | `Apply`, `SetType` |
-| Terrain dirty patch | `Assets/Scripts/World/Terrain/Core/TerrainRenderer.cs` | `UpdateDirtyCells`, `CoalesceOversizedDirtyRects` |
-| Global light texture/origin | `Assets/Scripts/World/Lighting/Core/LightingPresentation.cs` | `Publish` |
-| Frame counters | `Assets/Scripts/World/Common/FrameTelemetry.cs` | reset/accumulate semantics |
-| Dump current frame | `Assets/Scripts/World/Lighting/Diagnostics/LightingFrameDumper.cs` | config/counters/textures |
-| CPU transport oracle | `tools/Kern.LightingTests/LightingOracle.cs` | brute-force reference |
-| HLSL transport tests | `tools/Kern.LightingTests/NativeHarness.cs` + `NativeTransport*.cpp` | actual transport functions |
-| Layout/binding checks | `tools/Kern.LightingTests/Program.cs` | production source checks |
+| Scroll kernel | `Assets/Resources/Shaders/Lighting/Cascades/Trace/CascadeTrace.hlsl` | `ScrollRadianceAtlas` |
+| Как считается resident terrain window | `Assets/Scripts/World/Terrain/Presentation/Rendering/TerrainRenderer.cs` | `IsTerrainWindowResident` |
+| Размер и origin terrain window | `Assets/Scripts/World/Terrain/Planning/Viewport/TerrainViewportCalculator.cs` | `CalculateDimensions`, `ResolveGridPosition` |
+| Governor и quantum | `Assets/Scripts/World/Streaming/Control/StreamingGovernor.cs` | `SelectTargetOrigin`, `Plan` |
+| Политика quantum/padding | `Assets/Scripts/World/Streaming/Planning/StreamingPolicy.cs` | `Default`, `ResolvePrefetchMarginCells` |
+| Ring cache scroll | `Assets/Scripts/World/Terrain/Cache/Cells/TerrainCellCache.cs` | `ScrollAndFill` |
+| Incremental mesh band | `Assets/Scripts/World/Terrain/Build/Cells/TerrainCellBuilder.cs` | `ScrollAndBuildBand` |
+| Cell data upload | `Assets/Scripts/World/Terrain/GPU/Cells/TerrainCellBuffers.cs` | `Apply`, `SetType` |
+| Terrain dirty patch | `Assets/Scripts/World/Terrain/Presentation/Rendering/TerrainRenderer.cs` | `UpdateDirtyCells`, `CoalesceOversizedDirtyRects` |
+| Global light texture/origin | `Assets/Scripts/World/Lighting/Presentation/Output/LightingPresentation.cs` | `Publish` |
+| Frame counters | `Assets/Scripts/Diagnostics/World/Frames/Telemetry/FrameTelemetry.cs` | reset/accumulate semantics |
+| Dump current frame | `Assets/Scripts/World/Lighting/Diagnostics/Reports/LightingFrameDumper.cs` | config/counters/textures |
+| CPU transport oracle | `tools/Kern.LightingTests/Runtime/LightingOracle/LightingOracle.cs` | brute-force reference |
+| HLSL transport tests | `tools/Kern.LightingTests/Runtime/NativeHarness/NativeHarness.cs` + `NativeTransport*.cpp` | actual transport functions |
+| Layout/binding checks | `tools/Kern.LightingTests/Cli/Program.cs` | production source checks |
 
 ## Dataflow lookup
 
@@ -74,7 +74,7 @@ Camera
 ```bash
 dotnet run --project tools/Kern.LightingTests/Kern.LightingTests.csproj -- all
 dotnet run --project tools/Kern.LightingTests/Kern.LightingTests.csproj -- transport
-dotnet run --project tools/Kern.LightingTests/Kern.LightingTests.csproj -- equivalence Assets/Resources/Shaders/Lighting/WorldLighting.compute
+dotnet run --project tools/Kern.LightingTests/Kern.LightingTests.csproj -- equivalence Assets/Resources/Shaders/Lighting/Pipeline/WorldLighting.compute
 dotnet run --project tools/Kern.LightingTests/Kern.LightingTests.csproj -- compile
 dotnet test tools/Kern.TerrainTests/Kern.TerrainTests.csproj --no-restore
 git diff --check

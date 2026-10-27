@@ -1,0 +1,65 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>pad: running</title>
+<!-- Геймпад: фокус на главной кнопке, вкладки LB/RB, окна A/B, стик — поворот и шаг, действия в игре.
+     Кнопки нажимаются через kernPad.press, без настоящего пада. Итог — в <title>. -->
+<pre id="log"></pre>
+<script>
+const log = [], fail = [];
+const check = (ok, what) => (ok ? log : fail).push((ok ? 'ok: ' : 'FAIL: ') + what);
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const load = src => new Promise(res => {
+  const f = document.createElement('iframe');
+  f.style.cssText = 'width:1800px;height:1400px;border:0;position:absolute;left:-9999px';
+  f.onload = () => res(f); f.src = src; document.body.appendChild(f);
+});
+(async () => {
+  // Вход: фокус на «Войти», RB — регистрация
+  let f = await load('../index.html?screen=auth&pad=xbox'); await wait(800);
+  let w = f.contentWindow, d = w.document, $ = id => d.getElementById(id), P = b => w.kernPad.press(b);
+  check(d.activeElement === $('authSubmit'), 'вход: фокус на «Войти»');
+  check(!!d.querySelector('.pad-bar:not([hidden])'), 'вход: строка подсказок видна');
+  P('rb'); await wait(100);
+  check(!$('regForm').classList.contains('is-off'), 'вход: RB — вкладка «Регистрация»');
+  f.remove();
+
+  // Меню: фокус на «Играть», вниз — «Настройки», A — окно, B — закрыть
+  f = await load('../index.html?screen=menu&pad=xbox'); await wait(800);
+  w = f.contentWindow; d = w.document; $ = id => d.getElementById(id); P = b => w.kernPad.press(b);
+  check(d.activeElement === $('descendBtn'), 'меню: фокус на «Играть»');
+  P('down'); await wait(50);
+  check(d.activeElement?.textContent.trim() === 'Настройки', 'меню: вниз — «Настройки»');
+  P('a'); await wait(300);
+  check(!$('settingsDialog').hidden, 'меню: A открывает настройки');
+  check(!d.querySelector('.ctl-view[data-view="pad"]').hidden, 'настройки: с падом — вид «Геймпад»');
+  check($('settingsDialog').contains(d.activeElement), 'настройки: фокус внутри окна');
+  P('b'); await wait(300);
+  check($('settingsDialog').hidden, 'настройки: B закрывает');
+  f.remove();
+
+  // Игра: стик — поворот и шаг, X — автокопание, ☰ — пауза
+  f = await load('../index.html?screen=game&pad=xbox'); await wait(1200);
+  w = f.contentWindow; d = w.document; $ = id => d.getElementById(id); P = b => w.kernPad.press(b);
+  const x0 = w.kernWorld.PX;
+  w.kernStick(-.45, 0); await wait(50);
+  check(w.kernWorld.facing === 'left' && w.kernWorld.PX === x0, 'стик: небольшое отклонение — поворот без шага');
+  w.kernStick(-1, 0); await wait(400); w.kernStick(0, 0);
+  check(w.kernWorld.PX < x0, 'стик: сильное отклонение — ходьба');
+  P('x'); await wait(50);
+  check($('autodig').getAttribute('aria-pressed') === 'true', 'игра: X — автокопание');
+  check(!!d.querySelector('.pad-cluster') && d.querySelector('.pad-cluster').getClientRects().length > 0, 'игра: ромб кнопок виден');
+  P('start'); await wait(300);
+  check(!$('menuDialog').hidden, 'игра: ☰ — пауза');
+  check(d.activeElement?.textContent.trim() === 'Продолжить', 'пауза: фокус на «Продолжить»');
+  P('b'); await wait(300);
+  check($('menuDialog').hidden, 'пауза: B закрывает');
+  P('select'); await wait(100);
+  check($('hud').contains(d.activeElement), 'игра: ⧉ — фокус на кнопках интерфейса');
+  P('b'); await wait(100);
+  check(!$('hud').contains(d.activeElement), 'интерфейс: B — выход');
+  f.remove();
+
+  document.getElementById('log').textContent = [...log, ...fail].join('\n');
+  document.title = fail.length ? `pad: FAIL ${fail.length}` : `pad: ok ${log.length}`;
+})();
+</script>

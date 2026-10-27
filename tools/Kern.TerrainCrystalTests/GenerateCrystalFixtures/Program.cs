@@ -6,10 +6,10 @@ using StbImageSharp;
 // Root is three levels above this binary's source directory
 // (tools/Kern.TerrainCrystalTests/GenerateCrystalFixtures → project root)
 string thisDir = AppContext.BaseDirectory;
-string root = Path.GetFullPath(Path.Combine(thisDir, "..", "..", "..", ".."));
+string root = Path.GetFullPath(Path.Combine(thisDir, "../../../.."));
 
 string sourceFile = Path.GetFullPath(Path.Combine(root, "../OpenMines/client/Assets/Images/terrain.png"));
-string targetFile = Path.GetFullPath(Path.Combine(root, "Assets/Resources/PrismaticFlowMap.bytes"));
+string targetFile = Path.GetFullPath(Path.Combine(root, "Assets/Resources/World/Terrain/Animation/Flow/PrismaticFlowMap.bytes"));
 
 using FileStream source = File.OpenRead(sourceFile);
 ImageResult image = ImageResult.FromStream(source, ColorComponents.RedGreenBlueAlpha);

@@ -32,7 +32,7 @@ public sealed class TransitionStateContractRule : IRule
         var violations = new List<RuleViolation>();
         var projectRoot = context.ProjectRoot;
 
-        var bootstrapPath = Path.Combine(projectRoot, "Assets/Scripts/Core/Bootstrap/Scopes/BootstrapLifetimeScope.cs");
+        var bootstrapPath = Path.Combine(projectRoot, "Assets/Scripts/Bootstrap/Scenes/Scopes/BootstrapLifetimeScope.cs");
         if (File.Exists(bootstrapPath))
         {
             var source = File.ReadAllText(bootstrapPath);
@@ -44,7 +44,7 @@ public sealed class TransitionStateContractRule : IRule
                     RuleId = Id,
                     Message = "Переход от загруженной сцены должен очищать текущее состояние сцены до загрузки новой.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Core/Bootstrap/Scopes/BootstrapLifetimeScope.cs"
+                    TypeName = "Assets/Scripts/Bootstrap/Scenes/Scopes/BootstrapLifetimeScope.cs"
                 });
             }
 
@@ -57,7 +57,7 @@ public sealed class TransitionStateContractRule : IRule
                     RuleId = Id,
                     Message = "Bootstrap scene transitions должны публиковать typed completion и failure states.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Core/Bootstrap/Scopes/BootstrapLifetimeScope.cs"
+                    TypeName = "Assets/Scripts/Bootstrap/Scenes/Scopes/BootstrapLifetimeScope.cs"
                 });
             }
 
@@ -68,13 +68,13 @@ public sealed class TransitionStateContractRule : IRule
                     RuleId = Id,
                     Message = "Legacy split transition events запрещены; публикуйте SceneTransitionStatus через TransitionChanged.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Core/Bootstrap/Scopes/BootstrapLifetimeScope.cs"
+                    TypeName = "Assets/Scripts/Bootstrap/Scenes/Scopes/BootstrapLifetimeScope.cs"
                 });
             }
         }
 
         // ISceneNavigator
-        var navigatorPath = Path.Combine(projectRoot, "Assets/Scripts/Core/Interfaces/Contracts/Core/ISceneNavigator.cs");
+        var navigatorPath = Path.Combine(projectRoot, "Assets/Scripts/Bootstrap/Scenes/Contracts/Navigation/ISceneNavigator.cs");
         if (File.Exists(navigatorPath))
         {
             var navigator = File.ReadAllText(navigatorPath);
@@ -85,13 +85,13 @@ public sealed class TransitionStateContractRule : IRule
                     RuleId = Id,
                     Message = "ISceneNavigator должен предоставлять единственный typed TransitionChanged event.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Core/Interfaces/Contracts/Core/ISceneNavigator.cs"
+                    TypeName = "Assets/Scripts/Bootstrap/Scenes/Contracts/Navigation/ISceneNavigator.cs"
                 });
             }
         }
 
         // SceneTransitionTicket
-        var ticketPath = Path.Combine(projectRoot, "Assets/Scripts/Core/Bootstrap/Transitions/SceneTransitionTicket.cs");
+        var ticketPath = Path.Combine(projectRoot, "Assets/Scripts/Bootstrap/Scenes/Transitions/SceneTransitionTicket.cs");
         if (File.Exists(ticketPath))
         {
             var ticket = File.ReadAllText(ticketPath);
@@ -103,13 +103,13 @@ public sealed class TransitionStateContractRule : IRule
                     RuleId = Id,
                     Message = "SceneTransitionTicket должен публиковать Failed ровно один раз и сохранять PresentationReady terminal.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Core/Bootstrap/Transitions/SceneTransitionTicket.cs"
+                    TypeName = "Assets/Scripts/Bootstrap/Scenes/Transitions/SceneTransitionTicket.cs"
                 });
             }
         }
 
         // SceneTransitionRuntime
-        var runtimePath = Path.Combine(projectRoot, "Assets/Scripts/Core/Bootstrap/Transitions/SceneTransitionRuntime.cs");
+        var runtimePath = Path.Combine(projectRoot, "Assets/Scripts/Bootstrap/Scenes/Transitions/SceneTransitionRuntime.cs");
         if (File.Exists(runtimePath))
         {
             var runtime = File.ReadAllText(runtimePath);
@@ -121,13 +121,13 @@ public sealed class TransitionStateContractRule : IRule
                     RuleId = Id,
                     Message = "Transition observers должны вызываться независимо чтобы один subscriber не мог abortить транзакцию.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Core/Bootstrap/Transitions/SceneTransitionRuntime.cs"
+                    TypeName = "Assets/Scripts/Bootstrap/Scenes/Transitions/SceneTransitionRuntime.cs"
                 });
             }
         }
 
         // SceneTransitionStatus
-        var statusPath = Path.Combine(projectRoot, "Assets/Scripts/Core/Bootstrap/Contracts/SceneTransitionStatus.cs");
+        var statusPath = Path.Combine(projectRoot, "Assets/Scripts/Bootstrap/Scenes/Contracts/Transitions/SceneTransitionStatus.cs");
         if (File.Exists(statusPath))
         {
             var status = File.ReadAllText(statusPath);
@@ -140,7 +140,7 @@ public sealed class TransitionStateContractRule : IRule
                     RuleId = Id,
                     Message = "SceneTransitionStatus должен представлять successful, degraded и failed terminal outcomes.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Core/Bootstrap/Contracts/SceneTransitionStatus.cs"
+                    TypeName = "Assets/Scripts/Bootstrap/Scenes/Contracts/Transitions/SceneTransitionStatus.cs"
                 });
             }
         }

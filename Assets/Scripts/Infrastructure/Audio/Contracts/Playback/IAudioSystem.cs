@@ -1,0 +1,39 @@
+#nullable enable
+
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Kern.Audio.Core;
+using UnityEngine;
+
+namespace Kern.Core.Interfaces;
+public interface IAudioPlaybackHandle
+{
+    AudioBusType BusType { get; }
+    bool IsPlaying { get; }
+
+    void Stop(float fadeOut = 0f);
+    void SetPosition(Vector3 worldPosition);
+    void SetVolume(float linearVolume);
+    void SetPitch(float pitch);
+    void SetParameter(string parameterName, float value);
+}
+
+public interface IAudioSystem
+{
+    bool IsInitialized { get; }
+
+    bool IsDegraded { get; }
+
+    /// <summary>Мастер-вывод заглушён из-за свёрнутого приложения (MuteInBackground).</summary>
+    bool IsBackgroundMuted { get; }
+
+    IAudioPlaybackHandle? Play(string eventName, Vector3? worldPosition = null, AudioLayer? overrideLayer = null, float? overrideVolume = null);
+    IAudioPlaybackHandle? PlayAttached(string eventName, GameObject targetGameObject, AudioLayer? overrideLayer = null, float? overrideVolume = null);
+    IAudioPlaybackHandle? PlayAt(string eventName, Vector3 worldPosition, AudioLayer? layer = null, float? volume = null);
+    IAudioPlaybackHandle? Play2D(string eventName, AudioLayer? layer = null, float? volume = null);
+    float GetBusVolume(AudioBusType type);
+    void SetBusVolume(AudioBusType type, float volume);
+    void StopBus(AudioBusType type, float fadeOut = 0f);
+
+    UniTask WaitUntilBanksReadyAsync(CancellationToken cancellationToken = default);
+}

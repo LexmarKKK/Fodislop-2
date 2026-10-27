@@ -21,7 +21,9 @@
         "FMODUnity",
         "Effekseer",
         "Effekseer.URP",
-        "VContainer"
+        "VContainer",
+        "Kern.Diagnostics",
+        "Kern.Effects"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

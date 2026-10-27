@@ -1,0 +1,62 @@
+{
+  "Effects": [
+    {
+      "Id": "spark",
+      "DurationSeconds": 0.6,
+      "Loop": false,
+      "Emitters": [
+        {
+          "Id": "core",
+          "SpriteSheet": "VFX/Sprites/Textures/CrystallSparkle/CrystallSparkleImage",
+          "SpriteSheetColumns": 6,
+          "SpriteSheetRows": 1,
+          "FrameCount": 6,
+          "FramesPerSecond": 12.0,
+          "SortingOrder": 0,
+          "RatePerSecond": 30.0,
+          "BurstCount": 10,
+          "LifetimeSeconds": { "x": 0.2, "y": 0.45 },
+          "SpeedUnitsPerSecond": { "x": 1.0, "y": 3.0 },
+          "DirectionDegrees": { "x": 0.0, "y": 360.0 },
+          "GravityUnitsPerSecondSquared": -2.0,
+          "DragPerSecond": 1.5,
+          "StartSizeRange": { "x": 0.5, "y": 0.9 },
+          "EndSizeRange": { "x": 0.1, "y": 0.3 },
+          "StartColor": { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 },
+          "EndColor": { "r": 1.0, "g": 1.0, "b": 1.0, "a": 0.0 },
+          "Shape": 0,
+          "ShapeExtents": { "x": 0.0, "y": 0.0 }
+        }
+      ]
+    },
+    {
+      "Id": "smoke",
+      "DurationSeconds": 1.5,
+      "Loop": false,
+      "Emitters": [
+        {
+          "Id": "puff",
+          "SpriteSheet": "VFX/Sprites/Textures/Steam/SteamImage",
+          "SpriteSheetColumns": 15,
+          "SpriteSheetRows": 1,
+          "FrameCount": 15,
+          "FramesPerSecond": 15.0,
+          "SortingOrder": 1,
+          "RatePerSecond": 10.0,
+          "BurstCount": 2,
+          "LifetimeSeconds": { "x": 0.8, "y": 1.4 },
+          "SpeedUnitsPerSecond": { "x": 0.2, "y": 0.7 },
+          "DirectionDegrees": { "x": 70.0, "y": 110.0 },
+          "GravityUnitsPerSecondSquared": 0.4,
+          "DragPerSecond": 0.6,
+          "StartSizeRange": { "x": 0.6, "y": 1.0 },
+          "EndSizeRange": { "x": 1.6, "y": 2.4 },
+          "StartColor": { "r": 0.6, "g": 0.6, "b": 0.6, "a": 0.7 },
+          "EndColor": { "r": 0.6, "g": 0.6, "b": 0.6, "a": 0.0 },
+          "Shape": 1,
+          "ShapeExtents": { "x": 0.25, "y": 0.0 }
+        }
+      ]
+    }
+  ]
+}

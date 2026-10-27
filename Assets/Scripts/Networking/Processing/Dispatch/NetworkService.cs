@@ -1,0 +1,426 @@
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Kern.Core.Interfaces;
+using Kern.Networking.Connection;
+using Kern.Networking.Diagnostics;
+using MinesServer.Networking.Client;
+using MinesServer.Networking.Client.Packets;
+using MinesServer.Networking.Client.Packets.Actions;
+using MinesServer.Networking.Server.Packets;
+using MinesServer.Networking.Server.Packets.Connection;
+using MinesServer.Networking.Server.Packets.Compression;
+using MinesServer.Networking.Server.Packets.GUI;
+using MinesServer.Networking.Server.Packets.Information;
+using MinesServer.Networking.Server.Packets.Movement;
+using MinesServer.Networking.Server.Packets.World;
+using UnityEngine;
+using VContainer;
+
+using Kern.Diagnostics.Frames;
+using Kern.Diagnostics.Memory;
+
+namespace Kern.Networking.Processing
+{
+    [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "Kern.Networking", sourceAssembly: null, sourceClassName: "NetworkService")]
+    public class NetworkService : MonoBehaviour, INetworkService
+    {
+        [Inject]
+        private IConnectionService _connectionService = null!;
+        [Inject]
+        private ILocalPlayerState _localPlayer = null!;
+        private IConnectionService? _subscribedConnection;
+
+        private readonly Dictionary<Type, List<Subscription>> _subscribers = new();
+        private readonly Dictionary<Type, Subscription[]> _subscriberSnapshots = new();
+        private readonly HashSet<Type> _reportedDispatchFailures = new();
+        private readonly object _subscribersLock = new();
+        private bool _connectionSubscribed;
+
+        public bool IsConnectionSubscriptionEstablished => _connectionSubscribed;
+
+        protected void Awake()
+        {
+        }
+
+        protected void OnEnable()
+        {
+            EnsureConnectionSubscription();
+        }
+
+        protected void OnDisable()
+        {
+            UnsubscribeFromConnection();
+        }
+
+        protected void OnDestroy()
+        {
+            UnsubscribeFromConnection();
+        }
+
+        public void EnsureConnectionSubscription()
+        {
+            if (_subscribedConnection != null)
+            {
+                _subscribedConnection.OnPacketReceived -= OnPacketReceived;
+                _subscribedConnection.OnPacketBatchStarted -= BeginBatch;
+                _subscribedConnection.OnPacketBatchCompleted -= EndBatch;
+                _subscribedConnection = null;
+            }
+
+            if (_connectionService == null)
+            {
+                _connectionSubscribed = false;
+                return;
+            }
+
+            // Rebind even when the local flag says "subscribed". During an
+            // editor/domain reload the ConnectionManager instance can be
+            // replaced while this component survives; the old boolean then
+            // describes a dead connection event source.
+            _connectionService.OnPacketReceived -= OnPacketReceived;
+            _connectionService.OnPacketReceived += OnPacketReceived;
+            _connectionService.OnPacketBatchStarted -= BeginBatch;
+            _connectionService.OnPacketBatchStarted += BeginBatch;
+            _connectionService.OnPacketBatchCompleted -= EndBatch;
+            _connectionService.OnPacketBatchCompleted += EndBatch;
+            _subscribedConnection = _connectionService;
+            _connectionSubscribed = true;
+            lock (_subscribersLock)
+            {
+                _reportedDispatchFailures.Clear();
+            }
+        }
+
+        private void UnsubscribeFromConnection()
+        {
+            if (_subscribedConnection == null)
+            {
+                _connectionSubscribed = false;
+                return;
+            }
+
+            _subscribedConnection.OnPacketReceived -= OnPacketReceived;
+            _subscribedConnection.OnPacketBatchStarted -= BeginBatch;
+            _subscribedConnection.OnPacketBatchCompleted -= EndBatch;
+            _subscribedConnection = null;
+            _connectionSubscribed = false;
+            _batchDepth = 0;
+        }
+
+        public bool IsConnected
+        {
+            get
+            {
+                return _connectionService != null && _connectionService.IsConnected;
+            }
+        }
+
+        private ILocalPlayer? _cachedPlayerController;
+        private bool _missingPlayerActionWarningLogged;
+
+        public void SendAction(IActionClientPacket action)
+        {
+            if (!IsConnected)
+            {
+                return;
+            }
+
+            if (_cachedPlayerController == null)
+            {
+                _cachedPlayerController = _localPlayer.Current;
+            }
+
+            if (_cachedPlayerController == null)
+            {
+                if (!_missingPlayerActionWarningLogged)
+                {
+                    Debug.LogWarning("[NetworkService] Action dropped: local player is not ready.");
+                    _missingPlayerActionWarningLogged = true;
+                }
+
+                return;
+            }
+
+            _missingPlayerActionWarningLogged = false;
+
+            Vector2Int pos = _cachedPlayerController.Position;
+            ushort serverX = (ushort)pos.x;
+            ushort serverY = (ushort)pos.y;
+
+            Send(new ActionClientPacket(serverX, serverY, action));
+        }
+
+        public void Send(IRootClientPacket packet)
+        {
+            var connectionService = _connectionService ??
+                throw new InvalidOperationException(
+                    "NetworkService requires IConnectionService before sending.");
+            var timestamp = (uint)DateTimeOffset.UtcNow.Ticks;
+            PacketTelemetry.RecordOutgoing(packet.GetType(), Time.unscaledTimeAsDouble);
+            connectionService.Send(new ClientPacket(timestamp, packet));
+        }
+
+        void INetworkService.Send(IRootClientPacket packet) => Send(packet);
+
+        public void Subscribe<T>(Action<T> handler)
+        {
+            var type = typeof(T);
+            lock (_subscribersLock)
+            {
+                if (!_subscribers.TryGetValue(type, out var handlers))
+                {
+                    handlers = new List<Subscription>();
+                    _subscribers[type] = handlers;
+                }
+
+                bool alreadySubscribed = false;
+                for (int i = 0; i < handlers.Count; i++)
+                {
+                    if (handlers[i].OriginalHandler == (Delegate)handler)
+                    {
+                        alreadySubscribed = true;
+                        break;
+                    }
+                }
+
+                if (alreadySubscribed)
+                {
+                    return;
+                }
+
+                handlers.Add(new Subscription
+                {
+                    OriginalHandler = handler,
+                    Wrapper = obj => handler((T)obj),
+                });
+                _subscriberSnapshots[type] = handlers.ToArray();
+            }
+        }
+
+        public void Unsubscribe<T>(Action<T> handler)
+        {
+            var type = typeof(T);
+            lock (_subscribersLock)
+            {
+                if (_subscribers.TryGetValue(type, out var handlers))
+                {
+                    handlers.RemoveAll(s => s.OriginalHandler == (Delegate)handler);
+                    _subscriberSnapshots[type] = handlers.ToArray();
+                }
+            }
+        }
+
+        private void OnPacketReceived(ServerPacket packet)
+        {
+            var payload = packet.Payload;
+            if (payload == null)
+            {
+                Debug.LogWarning("[NetworkService] Received ServerPacket with null Payload");
+                return;
+            }
+
+            while (payload is LzmaPacket lzma)
+            {
+                payload = lzma.Payload;
+                PacketTelemetry.RecordCompressed();
+            }
+
+            while (payload is LZ4Packet lz4)
+            {
+                payload = lz4.Payload;
+                PacketTelemetry.RecordCompressed();
+            }
+
+            if (payload is HBPacket hbPacket && hbPacket.Payload != null)
+            {
+                BeginBatch();
+                // Размер пачки считается перебором, а не свойством длины:
+                // тип полезной нагрузки задан протоколом, и обращаться к его
+                // внутреннему устройству ради одного числа значит привязать
+                // учёт к тому, что клиенту не принадлежит.
+                int batched = 0;
+                try
+                {
+                    foreach (var innerPacket in hbPacket.Payload)
+                    {
+                        batched++;
+                        Dispatch(innerPacket);
+                    }
+                }
+                finally
+                {
+                    EndBatch();
+                }
+
+                PacketTelemetry.RecordBatch(batched);
+            }
+            else
+            {
+                Dispatch(payload);
+            }
+        }
+
+        private int _batchDepth;
+
+        public event Action? PacketBatchStarted;
+        public event Action? PacketBatchCompleted;
+
+        public void BeginBatch()
+        {
+            if (_batchDepth == 0)
+            {
+                PacketBatchStarted?.Invoke();
+            }
+
+            _batchDepth++;
+        }
+
+        public void EndBatch()
+        {
+            if (_batchDepth <= 0)
+            {
+                return;
+            }
+
+            _batchDepth--;
+            if (_batchDepth == 0)
+            {
+                PacketBatchCompleted?.Invoke();
+            }
+        }
+
+        private void Dispatch(object packet)
+        {
+            if (packet == null)
+            {
+                return;
+            }
+
+            var packetType = packet.GetType();
+
+            Subscription[]? handlers;
+            lock (_subscribersLock)
+            {
+                _subscriberSnapshots.TryGetValue(packetType, out handlers);
+            }
+
+            // Учёт ведётся за пределами замка. Внутри он не нужен — телеметрия
+            // однопоточная и своих замков не берёт, — а вызов чужого кода
+            // из-под замка это привычка, которая однажды приводит к тому, что
+            // сеть встаёт из-за отладочного окна.
+            //
+            // Пакет без подписчика — не ошибка и не повод для лога: клиент
+            // слушает не весь протокол. Но «сервер не прислал» и «прислал, а
+            // никто не слушает» обязаны различаться при разборе, поэтому такой
+            // пакет всё равно считается.
+            PacketTelemetry.RecordIncoming(
+                packetType,
+                handled: handlers is { Length: > 0 },
+                Time.unscaledTimeAsDouble);
+
+            if (handlers == null)
+            {
+                return;
+            }
+
+            // Время всех обработчиков пакета вместе: без него пик разбора
+            // очереди не привязать к типу пакета.
+            // Замер идёт всегда: тяжёлый обработчик пишется в журнал событий
+            // кадра, и отчёт о провисе называет пакет, даже когда окно трафика
+            // закрыто. Сам замер — два чтения таймера.
+            long handlerStarted = System.Diagnostics.Stopwatch.GetTimestamp();
+            try
+            {
+                using var allocationScope = Kern.Diagnostics.Memory.AllocationLedger.Enabled
+                    ? Kern.Diagnostics.Memory.AllocationLedger.Measure(PacketAllocationEntry(packetType))
+                    : default;
+                InvokeHandlers(packet, packetType, handlers);
+            }
+            finally
+            {
+                double handlerMilliseconds =
+                    (System.Diagnostics.Stopwatch.GetTimestamp() - handlerStarted) * 1000.0 /
+                    System.Diagnostics.Stopwatch.Frequency;
+                PacketTelemetry.RecordHandlerTime(packetType, handlerMilliseconds);
+                if (handlerMilliseconds >= SlowHandlerEventMilliseconds)
+                {
+                    Kern.Diagnostics.Frames.FrameEventLog.Record(
+                        $"пакет {packetType.Name} {handlerMilliseconds:F1} мс");
+                }
+            }
+        }
+
+        private const double SlowHandlerEventMilliseconds = 4.0;
+
+        // Одна запись учёта аллокаций на тип пакета; строка имени строится один
+        // раз на тип, а не на пакет.
+        private static readonly Dictionary<Type, Kern.Diagnostics.Memory.AllocationLedger.Entry> s_packetAllocationEntries = new();
+
+        private static Kern.Diagnostics.Memory.AllocationLedger.Entry PacketAllocationEntry(Type packetType)
+        {
+            if (!s_packetAllocationEntries.TryGetValue(packetType, out var entry))
+            {
+                entry = Kern.Diagnostics.Memory.AllocationLedger.Register("Пакет · " + packetType.Name);
+                s_packetAllocationEntries[packetType] = entry;
+            }
+
+            return entry;
+        }
+
+        private void InvokeHandlers(object packet, Type packetType, Subscription[] handlers)
+        {
+            for (int i = handlers.Length - 1; i >= 0; i--)
+            {
+                try
+                {
+                    handlers[i].Wrapper(packet);
+                }
+                catch (Exception ex)
+                {
+                    if (MustPropagateDispatchFailure(packetType))
+                    {
+                        Debug.LogException(new InvalidOperationException(
+                            $"[NetworkService] Critical {packetType.Name} handler failed; " +
+                            "packet processing stopped.",
+                            ex));
+                        throw;
+                    }
+
+                    bool firstFailure;
+                    lock (_subscribersLock)
+                    {
+                        firstFailure = _reportedDispatchFailures.Add(packetType);
+                    }
+
+                    if (firstFailure)
+                    {
+                        Debug.LogException(new InvalidOperationException(
+                            $"[NetworkService] Error dispatching packet {packetType.Name} to subscriber.",
+                            ex));
+                    }
+                }
+            }
+        }
+
+        private static bool MustPropagateDispatchFailure(Type packetType) =>
+            packetType == typeof(OpenWindowPacket) ||
+            packetType == typeof(WorldInitPacket) ||
+            packetType == typeof(PlayerInfoPacket) ||
+            packetType == typeof(RobotInfoPacket) ||
+            packetType == typeof(RobotPositionPacket) ||
+            packetType == typeof(MapRegionPacket) ||
+            packetType == typeof(LevelPacket) ||
+            packetType == typeof(HealthPacket) ||
+            packetType == typeof(BasketPacket);
+
+
+        private class Subscription
+        {
+            public Delegate OriginalHandler { get; set; } = null!;
+            public Action<object> Wrapper { get; set; } = null!;
+        }
+    }
+}

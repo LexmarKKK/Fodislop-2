@@ -7,8 +7,8 @@ namespace Kern.ArchitectureLinter.Rules.Settings;
 
 public sealed class SettingsWiringRule : IRule
 {
-    private const string ConfigPath = "Assets/Scripts/Core/Configuration/Contracts/ClientConfig.cs";
-    private const string SettingsDir = "Assets/Scripts/Core/Interfaces/Contracts/Settings";
+    private const string ConfigPath = "Assets/Scripts/Core/Configuration/Contracts/Client/ClientConfig.cs";
+    private const string SettingsDir = "Assets/Scripts/Core/Configuration/Contracts/Settings";
 
     private static readonly HashSet<string> MetadataFields = new(StringComparer.Ordinal)
     {
@@ -44,9 +44,9 @@ public sealed class SettingsWiringRule : IRule
         }
 
         var settingsFiles = Directory.Exists(Path.Combine(projectRoot, SettingsDir))
-            ? Directory.EnumerateFiles(Path.Combine(projectRoot, SettingsDir), "*.cs").ToList()
+            ? Directory.EnumerateFiles(Path.Combine(projectRoot, SettingsDir), "*.cs", SearchOption.AllDirectories).ToList()
             : new List<string>();
-        var extraFiles = new[] { Path.Combine(projectRoot, "Assets/Scripts/Rendering/Settings/Contracts/GraphicsQualitySettings.cs") };
+        var extraFiles = new[] { Path.Combine(projectRoot, "Assets/Scripts/Rendering/Display/Contracts/Quality/GraphicsQualitySettings.cs") };
         foreach (var f in extraFiles)
             if (File.Exists(f)) settingsFiles.Add(f);
 
@@ -61,11 +61,11 @@ public sealed class SettingsWiringRule : IRule
         // Collect reads from all production files
         var reads = fields.ToDictionary(f => f, f => new List<string>(), StringComparer.Ordinal);
         var wiringRoot = Path.Combine(projectRoot, "Assets");
-        foreach (var file in SourceScanner.EnumerateCsFiles(wiringRoot, "Tests", "Plugins", "VContainer", "Editor"))
+        foreach (var file in CSharpSourceFiles.EnumerateCsFiles(wiringRoot, "Tests", "Plugins", "VContainer", "Editor"))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var relative = SourceScanner.GetProjectRelativePath(projectRoot, file);
-            if (relative.StartsWith("Assets/Scripts/Core/Interfaces/Contracts/", StringComparison.OrdinalIgnoreCase) ||
+            var relative = ProjectSourcePaths.GetProjectRelativePath(projectRoot, file);
+            if (relative.Contains("/Contracts/", StringComparison.OrdinalIgnoreCase) ||
                 relative.StartsWith("Assets/Scripts/Core/Configuration/", StringComparison.OrdinalIgnoreCase))
                 continue;
 
@@ -79,6 +79,7 @@ public sealed class SettingsWiringRule : IRule
 
         // Attribute-wired fields (AudioBus)
         var attributeWired = new HashSet<string>(StringComparer.Ordinal);
+        var userInterfaceWired = new HashSet<string>(StringComparer.Ordinal);
         foreach (var file in settingsFiles)
         {
             var lines = File.ReadAllLines(file);
@@ -88,6 +89,11 @@ public sealed class SettingsWiringRule : IRule
                 if (!m.Success) continue;
                 for (var j = i - 1; j >= 0 && j >= i - 5; j--)
                 {
+                    if (Regex.IsMatch(lines[j], @"\[SettingConsumer\(SettingConsumerTarget\.UserInterface\b"))
+                    {
+                        userInterfaceWired.Add(m.Groups[1].Value);
+                    }
+
                     if (lines[j].Trim().StartsWith("[") && lines[j].Trim().Contains("AudioBus"))
                     {
                         attributeWired.Add(m.Groups[1].Value);
@@ -129,7 +135,7 @@ public sealed class SettingsWiringRule : IRule
         };
         foreach (var field in fields)
         {
-            if (MetadataFields.Contains(field) || attributeWired.Contains(field) || uiAllowed.Contains(field))
+            if (MetadataFields.Contains(field) || attributeWired.Contains(field) || uiAllowed.Contains(field) || userInterfaceWired.Contains(field))
                 continue;
             var readers = reads[field];
             if (readers.Count == 0) continue;
@@ -197,7 +203,7 @@ public sealed class SettingsWiringRule : IRule
         }
 
         // Startup application contract
-        var bootstrapFile = Path.Combine(projectRoot, "Assets/Scripts/Core/Bootstrap/Startup/GameStartupPipeline.cs");
+        var bootstrapFile = Path.Combine(projectRoot, "Assets/Scripts/Bootstrap/Scenes/Startup/Game/GameStartupPipeline.cs");
         if (File.Exists(bootstrapFile))
         {
             var bootstrapSrc = File.ReadAllText(bootstrapFile);

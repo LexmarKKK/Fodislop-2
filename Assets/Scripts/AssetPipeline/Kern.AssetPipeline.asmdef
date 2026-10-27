@@ -5,7 +5,8 @@
         "UniTask",
         "Kern.Contracts",
         "MinesServer.Networking",
-        "VContainer"
+        "VContainer",
+        "Kern.Diagnostics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

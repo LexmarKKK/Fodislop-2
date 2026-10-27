@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Kern.UI.HUD.Player.View;
+namespace Kern.UI.HUD;
 
 internal sealed class PlayerHUDSkeletonPulse
 {

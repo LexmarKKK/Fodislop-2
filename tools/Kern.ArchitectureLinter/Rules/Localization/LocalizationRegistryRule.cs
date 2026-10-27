@@ -32,10 +32,10 @@ public sealed class LocalizationRegistryRule : IRule
 
         // Find keyed UXML files
         var keyedUxml = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var uiDir = Path.Combine(projectRoot, "Assets", "Resources", "UI");
+        var uiDir = Path.Combine(projectRoot, "Assets/Resources/UI");
         if (Directory.Exists(uiDir))
         {
-            foreach (var file in Directory.EnumerateFiles(uiDir, "*.uxml"))
+            foreach (var file in Directory.EnumerateFiles(uiDir, "*.uxml", SearchOption.AllDirectories))
             {
                 var content = File.ReadAllText(file);
                 foreach (Match m in Regex.Matches(content, @"text=""([^""]*)"""))
@@ -54,9 +54,9 @@ public sealed class LocalizationRegistryRule : IRule
 
         // Find loaders
         var loaderFiles = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
-        var scriptsDir = Path.Combine(projectRoot, "Assets", "Scripts");
+        var scriptsDir = Path.Combine(projectRoot, "Assets/Scripts");
 
-        foreach (var file in SourceScanner.EnumerateAllCsFiles(scriptsDir))
+        foreach (var file in CSharpSourceFiles.EnumerateAllCsFiles(scriptsDir))
         {
             if (file.Contains("/Tests/")) continue;
             var content = File.ReadAllText(file);
@@ -74,7 +74,7 @@ public sealed class LocalizationRegistryRule : IRule
 
             if (found.Count > 0)
             {
-                var relative = SourceScanner.GetProjectRelativePath(projectRoot, file);
+                var relative = ProjectSourcePaths.GetProjectRelativePath(projectRoot, file);
                 foreach (var baseName in found)
                 {
                     if (!loaderFiles.ContainsKey(baseName))

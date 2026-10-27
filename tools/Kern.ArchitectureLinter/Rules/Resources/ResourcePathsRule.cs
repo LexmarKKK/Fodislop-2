@@ -11,7 +11,7 @@ namespace Kern.ArchitectureLinter.Rules.Resources;
 /// </summary>
 public sealed class ResourcePathsRule : IRule
 {
-    private const string ContractsPath = "Assets/Scripts/Core/Interfaces/Contracts/ProjectRuntimeContracts.cs";
+    private const string ContractsPath = "Assets/Scripts/Core/Resources/Contracts/Paths/ResourcePaths.cs";
 
     public string Id => "KERN-RESOURCE-PATHS";
     public string Description => "ResourcePaths validation";
@@ -28,7 +28,7 @@ public sealed class ResourcePathsRule : IRule
         var src = File.ReadAllText(Path.Combine(projectRoot, ContractsPath));
         if (src == null)
         {
-            violations.Add(new RuleViolation { RuleId = Id, Message = "ProjectRuntimeContracts.cs not found.", Severity = Severity, AssemblyName = ContractsPath });
+            violations.Add(new RuleViolation { RuleId = Id, Message = "ResourcePaths.cs not found.", Severity = Severity, AssemblyName = ContractsPath });
             return Task.FromResult<IReadOnlyList<RuleViolation>>(violations);
         }
 

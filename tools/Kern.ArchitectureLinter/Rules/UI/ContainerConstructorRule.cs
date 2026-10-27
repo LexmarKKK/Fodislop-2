@@ -30,13 +30,13 @@ public sealed class ContainerConstructorRule : IRule
     {
         var violations = new List<RuleViolation>();
         var projectRoot = context.ProjectRoot;
-        var scriptsRoot = Path.Combine(projectRoot, "Assets", "Scripts");
+        var scriptsRoot = Path.Combine(projectRoot, "Assets/Scripts");
 
         // Find all registered types
         var registered = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var file in SourceScanner.EnumerateCsFiles(scriptsRoot, "Tests", "Editor", "VContainer"))
+        foreach (var file in CSharpSourceFiles.EnumerateCsFiles(scriptsRoot, "Tests", "Editor", "VContainer"))
         {
-            var relative = SourceScanner.GetProjectRelativePath(projectRoot, file);
+            var relative = ProjectSourcePaths.GetProjectRelativePath(projectRoot, file);
             var content = File.ReadAllText(file);
 
             foreach (Match m in RegisterPattern.Matches(content))
@@ -51,9 +51,9 @@ public sealed class ContainerConstructorRule : IRule
             return Task.FromResult<IReadOnlyList<RuleViolation>>(violations);
 
         // Check each registered type
-        foreach (var file in SourceScanner.EnumerateCsFiles(scriptsRoot, "Tests", "Editor", "VContainer"))
+        foreach (var file in CSharpSourceFiles.EnumerateCsFiles(scriptsRoot, "Tests", "Editor", "VContainer"))
         {
-            var relative = SourceScanner.GetProjectRelativePath(projectRoot, file);
+            var relative = ProjectSourcePaths.GetProjectRelativePath(projectRoot, file);
             var content = File.ReadAllText(file);
 
             foreach (var (typeName, scope) in registered)
@@ -71,7 +71,7 @@ public sealed class ContainerConstructorRule : IRule
                     continue;
 
                 // Strip comments for [Inject] check
-                var code = SourceScanner.StripComments(content);
+                var code = CSharpSourceText.StripComments(content);
                 if (InjectPattern.IsMatch(code))
                     continue;
 

@@ -24,7 +24,7 @@ f.onload = async () => {
   check(screen() === 'auth', 'загрузка переходит ко входу');
 
   $('authSubmit').click();
-  check(screen() === 'auth' && $('authHint').textContent === 'Введите логин и пароль', 'пустые поля не пускают');
+  check(screen() === 'auth' && $('authLogin').closest('.fld').querySelector('.fld-err').textContent === 'Введите логин', 'пустые поля не пускают');
   check(!d.getElementById('authOffline'), 'офлайн-входа нет');
   $('authLogin').value = 'shahter774'; $('authPassword').value = 'secret';
   $('authSubmit').click();

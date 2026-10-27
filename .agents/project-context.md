@@ -9,14 +9,12 @@ the root `AGENTS.md`.
 
 ## 0. Unity authority boundary
 
-The agent must not launch, open, close, restart, control, or inspect Unity
-Editor/Hub, Unity CLI, Unity MCP, Editor APIs, batch mode, builds, tests, asset
-imports, scenes, prefabs, materials, logs, or renders unless the current user
-explicitly requests that specific Unity operation.
-
-Ordinary source files (`.cs`, `.shader`, `.hlsl`, `.uxml`, `.uss`, and
-documentation) may be edited and checked without Unity. If completion requires
-Unity, report the exact operation that remains for the user.
+The root `AGENTS.md` is authoritative. Run necessary compilation, tests and
+production-path render checks headlessly through `unity`, one run at a time.
+Do not control GUI Editor/Hub or close a running editor. Use a disposable copy
+when the active project is locked; preserve production settings and user data.
+Builds and Android/device operations keep the explicit authorization rules in
+the root guidance. Never edit serialized scene, prefab or asset text.
 
 ## 0.1. No rollback without explicit authorization
 
@@ -74,6 +72,11 @@ diagnostic state.
 `GameLifetimeScope` owns models, processors, factories, the scene contract, and
 `GameBootstrap`.
 
+Scene scopes live under `Bootstrap/Scenes/Scopes`, startup orchestration under
+`Bootstrap/Scenes/Startup`, and transitions under `Bootstrap/Scenes/Transitions`.
+Typed ManagerBinding records serialize assembly-qualified names; namespace or
+assembly moves require the Editor migrator and scene-contract validation.
+
 Returning from game to menu uses `ReturnToMainMenu`: disconnect, prepare game
 teardown, then load the menu again. MainMenu remains loaded as a descent/loading
 layer until `GameManager.WorldReady`; only then is the previous scene unloaded.
@@ -118,6 +121,12 @@ the corresponding `GameStartupPipeline` phase. The pipeline is the source of tru
 
 ## 4. Client subsystems
 
+Physical ownership and asmdefs are listed in `repository-map.md`. Contracts
+are module-local neutral APIs with asmrefs to `Kern.Contracts`; diagnostics
+implementation lives in `Kern.Diagnostics`, not in the contract assembly.
+Authoring texture categories are independent of published identities: the
+texture staging catalog and RuntimeAssetPaths bridge those names explicitly.
+
 ### Networking and caching
 
 The server supplies lightweight state and identifiers. Heavy textures, sprites,
@@ -160,14 +169,14 @@ For new or rewritten UI:
    area, form classes). On a mobile platform one panel pixel is one dp
    (`ScreenShapeRules`); `UIScale` is a multiplier over that. Form classes on
    `panel.visualTree`: `form--desktop|micro|phone|tablet`, `form--narrow|short`
-   (Micro), `pointer--touch`. All touch layout lives in `Styles/Touch.uss`,
+   (Micro), `pointer--touch`. All touch layout lives in `UI/Screen/Touch/Styles/Touch.uss`,
    imported last; touch targets are at least 44 dp. Contract:
    `docs/architecture/MOBILE_STANDARD.html`.
 
 ### World, chunks, and coordinates
 
 Server coordinates use top-left origin `(0, 0)` with Y downward. Every conversion
-must use `CoordinateUtils` and `MapManager.WorldHeight`.
+must use `WorldCoordinateConverter` and `MapManager.WorldHeight`.
 
 `MapStorage` stores 32×32 chunks and raises `OnCellChanged`. Rendering waits for
 `MapStorage.IsReady`, which follows `WorldInitPacket`. `WorldLayer<T>` provides

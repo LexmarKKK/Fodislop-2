@@ -41,8 +41,8 @@ public sealed class ComputeKernelDeclarationRule : IRule
         {
             cancellationToken.ThrowIfCancellationRequested();
             string content = File.ReadAllText(file);
-            string stripped = SourceScanner.StripComments(content);
-            string relativeSource = SourceScanner.GetProjectRelativePath(context.ProjectRoot, file);
+            string stripped = CSharpSourceText.StripComments(content);
+            string relativeSource = ProjectSourcePaths.GetProjectRelativePath(context.ProjectRoot, file);
 
             // Collect full text by expanding project-local includes
             string fullShaderText = ExpandProjectIncludes(file, context.ProjectRoot, new HashSet<string>(StringComparer.OrdinalIgnoreCase));

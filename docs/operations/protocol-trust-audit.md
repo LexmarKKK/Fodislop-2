@@ -86,13 +86,24 @@ ClientHelloPacket(int ClientVersion, string OS, int OSVersion,
                   string HardwareFingerprint, string AuthToken)
 ```
 
-Наш клиент шлёт `(version, "Windows", 10, "fingerprint", token)` —
-`ConnectionManager.cs:346`. Платформа зашита строкой независимо от системы,
-поле отпечатка содержит буквально слово `"fingerprint"`.
+Актуальное состояние клиента (`ConnectionManager.CompleteConnectionAsync`):
 
-Отсюда следует ровно одно: **ни одна серверная проверка не должна ветвиться на
-этих полях**. Они не защита, а метаданные, и заполнены заглушками. Если сервер
-где-то смотрит на `ClientVersion`, самописный клиент назовётся любой версией.
+- `ClientVersion` — константа `ClientProtocolVersion.ClientVersion`
+  (сейчас `1`); сервер гейтит по ней актуальность релиза
+  (`OutdatedClientPacket (0)`). Это гейт версии, а не защита: самописный клиент
+  назовётся любой версией.
+- `OS` — зашитые строки: `"Windows"`/`"macOS"` по `Application.platform`,
+  прочие платформы отдаются как `RuntimePlatform.ToString()`.
+- `OSVersion` — только `Environment.OSVersion.Version.Major` (Windows 10/11
+  неразличимы).
+- `HardwareFingerprint` — `SystemInfo.deviceUniqueIdentifier`.
+- `AuthToken` — токен из `AuthTokenManager` (PlayerPrefs `AuthToken6`) либо
+  пустой при первом входе (сервер выдаёт новый через `AuthTokenPacket (45)`).
+
+Отсюда следует ровно одно: **доверять в протоколе можно только `AuthToken`**.
+`ClientVersion` — исключительно гейт актуальности клиента, а `OS`, `OSVersion`
+и `HardwareFingerprint` — метаданные наступаемости/диагностики: сервер не
+должен ветвиться на них нигде (ни авторизация, ни геймплей, ни лимиты).
 
 ### 1.5. Программа робота
 
