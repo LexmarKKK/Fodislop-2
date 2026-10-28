@@ -98,14 +98,16 @@ internal sealed class StaticLightingSolver
             return;
         }
 
-        bool useDependencyMask = allowDependencyMask &&
-            !reuseOverlap &&
-            ShouldUseDependencyMask(dirtyRegions, worldRect);
+        DirtyRegionGPU[] dirtyFieldRegions = allowDependencyMask
+            ? StaticLightingDirty.ConvertDirtyRegions(
+                dirtyRegions,
+                worldRect,
+                _resources.FieldWidth,
+                _resources.FieldHeight)
+            : Array.Empty<DirtyRegionGPU>();
+        bool useDependencyMask = StaticLightingDirty.ShouldUseDependencyMask(
+            dirtyFieldRegions, _resources.FieldWidth, _resources.FieldHeight);
 
-        // Scroll keeps every entry whose rays cannot touch uncovered strips.
-        // A misaligned probe lattice anywhere falls back to a full solve
-        // rather than smearing phases across the atlas.
-        Vector2Int[]? scrollDeltas = reuseOverlap ? _scrollRecorder.TryResolveScrollDeltas(regionDelta) : null;
         if (useDependencyMask)
         {
             _telemetry.LightingStaticDependencyMaskSolveCount++;
@@ -114,15 +116,10 @@ internal sealed class StaticLightingSolver
         {
             _telemetry.LightingStaticDenseFallbackCount++;
         }
-        bool needDirtyRegions = useDependencyMask ||
-            (scrollDeltas != null && dirtyRegions.Count > 0);
-        DirtyRegionGPU[] dirtyFieldRegions = needDirtyRegions
-            ? StaticLightingDirty.ConvertDirtyRegions(
-                dirtyRegions,
-                worldRect,
-                _resources.FieldWidth,
-                _resources.FieldHeight)
-            : Array.Empty<DirtyRegionGPU>();
+        if (!useDependencyMask)
+        {
+            dirtyFieldRegions = Array.Empty<DirtyRegionGPU>();
+        }
         _resources.EnsureDirtyRegionCapacity(Mathf.Max(1, dirtyFieldRegions.Length));
         if (useDependencyMask)
         {
@@ -157,81 +154,48 @@ internal sealed class StaticLightingSolver
                 1);
         }
 
-        if (scrollDeltas != null)
-        {
-            _scrollRecorder.RecordScroll(commandBuffer, compute, regionDelta);
-            _resources.SwapRadianceAtlases();
-        }
-
         commandBuffer.SetComputeBufferParam(compute, solveKernel,
             LightingComputeBinder.RadianceAtlasId, _resources.RadianceAtlas!);
         commandBuffer.SetComputeTextureParam(compute, solveKernel,
             LightingComputeBinder.CellSolidMaskId, _resources.CellSolidMask!);
+
+        // At most four layouts: 64 bytes on the stack, no per-edit heap buffer.
+        Span<ProbeRect> dirtyProbeRects = stackalloc ProbeRect[_resources.Cascades.Count];
+        if (useDependencyMask && dirtyFieldRegions.Length > 0)
+        {
+            StaticLightingDirty.FillProbeRects(
+                _resources.Cascades, dirtyFieldRegions, worldRect,
+                _resources.FieldWidth, _resources.FieldHeight, dirtyProbeRects);
+        }
 
         for (int cascadeIndex = _resources.Cascades.Count - 1;
              cascadeIndex >= 0;
              cascadeIndex--)
         {
             CascadeLayout cascade = _resources.Cascades[cascadeIndex];
-            if (scrollDeltas != null)
+            RectInt probeRect = new RectInt(0, 0, cascade.ProbeWidth, cascade.ProbeHeight);
+            if (useDependencyMask && dirtyFieldRegions.Length > 0)
             {
-                RectInt dirtyProbeRect = default;
-                if (dirtyFieldRegions.Length > 0)
+                // Include changed far-probe support before clipping a near
+                // dispatch. The GPU mask rejects unchanged entries inside it.
+                ProbeRect tight = dirtyProbeRects[cascadeIndex];
+                if (tight.IsEmpty)
                 {
-                    ProbeRect tight = StaticLightingDirty.TightProbeRect(
-                        cascade,
-                        dirtyFieldRegions,
-                        worldRect,
-                        _resources.FieldWidth,
-                        _resources.FieldHeight);
-                    if (!tight.IsEmpty)
-                    {
-                        dirtyProbeRect = new RectInt(tight.X, tight.Y, tight.Width, tight.Height);
-                    }
+                    continue;
                 }
 
-                _scrollRecorder.RecordCascadeMoveTier(
-                    commandBuffer,
-                    compute,
-                    solveKernel,
-                    cascadeIndex,
-                    glowField,
-                    scrollDeltas[cascadeIndex],
-                    dirtyProbeRect,
-                    RecordCascade);
+                probeRect = new RectInt(tight.X, tight.Y, tight.Width, tight.Height);
             }
-            else
-            {
-                RectInt probeRect = new RectInt(0, 0, cascade.ProbeWidth, cascade.ProbeHeight);
-                if (useDependencyMask && dirtyFieldRegions.Length > 0)
-                {
-                    // Маска вже економить DDA через early-out, але треди
-                    // слались на всю сітку. Тайт-rect ріже і треди: записи
-                    // телеметрії full/partial нижче це покажуть.
-                    ProbeRect tight = StaticLightingDirty.TightProbeRect(
-                        cascade,
-                        dirtyFieldRegions,
-                        worldRect,
-                        _resources.FieldWidth,
-                        _resources.FieldHeight);
-                    if (tight.IsEmpty)
-                    {
-                        continue;
-                    }
 
-                    probeRect = new RectInt(tight.X, tight.Y, tight.Width, tight.Height);
-                }
-
-                RecordCascade(
-                    commandBuffer,
-                    compute,
-                    solveKernel,
-                    cascadeIndex,
-                    glowField,
-                    probeRect,
-                    useDependencyMask,
-                    dirtyFieldRegions.Length);
-            }
+            RecordCascade(
+                commandBuffer,
+                compute,
+                solveKernel,
+                cascadeIndex,
+                glowField,
+                probeRect,
+                useDependencyMask,
+                dirtyFieldRegions.Length);
         }
 
         commandBuffer.SetComputeIntParam(compute, LightingComputeBinder.LightingCountersEnabledId, 0);
@@ -376,36 +340,6 @@ internal sealed class StaticLightingSolver
             _telemetry.LightingCascadePartialEntriesFrame += dispatchEntries;
         }
         commandBuffer.EndSample(sampleName);
-    }
-
-    private bool ShouldUseDependencyMask(
-        IReadOnlyList<RectInt> dirtyRegions,
-        Vector4 worldRect)
-    {
-        if (dirtyRegions.Count == 0 || worldRect.z <= 0f || worldRect.w <= 0f)
-        {
-            return false;
-        }
-
-        long dirtyArea = 0;
-        foreach (RectInt region in dirtyRegions)
-        {
-            dirtyArea += (long)region.width * region.height;
-        }
-
-        float fieldArea = (worldRect.z / WorldGridDefaults.CellSize) *
-            (worldRect.w / WorldGridDefaults.CellSize);
-        // Convert the changed world area directly to a candidate estimate.
-        // ConvertDirtyRegions already expands every region for rasterization
-        // and diagonal-cell dependencies; multiplying this estimate again
-        // made a narrow streaming strip fall back to a dense solve too early.
-        float candidateFraction = Mathf.Min(
-            1f,
-            dirtyArea / Mathf.Max(1f, fieldArea));
-        long maskOverhead = _resources.EstimatedCascadeDispatchThreads;
-        long estimatedPartialCost = (long)(_resources.EstimatedCascadeRayWorkUnits * candidateFraction) +
-            maskOverhead;
-        return estimatedPartialCost < _resources.EstimatedCascadeRayWorkUnits;
     }
 
     private void BindFieldTextures(

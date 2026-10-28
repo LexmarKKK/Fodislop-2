@@ -15,8 +15,8 @@ public static class CascadeLayoutBuilder
     public static int GetMaximumCascadeCount(long atlasDimension)
     {
         // A fourth interval is cheaper than extending the last cascade over
-        // the whole remaining diagonal. Entry-count and ray-work governors
-        // still reject it when the selected atlas cannot fit it.
+        // the whole remaining diagonal. Resource validation rejects layouts
+        // that do not fit the explicitly configured atlas.
         return 4;
     }
 
@@ -90,8 +90,8 @@ public static class CascadeLayoutBuilder
             }
 
             int entryCount = (int)entryCountLong;
-            // The atlas budget limits angular/spatial resolution, not the
-            // distance light can travel. The last interval covers the field.
+            // The final interval covers the remaining field diagonal with
+            // the explicitly selected angular and spatial resolution.
             float traceEnd = cascades.Count + 1 >= maxCascades
                 ? Mathf.Max(intervalEnd, requiredDistance)
                 : intervalEnd;

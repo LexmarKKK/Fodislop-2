@@ -9,6 +9,63 @@ namespace Kern.TerrainTests.Volume;
 public sealed class VolumeTopologyTests
 {
     [Test]
+    public void InteriorMaterialChangeDoesNotRepublishUnchangedEdges()
+    {
+        var buffers = new TerrainCellBuffers();
+        buffers.Type(1, 0);
+        buffers.Type(3, 0);
+        for (int y = 0; y < 16; y++)
+        {
+            for (int x = 0; x < 16; x++)
+            {
+                buffers.Set(x, y, 1);
+            }
+        }
+        var topology = new TerrainVolumeTopology();
+        topology.Publish(buffers, Vector2Int.zero, 16, 16, false);
+        ulong version = topology.Version;
+        buffers.Set(8, 8, 3);
+        topology.Publish(buffers, Vector2Int.zero, 16, 16, false);
+        Assert.That(topology.LastRebuiltCellCount, Is.EqualTo(9));
+        Assert.That(topology.Version, Is.EqualTo(version));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void LocalEditsMatchFreshTopologyIncludingWindowHalo(bool distortion)
+    {
+        var buffers = new TerrainCellBuffers();
+        buffers.Type(1, 1u << TerrainCellFormat.TypeOutlineShift);
+        buffers.Type(3, 3u << TerrainCellFormat.TypeOutlineShift);
+        var random = new Random(177);
+        var origin = new Vector2Int(-12, 17);
+        for (int y = -1; y <= 16; y++)
+        {
+            for (int x = -1; x <= 16; x++)
+            {
+                buffers.Set(origin.x + x, origin.y + y, (byte)(random.Next(3) switch { 0 => 1, 1 => 2, _ => 3 }));
+            }
+        }
+        var incremental = new TerrainVolumeTopology();
+        incremental.Publish(buffers, origin, 16, 16, distortion);
+        for (int edit = 0; edit < 100; edit++)
+        {
+            int x = random.Next(-1, 17);
+            int y = random.Next(-1, 17);
+            buffers.Set(origin.x + x, origin.y + y, (byte)(random.Next(3) switch { 0 => 1, 1 => 2, _ => 3 }));
+            ulong previous = incremental.Version;
+            incremental.Publish(buffers, origin, 16, 16, distortion);
+            var fresh = new TerrainVolumeTopology();
+            fresh.Publish(buffers, origin, 16, 16, distortion);
+            Assert.That(incremental.Edges, Is.EqualTo(fresh.Edges), $"edit {edit} at {x},{y}");
+            if (incremental.Version != previous)
+            {
+                Assert.That(incremental.LastRebuiltCellCount, Is.LessThanOrEqualTo(9));
+            }
+        }
+    }
+
+    [Test]
     public void SingleBlockHasFourPhysicalEdgesAndAdjacentBlocksHaveNoInternalWall()
     {
         var buffers = new TerrainCellBuffers();

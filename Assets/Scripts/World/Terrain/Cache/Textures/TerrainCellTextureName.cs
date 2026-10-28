@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using Kern.Core.Interfaces;
 using MinesServer.Data;
 
 namespace Kern.World.Terrain;
@@ -15,8 +16,6 @@ namespace Kern.World.Terrain;
 public static class TerrainCellTextureName
 {
     private const string CellPrefix = "Cells/";
-    private const string DecalAtlas = "terrain-decals.png";
-    private const string DecalRockAtlas = "terrain-decals-rock.png";
 
     public static bool TryParseCellType(string filename, out CellType cellType)
     {
@@ -41,10 +40,5 @@ public static class TerrainCellTextureName
         return true;
     }
 
-    // Второй атлас обязан попадать сюда наравне с первым: без этого его
-    // загрузка не перебиндит материалы, и rock-декали останутся сэмплить
-    // незаполненный _TerrainDecalRockAtlas, если он приехал вторым.
-    public static bool IsDecalAtlas(string filename) =>
-        string.Equals(filename, DecalAtlas, StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(filename, DecalRockAtlas, StringComparison.OrdinalIgnoreCase);
+    public static bool IsDecalAtlas(string filename) => TerrainDecalAssets.Contains(filename);
 }

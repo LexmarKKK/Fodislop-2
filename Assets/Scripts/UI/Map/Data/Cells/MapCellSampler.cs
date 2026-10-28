@@ -49,9 +49,13 @@ internal sealed class MapCellSampler
         _layer = layer;
         _chunks.Clear();
         _dirtyChunks.Clear();
-        _chunkOrder.Clear();
+        while (_chunkOrder.First is { } node)
+        {
+            _chunkOrder.RemoveFirst();
+            _freeChunkOrderNodes.Push(node);
+        }
+
         _chunkOrderNodes.Clear();
-        _freeChunkOrderNodes.Clear();
         _lastChunkIndex = -1;
         _lastChunk = null;
         _chunkSize = layer?.ChunkSize ?? 0;
@@ -65,9 +69,13 @@ internal sealed class MapCellSampler
     {
         _chunks.Clear();
         _dirtyChunks.Clear();
-        _chunkOrder.Clear();
+        while (_chunkOrder.First is { } node)
+        {
+            _chunkOrder.RemoveFirst();
+            _freeChunkOrderNodes.Push(node);
+        }
+
         _chunkOrderNodes.Clear();
-        _freeChunkOrderNodes.Clear();
         _lastChunkIndex = -1;
         _lastChunk = null;
         RequiresFullRefresh = true;

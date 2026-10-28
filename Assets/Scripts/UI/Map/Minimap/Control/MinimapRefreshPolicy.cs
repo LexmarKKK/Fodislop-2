@@ -18,6 +18,9 @@ public sealed class MinimapRefreshPolicy
 
     public bool InitialRefreshDone => _initialRefreshDone;
 
+    public bool HasStorageRevisionChanged(long currentStorageRevision) =>
+        currentStorageRevision != _lastRenderedStorageRevision;
+
     public bool CanRefresh(float currentTime)
     {
         return _lastUpdateTime < 0f || currentTime - _lastUpdateTime >= UpdateDelaySeconds - 0.0001f;
@@ -55,7 +58,7 @@ public sealed class MinimapRefreshPolicy
             return false;
         }
 
-        bool hasRevisionChange = currentStorageRevision != _lastRenderedStorageRevision;
+        bool hasRevisionChange = HasStorageRevisionChanged(currentStorageRevision);
         if ((_pendingPlayerMoveRefresh || hasRevisionChange) && CanRefresh(currentTime))
         {
             _pendingPlayerMoveRefresh = false;

@@ -99,17 +99,10 @@ internal sealed class MapViewportRenderer : IDisposable
             viewCenterY);
         bool useMip = mipSource is { IsReady: true } &&
                       grid.Area > MapViewportChunkBudget.MaxPackedChunkSlots;
-        if (grid.Area > MapViewportChunkBudget.MaxPackedChunkSlots && !useMip)
-        {
-            // The overview is being prepared (or failed). Packing a partial
-            // world-sized grid here walks every loaded storage chunk and can
-            // repack up to the full GPU slot budget on the main thread. Keep
-            // the current texture until the mip source requests a render.
-            return false;
-        }
+        bool overviewPending = grid.Area > MapViewportChunkBudget.MaxPackedChunkSlots && !useMip;
 
         int chunkSlot;
-        if (useMip)
+        if (useMip || overviewPending)
         {
             _buffers.EnsureChunkBuffers(1, 1);
             chunkSlot = 0;
@@ -132,8 +125,8 @@ internal sealed class MapViewportRenderer : IDisposable
         _computeShader.SetInt("_MipBlockSize", useMip ? mipSource!.MipBlockSize : 1);
         _computeShader.SetInt("_GridMinChunkX", grid.MinChunkX);
         _computeShader.SetInt("_GridMinChunkY", grid.MinChunkY);
-        _computeShader.SetInt("_GridWidth", grid.Width);
-        _computeShader.SetInt("_GridHeight", grid.Height);
+        _computeShader.SetInt("_GridWidth", overviewPending ? 0 : grid.Width);
+        _computeShader.SetInt("_GridHeight", overviewPending ? 0 : grid.Height);
 
         _computeShader.SetTexture(_kernelHandle, "_Result", mapTexture);
         _computeShader.SetTexture(_kernelHandle, "_MipTexture", mipTextureToBind);

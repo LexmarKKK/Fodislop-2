@@ -26,6 +26,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Resources\Binding\LightingComputeBinder.cs" Link="Game\LightingComputeBinder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\Rendering\Display\Contracts\Output\DisplayOutputPrecision.cs" Link="Game\DisplayOutputPrecision.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Cascades\Layout\CascadeProbeRects.cs" Link="Game\CascadeProbeRects.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Runtime\Invalidation\StaticLightingDirty.cs" Link="Game\StaticLightingDirty.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Coordinates\Contracts\Grid\WorldGridDefaults.cs" Link="Game\WorldGridDefaults.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Streaming\Planning\StreamingPolicy.cs" Link="Game\StreamingPolicy.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Streaming\Planning\StreamingPlan.cs" Link="Game\StreamingPlan.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Streaming\Control\StreamingGovernor.cs" Link="Game\StreamingGovernor.cs" />

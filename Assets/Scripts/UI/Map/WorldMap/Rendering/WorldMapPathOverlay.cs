@@ -23,6 +23,7 @@ internal sealed class WorldMapPathOverlay : IDisposable
     private Texture2D? _texture;
     private Color32[]? _pixels;
     private UnityEngine.UIElements.Image? _overlayImage;
+    private bool _hasDrawnPath;
 
     public void Ensure(WorldMapPanel panel, int width, int height)
     {
@@ -77,6 +78,14 @@ internal sealed class WorldMapPathOverlay : IDisposable
         {
             return;
         }
+
+        bool hasPath = path != null && startIndex < path.Count && path.Count > 0;
+        if (!hasPath && !_hasDrawnPath)
+        {
+            return;
+        }
+
+        _hasDrawnPath = hasPath;
 
         int width = texture.width;
         int height = texture.height;
@@ -164,5 +173,6 @@ internal sealed class WorldMapPathOverlay : IDisposable
 
         _pixels = null;
         _overlayImage = null;
+        _hasDrawnPath = false;
     }
 }

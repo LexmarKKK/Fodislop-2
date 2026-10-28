@@ -76,12 +76,6 @@ public static class LightingConfigHolder
 
     // Число слоёв веера вычисляется из этой плотности автоматически.
 
-    // Общий бюджет угловых вееров изменившихся источников. Длина луча
-    // всегда полная; бюджет регулирует число углов, не дальность света.
-    // Fixed angular quality per source, independent of zoom or moving-light count.
-    // Explicit cost guard; exceeding it reports an error, never lowers quality.
-    public const long MaximumDynamicPolarRayWorkUnits = 200_000_000;
-
     // Билинейный фикс при чтении соседних записей атласа каскада.
     public const bool EnableBilinearFix = true;
 

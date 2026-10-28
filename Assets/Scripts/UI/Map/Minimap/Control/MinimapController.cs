@@ -44,6 +44,9 @@ namespace Kern.UI.Map
         private MinimapCellInvalidation _cellInvalidation = null!;
         private readonly MinimapRefreshPolicy _refreshPolicy = new();
         private readonly MinimapRefreshLoop _refreshLoop = new();
+        private Action _reinitializeWorldState = null!;
+        private Func<int, int, bool, bool> _refreshTexture = null!;
+        private Action<bool> _setVisible = null!;
         private bool _ready;
         private bool _lastRefreshHadLoadedCells;
         private IWorldLayer<CellType>? _subscribedCellLayer;
@@ -56,6 +59,9 @@ namespace Kern.UI.Map
 
         protected void Start()
         {
+            _reinitializeWorldState = ReinitializeWorldState;
+            _refreshTexture = RefreshTexture;
+            _setVisible = SetVisible;
             _cellInvalidation = new MinimapCellInvalidation(_cellSampler);
             if (_uiSize < 3)
             {
@@ -166,9 +172,9 @@ namespace Kern.UI.Map
                 _cellInvalidation,
                 _refreshPolicy,
                 _cellSampler,
-                ReinitializeWorldState,
-                RefreshTexture,
-                SetVisible);
+                _reinitializeWorldState,
+                _refreshTexture,
+                _setVisible);
         private void ReinitializeWorldState()
         {
             _ready = false;
@@ -488,11 +494,11 @@ namespace Kern.UI.Map
             _cellInvalidation.OnRegionChanged(startX, startY, width, height, _cellLayer);
         }
 
-        private void RefreshTexture(int playerX, int playerY, bool drawPlayerMarker = true)
+        private bool RefreshTexture(int playerX, int playerY, bool drawPlayerMarker = true)
         {
             if (_textureRenderer == null)
             {
-                return;
+                return false;
             }
 
             // Путь рисуется от текущего индекса: пройденная часть не отображается.
@@ -520,6 +526,7 @@ namespace Kern.UI.Map
                 pathStart);
 
             _ui?.MarkDirty();
+            return _lastRefreshHadLoadedCells;
         }
 
         protected void OnDestroy()

@@ -75,18 +75,7 @@ half4 SampleTerrainLightingFieldAlbedoTexel(
         return half4(0.0, 0.0, 0.0, 0.0);
     }
 
-    float2 finalUV = PixelArtSampleUV(
-        tileUV.finalUV,
-        atlasTexelSize.zw,
-        TerrainPixelArtWidthTexels(carrierPixelWidth, tileSize, atlasTexelSize));
-    finalUV = ClampTerrainTileUV(finalUV, tileUV);
-    [branch]
-    if (_PixelArtFiltering < 0.5)
-    {
-        return TerrainSampleAtlas(atlasSlot, sampler_PointClamp, finalUV);
-    }
-
-    return TerrainSampleAtlas(atlasSlot, sampler_LinearClamp, finalUV);
+    return SampleTerrainSurfaceTexel(atlasSlot, tileUV, atlasTexelSize, tileSize, carrierPixelWidth);
 }
 
 #endif

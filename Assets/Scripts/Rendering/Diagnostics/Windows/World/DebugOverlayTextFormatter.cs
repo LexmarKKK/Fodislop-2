@@ -89,7 +89,7 @@ internal static class DebugOverlayTextFormatter
                     {
                         var config = mapManager.GetCellConfig(cellType);
                         BlockDefinition block = BlockRegistry.Get(cellType);
-                        bool passable = ((CellConfigProperties)config.Flags).HasFlag(CellConfigProperties.Passable);
+                        bool passable = ((CellConfigFlags)config.Flags).HasFlag(CellConfigFlags.Passable);
 
                         sb.Append("\n<b>Клетка под курсором  ·  ")
                           .Append(cell.x).Append(", ").Append(cell.y).Append("</b>\n")

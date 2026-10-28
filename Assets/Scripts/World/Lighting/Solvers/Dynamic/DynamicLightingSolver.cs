@@ -19,8 +19,6 @@ internal sealed class DynamicLightingSolver
     private RectInt[] _lightRects = new RectInt[1];
     private DynamicLightTileCache.TileInfo[] _lightTileInfos = new DynamicLightTileCache.TileInfo[1];
     private Vector2Int[] _lightRaySizes = new Vector2Int[1];
-    private int[] _lightRequestedRayFans = new int[1];
-    private bool[] _lightNeedsTrace = new bool[1];
     private int _previousLightCount;
 
     // Light ID -> receiver rectangle its tile currently contributes to
@@ -98,8 +96,6 @@ internal sealed class DynamicLightingSolver
             Array.Resize(ref _lightRects, count);
             Array.Resize(ref _lightTileInfos, count);
             Array.Resize(ref _lightRaySizes, count);
-            Array.Resize(ref _lightRequestedRayFans, count);
-            Array.Resize(ref _lightNeedsTrace, count);
         }
 
         long dynamicDispatchPixels = 0;
@@ -116,6 +112,8 @@ internal sealed class DynamicLightingSolver
         int composeMinY = int.MaxValue;
         int composeMaxX = int.MinValue;
         int composeMaxY = int.MinValue;
+        int polarDirections = LightingQualityTuningController.DynamicPolarDirectionCount;
+        int longestRay = 1;
         for (int lightIndex = 0; lightIndex < count; lightIndex++)
         {
             DynamicLightGPUData light = lights[lightIndex];
@@ -151,8 +149,8 @@ internal sealed class DynamicLightingSolver
             }
 
             // Dynamic-centred rays long enough to reach every corner of the
-            // rectangle. Angular density is bounded by the complete polar
-            // work budget below; the receiver interpolates between rays.
+            // rectangle. Every source uses the explicitly selected angular
+            // density; source count and ray length never lower that quality.
             Vector2 rayCenter = new(
                 (light.PositionRadius.x - worldRect.x) * texelsPerWorldX,
                 (light.PositionRadius.y - worldRect.y) * texelsPerWorldY);
@@ -172,11 +170,7 @@ internal sealed class DynamicLightingSolver
             // Rows are receiver texels: TraceDynamicPolar marches every
             // transport texel but stores one radial sample per light texel.
             int rayLength = Mathf.CeilToInt(farthest + (texelsPerWorldX + texelsPerWorldY) * cellSize) + 2;
-            int requestedRayFan = Mathf.Max(
-                1,
-                Mathf.CeilToInt(2f * Mathf.PI * rayLength));
-            _lightRequestedRayFans[lightIndex] = requestedRayFan;
-            _lightRaySizes[lightIndex] = new Vector2Int(1, rayLength);
+            _lightRaySizes[lightIndex] = new Vector2Int(polarDirections, rayLength);
             int receiverMinX = Mathf.Max(rect.xMin, receiverRect.xMin);
             int receiverMinY = Mathf.Max(rect.yMin, receiverRect.yMin);
             int receiverMaxX = Mathf.Min(rect.xMax, receiverRect.xMax);
@@ -186,6 +180,7 @@ internal sealed class DynamicLightingSolver
             _lightRects[lightIndex] = applied;
             if (applied.width > 0 && applied.height > 0)
             {
+                longestRay = Mathf.Max(longestRay, rayLength);
                 widestRect = Mathf.Max(widestRect, applied.width);
                 tallestRect = Mathf.Max(tallestRect, applied.height);
                 composeMinX = Mathf.Min(composeMinX, applied.xMin);
@@ -195,32 +190,18 @@ internal sealed class DynamicLightingSolver
             }
         }
 
-        int longestRequestedRay = DynamicPolarWorkBudget.RequiredRayLength(count, _lightRaySizes);
         int layoutGeneration = _tileCache.LayoutGeneration;
         _tileCache.EnsureLayout(widestRect, tallestRect, count,
-            LightingQualityTuningController.DynamicPolarDirectionCount, longestRequestedRay);
+            polarDirections, longestRay);
         if (invalidateDynamicTiles)
         {
             _tileCache.InvalidateAll();
         }
 
         _tileCache.AssignSlots(lightIds.Slice(0, count));
-        // Defer polar allocation until the frame-wide work budget has selected
-        // each fan's effective angular width. Allocating authored maximum
-        // quality first wastes memory and can exceed texture limits even when
-        // this frame must be conservatively reduced.
-        MarkLightsNeedingTrace(count, lights, lightIds);
-
-        int widestRayFan = DynamicPolarWorkBudget.AllocateRayFans(
-            count,
-            _lightRequestedRayFans,
-            _lightNeedsTrace,
-            _lightRaySizes,
-            out int longestRay);
-
         // Resize before evaluating cache validity: replacing this array loses
         // every layer's optical depth, including unchanged source slots.
-        _tileCache.EnsurePolar(widestRayFan, longestRay);
+        _tileCache.EnsurePolar(polarDirections, longestRay);
 
         // Several lights on a retained atlas: patch only what changed. One
         // light writes DirectTexture directly; a replaced atlas or a static
@@ -289,8 +270,6 @@ internal sealed class DynamicLightingSolver
             // newly lit one. clearRect already is that union.
             dynamicDirtyUnion = clearRect;
         }
-
-        _tileCache.EnsurePolar(widestRayFan, longestRay);
 
         ComputeShader compute = _resources.LightingCompute!;
         RenderTexture tiles = _tileCache.Tiles!;
@@ -629,26 +608,6 @@ internal sealed class DynamicLightingSolver
         int maxX = Mathf.Max(left.xMax, right.xMax);
         int maxY = Mathf.Max(left.yMax, right.yMax);
         return new RectInt(minX, minY, maxX - minX, maxY - minY);
-    }
-
-    // The polar work budget is shared only by lights that actually need a
-    // trace this frame. Static lights reuse their tiles: letting them dilute
-    // the budget would starve the one moving light of angular density.
-    private void MarkLightsNeedingTrace(
-        int count,
-        System.ReadOnlySpan<DynamicLightGPUData> lights,
-        System.ReadOnlySpan<int> lightIds)
-    {
-        for (int lightIndex = 0; lightIndex < count; lightIndex++)
-        {
-            int slot = _tileCache.SlotOf(lightIds[lightIndex]);
-            _lightNeedsTrace[lightIndex] = _tileCache.NeedsTrace(
-                slot,
-                lights[lightIndex].PositionRadius,
-                lights[lightIndex].ColorIntensity,
-                _lightRects[lightIndex]) && _tileCache.NeedsPolarTrace(
-                    slot, lights[lightIndex].PositionRadius, lights[lightIndex].ColorIntensity);
-        }
     }
 
     private void BindFieldTextures(

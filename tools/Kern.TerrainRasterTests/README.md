@@ -12,6 +12,13 @@ triangle rasterizer interpolates the shader outputs. Expectations come from a
 convex polygon half-plane oracle sampled at raster positions between logical
 pixel centers.
 
+Atlas-addressing checks execute the production UV resolver for World-anchored
+packs: all 256 descriptors, 14/16-column sheets, 32 texel centers and positive/
+negative world positions (81,920 cases), plus unchanged world-sheet addressing
+and frame animation. An independent rotation/mirror and atlas-offset oracle
+checks the selected variant and sampling bounds. Restoring the early World-sheet
+return must fail the `world-anchor-skips-autotiles` mutation.
+
 Coverage includes exact displaced polygon edges, adjacent cell seams read
 from shared grid nodes of neighbouring cells, background geometry isolation,
 shader-computed phase (every k/1000 value and every faceted value against an

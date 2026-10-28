@@ -14,6 +14,18 @@ public sealed class MapInteractionController
     // Между PointerDown и PointerUp был реальный сдвиг (drag), а не клик.
     public bool WasDragging { get; private set; }
 
+    public void Reset(Image? mapImage)
+    {
+        if (_dragPointerId >= 0 && mapImage != null && mapImage.HasPointerCapture(_dragPointerId))
+        {
+            mapImage.ReleasePointer(_dragPointerId);
+        }
+
+        _isDragging = false;
+        _dragPointerId = -1;
+        WasDragging = false;
+    }
+
     public void HandlePointerDown(
         PointerDownEvent evt,
         Image? mapImage)

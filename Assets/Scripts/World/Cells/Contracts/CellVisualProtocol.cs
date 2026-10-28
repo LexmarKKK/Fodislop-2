@@ -2,13 +2,13 @@
 
 namespace Kern.World;
 
-// Группа декали типа: земля (атлас земли, доля из TerrainConfigHolder)
-// или камень (атлас красно-чёрного камня, 30%); номера — KERN_TERRAIN_DECAL_ATLAS_*.
+// Группа декали типа; номера соответствуют KERN_TERRAIN_DECAL_ATLAS_*.
 public enum CellDecalAtlas : byte
 {
     None = 0,
     Ground = 1,
     Rock = 2,
+    Sand = 3,
 }
 
 // Слой, в котором рисуется клетка.

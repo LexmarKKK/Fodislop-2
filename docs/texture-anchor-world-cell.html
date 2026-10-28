@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cell и World — одна картинка, разный результат</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;background:#0f141b;color:#f1f4f7}
+*{box-sizing:border-box}
+body{max-width:1390px;margin:0 auto;padding:44px 32px 30px}
+h1{font-size:clamp(26px,3.2vw,44px);line-height:1.15;letter-spacing:-.035em;margin:0 0 14px;font-weight:720}
+.intro{font-size:20px;line-height:1.5;color:#bdc9d4;margin:0 0 36px;max-width:1000px}
+.comparison{display:grid;grid-template-columns:1fr 1fr 1fr;gap:26px;align-items:start}
+figure{margin:0;min-width:0}
+.kicker{font-size:14px;letter-spacing:.07em;text-transform:uppercase;color:#a9b8c7;margin:0 0 7px}
+h2{font-size:30px;line-height:1.2;margin:0 0 15px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.edge{fill:none;stroke:#ecf2f7;stroke-width:.24;stroke-linejoin:round}
+.old-edge{fill:none;stroke:#637484;stroke-width:.15;stroke-dasharray:.6 .6}
+figcaption{font-size:21px;line-height:1.4;margin:18px 0 0;font-weight:650}
+.sub{display:block;font-size:17px;font-weight:400;color:#b1c0cd;margin-top:8px;line-height:1.5}
+.rule{border-top:1px solid #33404c;margin-top:34px;padding-top:22px;font-size:20px;line-height:1.5}
+.key{display:flex;flex-wrap:wrap;gap:10px 28px;color:#b1c0cd;font-size:15px;margin-top:20px}
+.key span{display:flex;align-items:center;gap:9px}
+.line{display:inline-block;width:26px;border-top:2px solid #ecf2f7}
+.dash{border-top:2px dashed #637484}
+.note{font-size:13px;line-height:1.5;color:#8e9ead;margin-top:22px}
+@media(max-width:760px){body{padding:25px 18px}.comparison{grid-template-columns:1fr 1fr;gap:25px 16px}.source{grid-column:1/-1;display:grid;grid-template-columns:140px 1fr;gap:0 20px;align-items:center}.source .head{grid-column:2;grid-row:1}.source svg{grid-column:1;grid-row:1/3}.source figcaption{grid-column:2;margin:0}h2{font-size:25px}figcaption{font-size:18px}.sub{font-size:15px}.intro{font-size:18px;margin-bottom:25px}.rule{font-size:18px}}
+@media(max-width:410px){.source{grid-template-columns:105px 1fr;gap:0 12px}.comparison{gap:22px 10px}h2{font-size:23px}.kicker{font-size:12px}figcaption{font-size:16px}.sub{font-size:14px}}
+</style>
+</head>
+<body>
+<h1>Одну и ту же клетку сделали косой.</h1>
+<p class="intro">Внутри — одна и та же картинка с кругом. Смотри, что происходит с кругом.</p>
+<main class="comparison">
+<figure class="source"><div class="head"><p class="kicker">До изменения формы</p><h2>Картинка 32×32</h2></div><svg viewBox="-2 -2 36 36" role="img" aria-labelledby="source-title">
+<title id="source-title">Исходная квадратная картинка: золотое кольцо на клетчатом фоне.</title>
+<defs>
+<image id="picture-source" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAkUlEQVR4nGNQtfKAI3kDWziiljjDqAUELaCFocjioxYQtmDopyIiNfw/EYqGqGYBptHIiAr5ANnJcHE0QfJTER6DsFpMpgW4vE99C7IfHgIi0izAH8loMQmxAC3+KUpFaBagGUQ1C7AmRzQpKuQDIi0mPx9gRZTmA7g41jxM0PckWEC2+Gh9MBIsGPqpaMhbAABxadilUi/7sAAAAABJRU5ErkJggg==" width="32" height="32" style="image-rendering:pixelated"/>
+<clipPath id="source-clip"><path d="M0 0H16L32 32H16Z"/></clipPath>
+</defs>
+<use href="#picture-source"/><rect class="edge" width="32" height="32"/>
+</svg><figcaption>Обычный круг.<span class="sub">Так выглядят оба режима на квадратной клетке.</span></figcaption></figure>
+<figure><div class="head"><p class="kicker">После · привязка к клетке</p><h2>Cell</h2></div><svg viewBox="-2 -2 36 36" role="img" aria-labelledby="cell-title">
+<title id="cell-title">Косая клетка: кольцо сжалось и наклонилось вместе с рисунком.</title>
+<defs>
+<image id="picture-cell" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAkUlEQVR4nGNQtfKAI3kDWziiljjDqAUELaCFocjioxYQtmDopyIiNfw/EYqGqGYBptHIiAr5ANnJcHE0QfJTER6DsFpMpgW4vE99C7IfHgIi0izAH8loMQmxAC3+KUpFaBagGUQ1C7AmRzQpKuQDIi0mPx9gRZTmA7g41jxM0PckWEC2+Gh9MBIsGPqpaMhbAABxadilUi/7sAAAAABJRU5ErkJggg==" width="32" height="32" style="image-rendering:pixelated"/>
+<clipPath id="cell-clip"><path d="M0 0H16L32 32H16Z"/></clipPath>
+</defs>
+<g clip-path="url(#cell-clip)"><use href="#picture-cell" transform="matrix(.5 0 .5 1 0 0)"/></g><rect class="old-edge" width="32" height="32"/><path class="edge" d="M0 0H16L32 32H16Z"/>
+</svg><figcaption>Круг сжался и наклонился.<span class="sub">Картинка растянута по новой форме клетки.</span></figcaption></figure>
+<figure><div class="head"><p class="kicker">После · привязка к миру</p><h2>World</h2></div><svg viewBox="-2 -2 36 36" role="img" aria-labelledby="world-title">
+<title id="world-title">Та же косая клетка: кольцо осталось круглым, фон обрезан по контуру клетки.</title>
+<defs>
+<image id="picture-world" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAkUlEQVR4nGNQtfKAI3kDWziiljjDqAUELaCFocjioxYQtmDopyIiNfw/EYqGqGYBptHIiAr5ANnJcHE0QfJTER6DsFpMpgW4vE99C7IfHgIi0izAH8loMQmxAC3+KUpFaBagGUQ1C7AmRzQpKuQDIi0mPx9gRZTmA7g41jxM0PckWEC2+Gh9MBIsGPqpaMhbAABxadilUi/7sAAAAABJRU5ErkJggg==" width="32" height="32" style="image-rendering:pixelated"/>
+<clipPath id="world-clip"><path d="M0 0H16L32 32H16Z"/></clipPath>
+</defs>
+<g clip-path="url(#world-clip)"><use href="#picture-world" /></g><rect class="old-edge" width="32" height="32"/><path class="edge" d="M0 0H16L32 32H16Z"/>
+</svg><figcaption>Круг сохранил форму.<span class="sub">Клетка вырезает участок картинки, как окно.</span></figcaption></figure>
+</main>
+<p class="rule">Разница есть даже у одной картинки <b>32×32</b>: растянуть её вместе с клеткой или вырезать из неё участок.</p>
+<div class="key"><span><i class="line" aria-hidden="true"></i>Форма клетки</span><span><i class="line dash" aria-hidden="true"></i>Граница до изменения формы</span></div>
+<p class="note">Наглядная схема адресации из TerrainSampling.hlsl: одна текстура, без автотайлинга; углы клетки смещены внутри исходного квадрата. Это не снимок из игры.</p>
+</body>
+</html>

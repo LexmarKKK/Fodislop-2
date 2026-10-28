@@ -26,7 +26,7 @@ public static class CascadeCostCalculator
         }
 
         var samples = new List<CascadeCostSample>(cascades.Count);
-        CollectCascadeCosts(cascades, int.MaxValue, samples);
+        CollectCascadeCosts(cascades, samples);
 
         long total = 0;
         foreach (CascadeCostSample sample in samples)
@@ -39,7 +39,6 @@ public static class CascadeCostCalculator
 
     public static void CollectCascadeCosts(
         IReadOnlyList<CascadeLayout> cascades,
-        int maximumSteps,
         List<CascadeCostSample> destination)
     {
         if (cascades == null)
@@ -59,8 +58,6 @@ public static class CascadeCostCalculator
 
             // Conservative DDA texel visits, including each connected merge
             // path. Early opacity termination and field clipping reduce this.
-            // maximumSteps is retained for caller compatibility; it no longer
-            // permits the transport solver to skip geometry.
             double traceLength = Math.Max((double)cascade.IntervalEnd - cascade.IntervalStart, 0d);
             int traceCount = 1;
             long mergeTaps = 0;

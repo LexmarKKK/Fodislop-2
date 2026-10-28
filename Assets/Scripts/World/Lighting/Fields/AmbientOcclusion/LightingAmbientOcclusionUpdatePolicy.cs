@@ -20,7 +20,6 @@ internal static class LightingAmbientOcclusionUpdatePolicy
     // less than half a cell and contact reach is 0.8 cells: ceil(1 + 0.5 + 0.8).
     // Keep the complete support, including old geometry that must be erased.
     internal const int SupportHaloCells = 3;
-    internal const int MaximumPartialRasterRects = 8;
 
     public static bool CanUpdatePartially(
         LightingRuntimeState state,
@@ -48,7 +47,7 @@ internal static class LightingAmbientOcclusionUpdatePolicy
             throw new ArgumentOutOfRangeException(nameof(fieldWorldCells));
         }
 
-        var rasterRects = new List<RectInt>(Math.Min(dirtyRegions.Count, MaximumPartialRasterRects + 1));
+        var rasterRects = new List<RectInt>(dirtyRegions.Count);
         foreach (RectInt region in dirtyRegions)
         {
             if (region.width <= 0 || region.height <= 0)
@@ -80,29 +79,19 @@ internal static class LightingAmbientOcclusionUpdatePolicy
                 pixelHeight));
         }
 
-        MergePixelFreeUnions(rasterRects);
+        MergeWithoutIncreasingRasterArea(rasterRects);
         rasterRects.Sort(static (left, right) =>
         {
             int rowOrder = left.y.CompareTo(right.y);
             return rowOrder != 0 ? rowOrder : left.x.CompareTo(right.x);
         });
 
-        if (rasterRects.Count > MaximumPartialRasterRects)
-        {
-            RectInt bounds = rasterRects[0];
-            for (int i = 1; i < rasterRects.Count; i++)
-            {
-                bounds = Union(bounds, rasterRects[i]);
-            }
-
-            rasterRects.Clear();
-            rasterRects.Add(bounds);
-        }
-
         return rasterRects;
     }
 
-    private static void MergePixelFreeUnions(List<RectInt> rects)
+    // A merge removes a draw/clear set only when its summed pixel work cannot
+    // grow. No unmeasured exchange rate between pixels and draw calls is used.
+    private static void MergeWithoutIncreasingRasterArea(List<RectInt> rects)
     {
         for (int i = 0; i < rects.Count; i++)
         {

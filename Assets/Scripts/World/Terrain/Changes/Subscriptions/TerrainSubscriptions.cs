@@ -22,6 +22,7 @@ public sealed class TerrainSubscriptions : IDisposable
     private readonly Action<int, int> _onCellChanged;
     private readonly Action<int, int, int, int> _onRegionChanged;
     private readonly Action<string, Texture2D> _onTextureLoaded;
+    private readonly Action _onDecalAtlasLoaded;
     private readonly Action _onWorldDataLoaded;
     private readonly Action<int, int, int, int> _onChunkLoaded;
     private IWorldDataStorage? _storage;
@@ -33,12 +34,14 @@ public sealed class TerrainSubscriptions : IDisposable
         Action<int, int> onCellChanged,
         Action<int, int, int, int> onRegionChanged,
         Action<string, Texture2D> onTextureLoaded,
+        Action onDecalAtlasLoaded,
         Action onWorldDataLoaded,
         Action<int, int, int, int> onChunkLoaded)
     {
         _onCellChanged = onCellChanged;
         _onRegionChanged = onRegionChanged;
         _onTextureLoaded = onTextureLoaded;
+        _onDecalAtlasLoaded = onDecalAtlasLoaded;
         _onWorldDataLoaded = onWorldDataLoaded;
         _onChunkLoaded = onChunkLoaded;
     }
@@ -73,12 +76,14 @@ public sealed class TerrainSubscriptions : IDisposable
             if (_textureService != null)
             {
                 _textureService.OnTextureLoaded -= OnTextureLoaded;
+                _textureService.OnTerrainDecalAtlasLoaded -= OnDecalAtlasLoaded;
             }
 
             _textureService = textureService;
             if (_textureService != null)
             {
                 _textureService.OnTextureLoaded += OnTextureLoaded;
+                _textureService.OnTerrainDecalAtlasLoaded += OnDecalAtlasLoaded;
             }
         }
 
@@ -130,6 +135,8 @@ public sealed class TerrainSubscriptions : IDisposable
 
     private void OnTextureLoaded(string filename, Texture2D texture) =>
         _onTextureLoaded(filename, texture);
+
+    private void OnDecalAtlasLoaded() => _onDecalAtlasLoaded();
 
     private void OnWorldDataLoaded() => _onWorldDataLoaded();
 

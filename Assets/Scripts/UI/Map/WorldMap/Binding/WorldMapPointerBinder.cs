@@ -12,6 +12,7 @@ internal sealed class WorldMapPointerBinder : IDisposable
     private EventCallback<PointerDownEvent>? _onDown;
     private EventCallback<PointerMoveEvent>? _onMove;
     private EventCallback<PointerUpEvent>? _onUp;
+    private EventCallback<PointerCancelEvent>? _onCancel;
     private EventCallback<ClickEvent>? _onClick;
 
     public WorldMapPointerBinder(WorldMapPanel panel)
@@ -23,6 +24,7 @@ internal sealed class WorldMapPointerBinder : IDisposable
         EventCallback<PointerDownEvent> onDown,
         EventCallback<PointerMoveEvent> onMove,
         EventCallback<PointerUpEvent> onUp,
+        EventCallback<PointerCancelEvent> onCancel,
         EventCallback<ClickEvent> onClick)
     {
         Image? image = _panel.Image;
@@ -34,28 +36,31 @@ internal sealed class WorldMapPointerBinder : IDisposable
         image.RegisterCallback(onDown);
         image.RegisterCallback(onMove);
         image.RegisterCallback(onUp);
+        image.RegisterCallback(onCancel);
         image.RegisterCallback(onClick);
         _onDown = onDown;
         _onMove = onMove;
         _onUp = onUp;
+        _onCancel = onCancel;
         _onClick = onClick;
         _bound = true;
     }
 
     public void Dispose()
     {
-        if (_onDown == null || _onMove == null || _onUp == null || _onClick == null)
+        if (_onDown == null || _onMove == null || _onUp == null || _onCancel == null || _onClick == null)
         {
             return;
         }
 
-        Dispose(_onDown, _onMove, _onUp, _onClick);
+        Dispose(_onDown, _onMove, _onUp, _onCancel, _onClick);
     }
 
     public void Dispose(
         EventCallback<PointerDownEvent> onDown,
         EventCallback<PointerMoveEvent> onMove,
         EventCallback<PointerUpEvent> onUp,
+        EventCallback<PointerCancelEvent> onCancel,
         EventCallback<ClickEvent> onClick)
     {
         if (!_bound || _panel.Image == null)
@@ -66,11 +71,13 @@ internal sealed class WorldMapPointerBinder : IDisposable
         _panel.Image.UnregisterCallback(onDown);
         _panel.Image.UnregisterCallback(onMove);
         _panel.Image.UnregisterCallback(onUp);
+        _panel.Image.UnregisterCallback(onCancel);
         _panel.Image.UnregisterCallback(onClick);
         _bound = false;
         _onDown = null;
         _onMove = null;
         _onUp = null;
+        _onCancel = null;
         _onClick = null;
     }
 }

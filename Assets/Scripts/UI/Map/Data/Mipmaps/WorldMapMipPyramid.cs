@@ -41,6 +41,7 @@ internal sealed class WorldMapMipPyramid
 
     private int _currentChunkIndex = -1;
     private int _decodedCellCount;
+    private bool _buildingStoredScan;
 
     public WorldMapMipPyramid(
         int widthChunks,
@@ -303,7 +304,17 @@ internal sealed class WorldMapMipPyramid
         _decodedCellCount = end;
     }
 
-    public void CompleteStoredScan() => FlushCurrentChunk();
+    public void BeginStoredScan() => _buildingStoredScan = true;
+
+    public void CompleteStoredScan()
+    {
+        FlushCurrentChunk();
+        if (_buildingStoredScan)
+        {
+            _buildingStoredScan = false;
+            RebuildParentRegion(0, 0, _levelWidths[0] - 1, _levelHeights[0] - 1);
+        }
+    }
 
     public void SetChunkCells(int chunkIndex, CellType[] cells)
     {
@@ -418,11 +429,14 @@ internal sealed class WorldMapMipPyramid
                 $"Chunk {chunkX},{chunkY} contributed no in-world cells to the mip pyramid.");
         }
 
-        RebuildParentRegion(
-            blockX0 + minBlockX,
-            blockY0 + minBlockY,
-            blockX0 + maxBlockX,
-            blockY0 + maxBlockY);
+        if (!_buildingStoredScan)
+        {
+            RebuildParentRegion(
+                blockX0 + minBlockX,
+                blockY0 + minBlockY,
+                blockX0 + maxBlockX,
+                blockY0 + maxBlockY);
+        }
         ResetBlockAccumulators();
     }
 

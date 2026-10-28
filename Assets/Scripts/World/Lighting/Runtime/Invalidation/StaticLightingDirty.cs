@@ -61,12 +61,38 @@ internal static class StaticLightingDirty
         return result;
     }
 
-    internal static ProbeRect TightProbeRect(
-        CascadeLayout cascade,
+    // The caller supplies regions only when the retained atlas is valid.
+    // A full-field invalidation has no interior outside its dirty bounds to
+    // preserve. Regional changes use exact shader dependencies, not area ratios.
+    internal static bool ShouldUseDependencyMask(
+        IReadOnlyList<DirtyRegionGPU> dirtyFieldRegions,
+        int fieldWidth,
+        int fieldHeight)
+    {
+        if (dirtyFieldRegions.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (DirtyRegionGPU region in dirtyFieldRegions)
+        {
+            if (region.MinX <= 0 && region.MinY <= 0 &&
+                region.MaxX >= fieldWidth && region.MaxY >= fieldHeight)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    internal static void FillProbeRects(
+        IReadOnlyList<CascadeLayout> cascades,
         DirtyRegionGPU[] dirtyFieldRegions,
         Vector4 worldRect,
         int fieldWidth,
-        int fieldHeight)
+        int fieldHeight,
+        Span<ProbeRect> rectangles)
     {
         int minX = int.MaxValue;
         int minY = int.MaxValue;
@@ -90,15 +116,15 @@ internal static class StaticLightingDirty
         float texelsPerCell = Mathf.Max(
             fieldWidth / cellsX,
             fieldHeight / cellsY);
-        float marginTexels = texelsPerCell + cascade.ProbeSpacing + 2f;
-        return CascadeProbeRects.ForCascade(
+        CascadeProbeRects.FillCascadeChain(
             minX,
             minY,
             maxX,
             maxY,
             fieldWidth,
             fieldHeight,
-            cascade,
-            marginTexels);
+            cascades,
+            texelsPerCell + 2f,
+            rectangles);
     }
 }

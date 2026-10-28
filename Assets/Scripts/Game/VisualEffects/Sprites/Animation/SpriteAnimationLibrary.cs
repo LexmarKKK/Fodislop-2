@@ -17,6 +17,9 @@ public sealed class SpriteAnimationLibrary : IDisposable
     private readonly Dictionary<string, Material> _materials = new(StringComparer.Ordinal);
     private readonly List<Texture2D> _textures = new();
     private readonly List<Sprite> _sprites = new();
+    // Indexed by encoded channel and alpha. Conversion is deterministic and
+    // identical for every pixel sharing the same pair across sprite sheets.
+    private readonly float[] _premultipliedLinear = new float[256 * 256];
     private readonly Mesh[] _meshes;
     private readonly Material[] _meshMaterials;
     private readonly Sprite[] _crystalCollectionSprites;
@@ -24,6 +27,8 @@ public sealed class SpriteAnimationLibrary : IDisposable
 
     public SpriteAnimationLibrary()
     {
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
+        long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
         TextAsset asset = Resources.Load<TextAsset>("VFX/Sprites/Catalog/Catalog")
             ?? throw new InvalidOperationException("The sprite animation catalog is missing.");
         Catalog data = JsonUtility.FromJson<Catalog>(asset.text)
@@ -94,6 +99,16 @@ public sealed class SpriteAnimationLibrary : IDisposable
         }
 
         _crystalCollectionSprites = LoadCrystalCollectionSprites();
+        double elapsedMs = (System.Diagnostics.Stopwatch.GetTimestamp() - started) * 1000.0 /
+            System.Diagnostics.Stopwatch.Frequency;
+        if (elapsedMs >= 4.0)
+        {
+            long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+            string allocation = allocatedBytes > 0 ? $"{allocatedBytes / 1024} КБ" : "учёт выделений недоступен";
+            Kern.Diagnostics.Frames.FrameEventLog.Record(
+                $"библиотека VFX: {data.Meshes.Length} мешей, {_textures.Count} текстур, " +
+                $"{elapsedMs:F1} мс, {allocation}");
+        }
     }
 
     internal Material GunLineMaterial => GetGunMaterial("GunLine", Texture2D.whiteTexture);
@@ -190,8 +205,8 @@ public sealed class SpriteAnimationLibrary : IDisposable
             {
                 Color32 value = encoded[index];
                 float alpha = value.a / 255f;
-                pixels[index] = new Color(Mathf.GammaToLinearSpace(value.r / 255f * alpha),
-                    Mathf.GammaToLinearSpace(value.g / 255f * alpha), Mathf.GammaToLinearSpace(value.b / 255f * alpha), alpha);
+                pixels[index] = new Color(PremultipliedLinear(value.r, value.a),
+                    PremultipliedLinear(value.g, value.a), PremultipliedLinear(value.b, value.a), alpha);
             }
 
             Texture2D texture = RuntimeTextureFactory.CreateRGBAHalfNoMip(source.width, source.height,
@@ -202,6 +217,22 @@ public sealed class SpriteAnimationLibrary : IDisposable
             return texture;
         }
         finally { UnityEngine.Object.Destroy(source); }
+    }
+
+    private float PremultipliedLinear(byte channel, byte alpha)
+    {
+        if (channel == 0 || alpha == 0)
+        {
+            return 0f;
+        }
+        int key = (channel << 8) | alpha;
+        float value = _premultipliedLinear[key];
+        if (value == 0f)
+        {
+            value = Mathf.GammaToLinearSpace(channel / 255f * (alpha / 255f));
+            _premultipliedLinear[key] = value;
+        }
+        return value;
     }
 
     public void Dispose()

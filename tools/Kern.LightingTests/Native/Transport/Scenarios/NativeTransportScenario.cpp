@@ -46,7 +46,8 @@ float3 trace(float2 a,float2 b,float3* radiance=nullptr) {
     if(radiance)*radiance=r; return t;
 }
 struct Cascade {int offset,w,h,spacing,dirs;float start,end;};
-void solveField(int count=3, bool dependencyMask=false, int4 dirty={0,0,0,0}) {
+long fixtureCascadeDispatchEntries=0;
+void solveField(int count=3, bool dependencyMask=false, int4 dirty={0,0,0,0}, bool emitterEditDispatch=false) {
     buildMask();
     std::vector<Cascade> levels; int offset=0,spacing=1,dirs=4; float start=0,end=1;
     for(int i=0;i<count;i++) {
@@ -60,14 +61,23 @@ void solveField(int count=3, bool dependencyMask=false, int4 dirty={0,0,0,0}) {
     _DirtyRegions.assign(1, dirty);
     _DirtyRegionCount=dependencyMask ? 1 : 0;
     _CascadeMaskEnabled=dependencyMask ? 1 : 0;
+    fixtureCascadeDispatchEntries=0;
     for(int i=count-1;i>=0;i--) {
         auto c=levels[i],f=levels[std::min(i+1,count-1)];
         _CascadeOffset=c.offset; _CascadeProbeSize={c.w,c.h}; _CascadeProbeSpacing=c.spacing;
         _CascadeDirectionCount=c.dirs; _CascadeInterval={c.start,c.end}; _CascadeEntryCount=c.w*c.h*c.dirs;
         _CascadeDispatchOrigin={0,0}; _CascadeDispatchSize={c.w,c.h};
+        if(emitterEditDispatch) {
+            if(count!=4 || _FieldSize.x!=64 || _FieldSize.y!=64)
+                throw std::runtime_error("Emitter edit fixture must match the production dispatch plan");
+            int4 rect=EmitterEditDispatchRects[i];
+            _CascadeDispatchOrigin={rect.x,rect.y}; _CascadeDispatchSize={rect.z,rect.w};
+            _CascadeEntryCount=rect.z*rect.w*c.dirs;
+        }
         _FarCascadeOffset=f.offset; _FarCascadeProbeSize={f.w,f.h}; _FarCascadeProbeSpacing=f.spacing;
         _FarCascadeDirectionCount=f.dirs; _FarCascadeInterval={f.start,f.end}; _HasFarCascade=i<count-1;
         _CascadeDispatchRowWidth=_CascadeEntryCount;
+        fixtureCascadeDispatchEntries+=_CascadeEntryCount;
         for(int n=0;n<_CascadeEntryCount;n++) SolveCascade(uint3{(uint)n,0,0});
     }
     _CascadeMaskEnabled=0;
@@ -388,6 +398,45 @@ int main() {
         if(!sameAtlas(_RadianceAtlas, atlasFull))
             throw std::runtime_error("dependency mask differs from full cascade solve");
         ++checks;
+        // A new emissive block changes far-tier radiance as well as local rays.
+        // Use the actual C# dispatch planner, not a full-grid mask substitute.
+        for(int bilinearFix : {0,1}) {
+            setup(16,16,4); _EnableBilinearFix=bilinearFix;
+            _EmptyExtinctionRGB={.05f,.05f,.05f,0};
+            solveField(4); auto darkAtlas=_RadianceAtlas;
+            for(int y=32;y<36;y++)for(int x=32;x<36;x++) {
+                _GlowField.data[y*64+x]={16,8,4,0};
+                _MaterialField.data[y*64+x].w=1;
+            }
+            _LightingCountersEnabled=1; _LightingCounters.assign(3,0);
+            solveField(4); auto placedFull=_RadianceAtlas;
+            auto denseCounters=_LightingCounters;
+            float fullOutsideFormerSquare=direct(12,34);
+            if(fullOutsideFormerSquare<=0)
+                throw std::runtime_error("Placed-emitter oracle must light receivers outside the local edit square");
+            _RadianceAtlas=darkAtlas;
+            _LightingCounters.assign(3,0);
+            solveField(4,true,int4{30,30,38,38},true);
+            auto maskedCounters=_LightingCounters;
+            if(!sameAtlas(_RadianceAtlas,placedFull))
+                throw std::runtime_error("Placed emitter: partial dispatch leaves stale radiance outside the edit square");
+            near(direct(12,34),fullOutsideFormerSquare,0,"placed-emitter distant receiver");
+            long dispatched=fixtureCascadeDispatchEntries;
+            for(auto& glow:_GlowField.data)glow={0,0,0,0};
+            for(auto& material:_MaterialField.data)material.w=0;
+            solveField(4); auto removedFull=_RadianceAtlas;
+            _RadianceAtlas=placedFull;
+            solveField(4,true,int4{30,30,38,38},true);
+            if(!sameAtlas(_RadianceAtlas,removedFull))
+                throw std::runtime_error("Removed emitter: partial dispatch retains stale light outside the edit square");
+            std::cout<<"Emitter add/remove matches full packed atlas, bilinearFix="<<bilinearFix
+                <<", dispatch entries="<<dispatched<<", dense/masked DDA segments="
+                <<denseCounters[0]<<"/"<<maskedCounters[0]<<", texel visits="
+                <<denseCounters[1]<<"/"<<maskedCounters[1]<<"\n";
+            _LightingCountersEnabled=0;
+            checks+=2;
+        }
+        _EnableBilinearFix=1;
         setup(16,16,4);_SolidExtinctionRGB={1600,1600,1600,0};
         {
             DynamicLight before={{12.02f,8.5f,0,0},{1,1,1,1}};

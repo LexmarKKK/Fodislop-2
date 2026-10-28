@@ -39,6 +39,8 @@ namespace Kern.Game.Events.Audio
 
         private const string MusicEventName = "music/evil_huge";
         private readonly List<IServerWorldEffect> _activeEffects = new();
+        private readonly Stack<GunShotWorldEffect> _availableGunShots = new();
+        private const int MaximumRetainedGunShots = 8;
         private readonly Dictionary<(global::MinesServer.Data.SFX Effect, ushort Bot, ushort X, ushort Y), float> _lastSfxTimes = new();
         private readonly Dictionary<ushort, SpriteAnimationWorldEffect> _healingEffects = new();
         private SpriteAnimationWorldEffect? _heldHealEffect;
@@ -252,8 +254,19 @@ namespace Kern.Game.Events.Audio
                 if (_robotService.TryGetRobot(packet.TargetBotId, out IRobotView? target) && target != null)
                 {
                     Vector3 origin = WorldCoordinateConverter.ServerToUnityPos(packet.X, packet.Y, _mapManager.WorldHeight);
-                    _activeEffects.Add(new GunShotWorldEffect(origin, target.transform.position,
-                        _spriteAnimations, _sceneObjects, unchecked((uint)Time.frameCount ^ packet.TargetBotId)));
+                    uint seed = unchecked((uint)Time.frameCount ^ packet.TargetBotId);
+                    GunShotWorldEffect effect;
+                    if (_availableGunShots.Count > 0)
+                    {
+                        effect = _availableGunShots.Pop();
+                        effect.Activate(origin, target.transform.position, seed);
+                    }
+                    else
+                    {
+                        effect = new GunShotWorldEffect(origin, target.transform.position,
+                            _spriteAnimations, _sceneObjects, seed);
+                    }
+                    _activeEffects.Add(effect);
                 }
 
                 return true;
@@ -421,6 +434,7 @@ namespace Kern.Game.Events.Audio
             foreach (var effect in _activeEffects)
             {
                 effect.Dispose();
+                RecycleGunShot(effect);
             }
 
             _activeEffects.Clear();
@@ -439,6 +453,10 @@ namespace Kern.Game.Events.Audio
         protected void OnDestroy()
         {
             ClearAllEffects();
+            while (_availableGunShots.Count > 0)
+            {
+                _availableGunShots.Pop().Destroy();
+            }
             _audioSystem?.StopBus(AudioBusType.Music, 0.2f);
         }
 
@@ -456,7 +474,24 @@ namespace Kern.Game.Events.Audio
                 if (effect.IsDisposed)
                 {
                     _activeEffects.RemoveAt(i);
+                    RecycleGunShot(effect);
                 }
+            }
+        }
+
+        private void RecycleGunShot(IServerWorldEffect effect)
+        {
+            if (effect is not GunShotWorldEffect gunShot)
+            {
+                return;
+            }
+            if (_availableGunShots.Count < MaximumRetainedGunShots)
+            {
+                _availableGunShots.Push(gunShot);
+            }
+            else
+            {
+                gunShot.Destroy();
             }
         }
     }

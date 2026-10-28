@@ -45,7 +45,12 @@ public sealed class MapPlayerTracker
         if (player != null)
         {
             SubscribeToPlayer(player);
-            return;
+        }
+        else if (_player != null)
+        {
+            UnsubscribeFromPlayer(_player);
+            _player = null;
+            _lastPlayerPos = new Vector2Int(int.MinValue, int.MinValue);
         }
 
         _localPlayer.Changed += OnLocalPlayerChanged;

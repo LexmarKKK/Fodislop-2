@@ -9,6 +9,7 @@ namespace UnityEngine
         public static float Abs(float value) => MathF.Abs(value);
         public static float Sqrt(float value) => MathF.Sqrt(value);
         public static int CeilToInt(float value) => checked((int)MathF.Ceiling(value));
+        public static int FloorToInt(float value) => checked((int)MathF.Floor(value));
         public static int Min(int left, int right) => Math.Min(left, right);
         public static float Min(float left, float right) => MathF.Min(left, right);
         public static int Max(int left, int right) => Math.Max(left, right);
@@ -41,6 +42,13 @@ namespace UnityEngine
         public override int GetHashCode() => HashCode.Combine(x, y);
     }
     public readonly record struct Vector4(float x, float y, float z, float w);
+    public readonly record struct RectInt(int x, int y, int width, int height)
+    {
+        public int xMin => x;
+        public int yMin => y;
+        public int xMax => x + width;
+        public int yMax => y + height;
+    }
     public readonly record struct Color(float r, float g, float b, float a = 1f)
     {
         public static Color white => new(1f, 1f, 1f, 1f);

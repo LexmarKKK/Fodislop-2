@@ -16,6 +16,9 @@ namespace UnityEngine
         public int subMeshCount;
         public int vertexCount;
         public int UploadCount { get; private set; }
+        public int LastUploadDestination { get; private set; }
+        public int LastUploadCount { get; private set; }
+        public int IndexUploadCount { get; private set; }
         public Array Vertices { get; private set; } = Array.Empty<byte>();
         public int[] Indices { get; private set; } = Array.Empty<int>();
         private readonly Dictionary<int, SubMeshDescriptor> _draws = new();
@@ -29,13 +32,21 @@ namespace UnityEngine
         public void SetVertexBufferData<T>(List<T> data, int start, int destination, int count, int stream, MeshUpdateFlags flags)
             where T : struct
         {
-            Vertices = data.ToArray();
+            if (Vertices is not T[] vertices || vertices.Length != vertexCount)
+            {
+                vertices = new T[vertexCount];
+                Vertices = vertices;
+            }
+            data.CopyTo(start, vertices, destination, count);
             UploadCount++;
+            LastUploadDestination = destination;
+            LastUploadCount = count;
         }
         public void SetIndexBufferParams(int count, IndexFormat format) { Indices = new int[count]; }
         public void SetIndexBufferData(List<int> data, int start, int destination, int count, MeshUpdateFlags flags)
         {
             data.CopyTo(Indices);
+            IndexUploadCount++;
         }
         public void SetSubMesh(int draw, SubMeshDescriptor descriptor, MeshUpdateFlags flags)
         {

@@ -48,7 +48,6 @@ public static class LightingFrameDumper
         public float surfaceReflectionReachCells;
         public float dynamicLightIntensity;
         public float maximumLightMultiplier;
-        public long maximumDynamicPolarRayWorkUnits;
         public int ambientOcclusionWidth;
         public int ambientOcclusionHeight;
         public int cellGridWidth;
@@ -219,7 +218,6 @@ public static class LightingFrameDumper
             surfaceReflectionReachCells = LightingConfigHolder.SurfaceReflectionReachCells,
             dynamicLightIntensity = LightingConfigHolder.DynamicLightIntensity,
             maximumLightMultiplier = LightingConfigHolder.MaximumLightMultiplier,
-            maximumDynamicPolarRayWorkUnits = LightingConfigHolder.MaximumDynamicPolarRayWorkUnits,
             ambientOcclusionWidth = resources.Geometry.AmbientOcclusionWidth,
             ambientOcclusionHeight = resources.Geometry.AmbientOcclusionHeight,
             cellGridWidth = resources.Geometry.CellGridWidth,

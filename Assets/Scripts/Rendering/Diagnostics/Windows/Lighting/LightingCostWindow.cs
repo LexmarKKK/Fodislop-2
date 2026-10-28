@@ -127,7 +127,7 @@ public sealed class LightingCostWindow : ToolWindow
             $"({LightingQualityTuningController.LightPixelsPerCell} пикс/клетку); " +
             $"AO R8 {aoWidth}×{aoHeight} ({LightingConfigHolder.AmbientOcclusionPixelsPerCell} пикс/клетку, фиксировано, " +
             $"около {aoBytes / (1024f * 1024f):N0} МиБ)";
-        _cascadeDetail = $"{lighting.CascadeCount} каскадов, шагов до {lighting.MaximumIntervalSteps}";
+        _cascadeDetail = $"{lighting.CascadeCount} каскадов";
         _atlasDetail = $"каскады: {lighting.AtlasEntryCount:N0}/{lighting.AtlasCapacity:N0} записей, " +
             $"источников динамики {lighting.DynamicLightCount}";
         _probeDetail = $"Пробы/клетку: запрос {LightingQualityTuningController.CascadeProbePixelsPerCell}, " +

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Kern.World.Lighting;
 
 namespace Kern.LightingTests;
 
@@ -46,10 +47,54 @@ internal static class NativeHarness
         string fixtureRoot = Path.Combine(repositoryRoot, "tools/Kern.LightingTests");
         string transportShim = File.ReadAllText(Path.Combine(fixtureRoot, "Native/Transport/Shims/NativeTransportShim.cpp"));
         string code = ExtractFunctions(shader, transportShim, RequiredTransportFunctions);
-        string source = transportShim +
-            Environment.NewLine + code +
-            Environment.NewLine + File.ReadAllText(Path.Combine(fixtureRoot, "Native/Transport/Scenarios/NativeTransportScenario.cpp"));
-        return CompileAndRun(source, "lighting-transport", TimeSpan.FromSeconds(90));
+        string prefix = transportShim + Environment.NewLine + code;
+        string scenario = File.ReadAllText(Path.Combine(fixtureRoot, "Native/Transport/Scenarios/NativeTransportScenario.cpp"));
+        string source = prefix + Environment.NewLine + BuildEmitterEditDispatches() + Environment.NewLine + scenario;
+        CompileAndRun(source, "lighting-transport", TimeSpan.FromSeconds(90));
+
+        // Recreate the former independent-tier plan without modifying any source
+        // file. The full-atlas oracle must reject this exact stale-light defect.
+        string oldPlan = prefix + Environment.NewLine + BuildEmitterEditDispatches(localBoundsOnly: true) +
+            Environment.NewLine + scenario;
+        try
+        {
+            CompileAndRun(oldPlan, "lighting-transport-local-bounds-mutation", TimeSpan.FromSeconds(90));
+        }
+        catch (InvalidOperationException exception) when (exception.Message.Contains(
+                   "Placed emitter: partial dispatch leaves stale radiance outside the edit square", StringComparison.Ordinal))
+        {
+            Console.WriteLine("Mutation independent-tier dirty bounds rejected: stale placed-emitter radiance.");
+            return 0;
+        }
+
+        throw new InvalidOperationException("Transport oracle accepted the independent-tier dirty bounds mutation.");
+    }
+
+    private static string BuildEmitterEditDispatches(bool localBoundsOnly = false)
+    {
+        var cascades = new List<CascadeLayout>();
+        CascadeLayoutBuilder.BuildCascadeLayouts(64, 64, 4096, cascades);
+        Span<ProbeRect> dispatchRects = stackalloc ProbeRect[cascades.Count];
+        var worldRect = new UnityEngine.Vector4(0, 0, 16, 16);
+        StaticLightingDirty.DirtyRegionGPU[] dirty = StaticLightingDirty.ConvertDirtyRegions(
+            new[] { new UnityEngine.RectInt(8, 8, 1, 1) }, worldRect, 64, 64);
+        StaticLightingDirty.FillProbeRects(cascades, dirty, worldRect, 64, 64, dispatchRects);
+        if (localBoundsOnly)
+        {
+            for (int index = 0; index < cascades.Count; index++)
+            {
+                CascadeLayout cascade = cascades[index];
+                dispatchRects[index] = CascadeProbeRects.ForCascade(
+                    30, 30, 38, 38, 64, 64, cascade, 6f + cascade.ProbeSpacing);
+            }
+        }
+        var rectangles = new List<string>();
+        foreach (ProbeRect rect in dispatchRects)
+        {
+            rectangles.Add($"{{{rect.X},{rect.Y},{rect.Width},{rect.Height}}}");
+        }
+
+        return "static const int4 EmitterEditDispatchRects[] = {" + string.Join(",", rectangles) + "};";
     }
 
     public static int CompileShaders(string repositoryRoot, string? validator)

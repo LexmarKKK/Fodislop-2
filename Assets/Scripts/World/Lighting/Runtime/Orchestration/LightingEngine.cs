@@ -112,8 +112,7 @@ namespace Kern.World.Lighting
             _initialized,
             QualityController.QualityMode,
             WorldRect,
-            CellSize,
-            MaximumIntervalSteps);
+            CellSize);
 
         private List<CascadeLayout> _cascades => _resources.Cascades;
         private int _fieldWidth => _resources.FieldWidth;
@@ -261,7 +260,7 @@ namespace Kern.World.Lighting
             }
 
             return _resources.TryApplyQualityTuning(
-                quality, QualityController.Settings, _dynamicLightManager.Count, out rejection);
+                quality, QualityController.Settings, out rejection);
         }
 
         public bool TrySetDynamicTransportMode(DynamicLightingTransportMode mode, out string rejection)
@@ -307,10 +306,8 @@ namespace Kern.World.Lighting
         public int CascadeCount => _cascades.Count;
 
         // One clipped DDA path crosses at most every row and column once.
-        public int MaximumIntervalSteps => _fieldWidth + _fieldHeight + 1;
-
         public void CollectCascadeCosts(List<CascadeCostSample> destination) =>
-            Diagnostics.CollectCascadeCosts(destination, DiagnosticsContext);
+            Diagnostics.CollectCascadeCosts(destination);
 
         public LightingInvalidationJournal Journal => _journal;
 

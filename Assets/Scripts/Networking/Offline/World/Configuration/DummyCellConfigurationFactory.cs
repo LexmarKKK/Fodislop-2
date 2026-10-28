@@ -39,14 +39,19 @@ internal static class DummyCellConfigurationFactory
             var type = (CellType)i;
             BlockDefinition def = BlockRegistry.Get(type);
 
-            CellConfigProperties props = CellConfigProperties.None;
+            CellConfigFlags flags = CellConfigFlags.None;
             if (def.IsPassable)
             {
-                props |= CellConfigProperties.Passable;
+                flags |= CellConfigFlags.Passable;
+            }
+
+            if (def.Emission)
+            {
+                flags |= CellConfigFlags.Emission;
             }
 
             configs[i] = new CellConfigurationPacket(
-                Flags: props,
+                Flags: flags,
                 DrawLayer: (CellRenderLayer)def.DrawLayer,
                 Outline: (CellOutlineKind)def.Outline,
                 TextureAnchor: (CellTextureAnchorKind)def.TextureAnchor,
@@ -56,7 +61,6 @@ internal static class DummyCellConfigurationFactory
                 FrameAnimationSpeed: def.FrameAnimationSpeed,
                 DecalAtlas: (CellDecalAtlasKind)def.DecalAtlas,
                 ReliefGroup: def.ReliefGroup,
-                Emission: def.Emission,
                 MapColor: DummyMapColors.Get(i));
         }
 

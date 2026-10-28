@@ -237,8 +237,18 @@ public sealed class FmodAudioBackend
             : $"event:/{eventName}";
 
         long callStart = System.Diagnostics.Stopwatch.GetTimestamp();
-        FMOD.RESULT lookupResult = FMODUnity.RuntimeManager.StudioSystem.getEvent(
-            fmodPath, out FMOD.Studio.EventDescription description);
+        FMOD.Studio.EventDescription description;
+        FMOD.RESULT lookupResult;
+        if (_digSamplesRequested && _digEventDescription.isValid() &&
+            string.Equals(fmodPath, DigEventPath, StringComparison.OrdinalIgnoreCase))
+        {
+            description = _digEventDescription;
+            lookupResult = FMOD.RESULT.OK;
+        }
+        else
+        {
+            lookupResult = FMODUnity.RuntimeManager.StudioSystem.getEvent(fmodPath, out description);
+        }
         RecordSlowCall("getEvent", fmodPath, callStart);
         if (lookupResult != FMOD.RESULT.OK)
         {

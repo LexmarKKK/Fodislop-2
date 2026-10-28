@@ -8,7 +8,7 @@ namespace Kern.Tests;
 internal static class CellPacket
 {
     public static CellConfigurationPacket Create(
-        CellConfigProperties properties = CellConfigProperties.None,
+        CellConfigFlags properties = CellConfigFlags.None,
         CellAnimationType shaderAnimation = CellAnimationType.None,
         float frameAnimationSpeed = 0f,
         int mapColor = 0,
@@ -16,7 +16,7 @@ internal static class CellPacket
         CellOutlineKind outline = CellOutlineKind.Pliant) =>
         new(
             properties,
-            properties.HasFlag(CellConfigProperties.Passable)
+            properties.HasFlag(CellConfigFlags.Passable)
                 ? CellRenderLayer.Background
                 : CellRenderLayer.Foreground,
             outline,
@@ -27,6 +27,5 @@ internal static class CellPacket
             frameAnimationSpeed,
             CellDecalAtlasKind.None,
             reliefGroup,
-            false,
             mapColor);
 }

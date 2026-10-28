@@ -45,6 +45,23 @@ public sealed class MapPinchGestureTests
         Assert.That(gesture.IsPinching, Is.False);
     }
 
+    [Test]
+    public void Reset_DiscardsBothFingersBeforeTheNextGesture()
+    {
+        var gesture = new MapPinchGesture();
+        var image = new VisualElement();
+
+        Down(gesture, image, 1, new Vector2(100, 100));
+        Down(gesture, image, 2, new Vector2(200, 100));
+        Assert.That(gesture.IsPinching, Is.True);
+
+        gesture.Reset(image);
+
+        Assert.That(gesture.IsPinching, Is.False);
+        Assert.That(Down(gesture, image, 3, new Vector2(100, 100)), Is.False);
+        Assert.That(Down(gesture, image, 4, new Vector2(200, 100)), Is.True);
+    }
+
     private static bool Down(MapPinchGesture gesture, VisualElement image, int finger, Vector2 position, bool mouse = false)
     {
         using PointerDownEvent evt = PointerDownEvent.GetPooled(new FakePointer(finger, position, mouse));

@@ -347,8 +347,14 @@ namespace Kern.Networking.Processing
                 PacketTelemetry.RecordHandlerTime(packetType, handlerMilliseconds);
                 if (handlerMilliseconds >= SlowHandlerEventMilliseconds)
                 {
+                    string detail = packet switch
+                    {
+                        VFXPacket vfx => $" ({vfx.EffectType})",
+                        AudioPacket audio => $" ({audio.EffectType})",
+                        _ => string.Empty,
+                    };
                     Kern.Diagnostics.Frames.FrameEventLog.Record(
-                        $"пакет {packetType.Name} {handlerMilliseconds:F1} мс");
+                        $"пакет {packetType.Name}{detail} {handlerMilliseconds:F1} мс");
                 }
             }
         }

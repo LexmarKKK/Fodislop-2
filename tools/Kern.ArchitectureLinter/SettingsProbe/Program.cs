@@ -871,26 +871,6 @@ public static class Program
             }
         }
 
-        // Масштаб рендера обязан приводиться к обратной величине целого:
-        // при дробном апскейл до окна размазывает кадр, и никакое
-        // сглаживание при выборке этого уже не спасёт.
-        foreach (float authored in new[] { 0.5f, 0.65f, 0.8f, 0.9f, 1f, 0.33f, 0.7f })
-        {
-            _checks++;
-            float quantized = PixelGrid.QuantizeRenderScale(authored, 0.5f, 1f);
-            float divisor = 1f / quantized;
-            if (Math.Abs(divisor - MathF.Round(divisor)) > 0.0001f)
-            {
-                Failures.Add(
-                    $"масштаб рендера {authored:F2} приведён к {quantized:F4} — это не обратная величина целого");
-            }
-
-            if (quantized < 0.5f - 0.0001f || quantized > 1f + 0.0001f)
-            {
-                Failures.Add($"масштаб рендера {authored:F2} вышел за пределы — {quantized:F4}");
-            }
-        }
-
         // Высота буфера рендера — целая и положительная: на ней считается
         // шаг привязки, и ноль обрушил бы его в бесконечность.
         foreach (int screenHeight in screenHeights)

@@ -18,7 +18,6 @@ public sealed class LightingInvalidationSourceTests
     public void CompileProductionDecisionPath() => _production = Compile(injectCompositeFault: false);
 
     [TestCase("culled", 0, 0, 0)]
-    [TestCase("capacity", 0, 0, 0)]
     [TestCase("stable", 0, 0, 0)]
     [TestCase("move", 1, 1, 0)]
     [TestCase("enter", 1, 1, 0)]
@@ -34,6 +33,14 @@ public sealed class LightingInvalidationSourceTests
     {
         int[] result = Run(_production, scenario);
         Assert.That(result, Is.EqualTo(new[] { submissions, submissions, 0, changedInputs, clears, 1 }));
+    }
+
+    [Test]
+    public void VisibleLightsExceedingCapacityAreReported()
+    {
+        TargetInvocationException exception = Assert.Throws<TargetInvocationException>(() => Run(_production, "capacity"))!;
+        Assert.That(exception.InnerException, Is.TypeOf<InvalidOperationException>());
+        Assert.That(exception.InnerException!.Message, Does.Contain("visible sources cannot be silently discarded"));
     }
 
     [Test]

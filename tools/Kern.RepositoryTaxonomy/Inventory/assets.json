@@ -2557,7 +2557,7 @@
   {
     "old": "Assets/Textures/Cells/AliveViol.png",
     "path": "Assets/Textures/Cells/Biological/Violet/AliveViol.png",
-    "sha256": "49101f1184da1a31238d7d7d06e32c63ffadcd22ada02e8aee3d85d82c89749c",
+    "sha256": "810cd2a8e8c94fa62be456387f4e77c94638dafe8d4eff39601a86c7b2983c86",
     "meta_sha256": "55ecafd7f6dc4749daf2e5b19845716607e05115ef23af8e2ddf6c885af6ba2a",
     "guid": "03bc34c550534961bfea04ded5315f9a"
   },
@@ -2613,7 +2613,7 @@
   {
     "old": "Assets/Textures/Cells/AliveBlack.png",
     "path": "Assets/Textures/Cells/Biological/Black/AliveBlack.png",
-    "sha256": "c1dedf8f4adaa9f04c44d1acb652f66d43cec0984a6ef0f170996b660cc0ef5e",
+    "sha256": "acca0aea15e9bfbb791ecdd8ce6f741f31bbf639180f5f8c26e181ed49282c92",
     "meta_sha256": "685555ce81ff995b9feba6fc989b96ea8b283dda16e37c5b9b5662a07fad4007",
     "guid": "51e3646753564236b525500397d3f17a"
   },
@@ -2648,7 +2648,7 @@
   {
     "old": "Assets/Textures/Cells/GrayAcid.png",
     "path": "Assets/Textures/Cells/Liquids/Acid/Gray/GrayAcid.png",
-    "sha256": "8d696c5a6bf9318ececb105ca9bc32a308f86dd5b6ecc7c5a2f0c97e90a18df3",
+    "sha256": "4d9d52aac54e2a0ed248a605810d9678832ea6e93dc8d158e13f130cd6dda421",
     "meta_sha256": "31b1dcee3d7a3eb620cbbb8cbc63e740f159037df607bbb8cb347899184d7187",
     "guid": "ab99adab2eac4a898a42f0d729fe7f83"
   },
@@ -2739,7 +2739,7 @@
   {
     "old": "Assets/Textures/Cells/PassiveAcid.png",
     "path": "Assets/Textures/Cells/Liquids/Acid/Passive/PassiveAcid.png",
-    "sha256": "37b78b165c86486e969dca914cfcb76ae953f694a97bce958826f59254a54551",
+    "sha256": "38848c21c423e23b1fe21f3fee8c5b155ed022c2b53636b1e3c30590edf6e78c",
     "meta_sha256": "4191ed0b210f163c160fb1032510cce3960788eaff22fe334296c313c26d17e9",
     "guid": "cc663a54440c476eb12ef1acaff9617d"
   },
@@ -2816,7 +2816,7 @@
   {
     "old": "Assets/Textures/Cells/AliveBlue.png",
     "path": "Assets/Textures/Cells/Biological/Blue/AliveBlue.png",
-    "sha256": "8b78949ae65fba6ce2da267e6816a043c1ed4db7d1d31c278c92059f7c78770c",
+    "sha256": "c1457d3d40761212a4e786db32af5d56f776e4cfc6025d5c30761627b5685697",
     "meta_sha256": "a58a5937299049a7cd2783027468b916c60834ef3668e15dca2002ea05988c6e",
     "guid": "9270e50a32f049faa5f82c790afe462f"
   },
@@ -2837,7 +2837,7 @@
   {
     "old": "Assets/Textures/Cells/AliveRed.png",
     "path": "Assets/Textures/Cells/Biological/Red/AliveRed.png",
-    "sha256": "c88864d94cb2e514e5e147e258209c03fd9af0429cf37830f926477e3ce03729",
+    "sha256": "0ea05da5f9029b3df920d820ac59b6704d38572ef80f2db2c56d3dbf507971c6",
     "meta_sha256": "a045f1b57c152733f80f682caab99511dfccd048d7f04b6938138245e1005c8d",
     "guid": "623164a4c60a44af8e2b78b86da5ee2e"
   },
@@ -2928,7 +2928,7 @@
   {
     "old": "Assets/Textures/Cells/AliveWhite.png",
     "path": "Assets/Textures/Cells/Biological/White/AliveWhite.png",
-    "sha256": "936074b2569fbb77e553f341f0680fac72d8d9de0f520ec7b88fd75ef9905c97",
+    "sha256": "36b313be714365450f03e20249e4e9924f300b56cc9408be6fdd1fe798d89078",
     "meta_sha256": "fbcdf1ad0f66083b93074291c6eb00fb7f27b5f2cef30371e4057d6c21e51ab6",
     "guid": "72411e102b2d4d508f70fe06cb7803e7"
   },
@@ -2991,7 +2991,7 @@
   {
     "old": "Assets/Textures/Cells/PurpleAcid.png",
     "path": "Assets/Textures/Cells/Liquids/Acid/Purple/PurpleAcid.png",
-    "sha256": "dc713965817069fe8a7a76277b91b5b8dc32dbe54272a91d3985a0e5c9a2b7ce",
+    "sha256": "2d300ac6c664b131abe37c7421a1e6d5a526383f8ba38ab08a353711e4066bdd",
     "meta_sha256": "9bc6ba68c734223f870ffa3a382f93274804b751fa6e3dd33fb270b7c2061f0e",
     "guid": "20b9ec6f5b239495c8a44699b51b2f1e"
   },
@@ -3012,7 +3012,7 @@
   {
     "old": "Assets/Textures/Cells/AliveCyan.png",
     "path": "Assets/Textures/Cells/Biological/Cyan/AliveCyan.png",
-    "sha256": "20fc4b4ae66d5fd407b72e3b1a7da6d2a09df65a208f9b6e0583435ab315a8e3",
+    "sha256": "f1a3a35a25a4b483e7a93e9976c69185bc421ce42b3cc24e633276fa83fcc5d4",
     "meta_sha256": "07c6a5a9d857db4a88c5542bbe7afb48e7432cd0fd0ffbe179725bcc1b3b0be3",
     "guid": "7c83be787057449586a5fdc2f181fa6b"
   },

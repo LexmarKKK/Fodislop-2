@@ -12,11 +12,15 @@ namespace Kern.World
     internal sealed class WorldTextureAuxiliaryAssets : IDisposable
     {
         private readonly TerrainDecalAtlasLoader _decalLoader = new(
-            "terrain-decals.png",
+            TerrainDecalAssets.Ground,
             "load_terrain_decal_atlas");
         private readonly TerrainDecalAtlasLoader _decalRockLoader = new(
-            "terrain-decals-rock.png",
+            TerrainDecalAssets.Rock,
             "load_terrain_decal_rock_atlas");
+
+        private readonly TerrainDecalAtlasLoader _decalSandLoader = new(
+            TerrainDecalAssets.Sand,
+            "load_terrain_decal_sand_atlas");
 
         private Texture2D? _prismaticFlowMapTexture;
         private Texture2D? _flowMapTexture;
@@ -25,16 +29,18 @@ namespace Kern.World
         public Texture2D? FlowMapTexture => _flowMapTexture;
         public Texture2D? TerrainDecalAtlasTexture => _decalLoader.AtlasTexture;
         public Texture2D? TerrainDecalRockAtlasTexture => _decalRockLoader.AtlasTexture;
+        public Texture2D? TerrainDecalSandAtlasTexture => _decalSandLoader.AtlasTexture;
 
         public void Initialize(
             ITextureStorageService textureStorage,
             IAsyncOperationSupervisor operations,
-            Action<string, Texture2D> notifyTextureLoaded)
+            Action notifyTextureLoaded)
         {
             _prismaticFlowMapTexture = WorldTextureGenerator.CreatePrismaticFlowMap();
             RegenerateFlowMap();
             _decalLoader.StartLoad(textureStorage, operations, notifyTextureLoaded);
             _decalRockLoader.StartLoad(textureStorage, operations, notifyTextureLoaded);
+            _decalSandLoader.StartLoad(textureStorage, operations, notifyTextureLoaded);
         }
 
         public void RegenerateFlowMap()
@@ -53,6 +59,7 @@ namespace Kern.World
 
             _decalLoader.Dispose();
             _decalRockLoader.Dispose();
+            _decalSandLoader.Dispose();
         }
 
         private static void DestroyTexture(Texture2D? texture)

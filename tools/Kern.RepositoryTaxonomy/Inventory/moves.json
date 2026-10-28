@@ -369,7 +369,6 @@
   "Assets/Scripts/World/Lighting/Solvers/StaticLightingSolver.cs": "Assets/Scripts/World/Lighting/Solvers/Static/StaticLightingSolver.cs",
   "Assets/Scripts/World/Lighting/Solvers/DynamicLightBatch.cs": "Assets/Scripts/World/Lighting/Solvers/Dynamic/DynamicLightBatch.cs",
   "Assets/Scripts/World/Lighting/Solvers/DynamicLightingSolver.cs": "Assets/Scripts/World/Lighting/Solvers/Dynamic/DynamicLightingSolver.cs",
-  "Assets/Scripts/World/Lighting/Solvers/DynamicPolarWorkBudget.cs": "Assets/Scripts/World/Lighting/Solvers/Dynamic/DynamicPolarWorkBudget.cs",
   "Assets/Scripts/World/Lighting/Solvers/IndirectLightingSolver.cs": "Assets/Scripts/World/Lighting/Solvers/Indirect/IndirectLightingSolver.cs",
   "Assets/Scripts/Rendering/WorldRenderGridBinding.cs": "Assets/Scripts/Rendering/WorldGrid/Cameras/WorldRenderGridBinding.cs",
   "Assets/Scripts/Rendering/WorldRenderGridCamera.cs": "Assets/Scripts/Rendering/WorldGrid/Cameras/WorldRenderGridCamera.cs",

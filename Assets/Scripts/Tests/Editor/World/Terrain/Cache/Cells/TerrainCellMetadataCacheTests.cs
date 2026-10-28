@@ -100,6 +100,12 @@ public sealed class TerrainCellMetadataCacheTests
             remove { }
         }
 
+        public event Action? OnTerrainDecalAtlasLoaded
+        {
+            add { }
+            remove { }
+        }
+
         public int PendingCellTextureRequests => 0;
 
         public Texture2D? PrismaticFlowMapTexture => null;
@@ -108,6 +114,7 @@ public sealed class TerrainCellMetadataCacheTests
 
         public Texture2D? TerrainDecalAtlasTexture => null;
         public Texture2D? TerrainDecalRockAtlasTexture => null;
+        public Texture2D? TerrainDecalSandAtlasTexture => null;
 
         public void RequestTexture(CellType cellType)
         {
@@ -158,7 +165,7 @@ public sealed class TerrainCellMetadataCacheTests
 
         public CellConfigurationPacket GetCellConfig(CellType type) =>
             CellPacket.Create(
-                properties: CellConfigProperties.DropsShadow,
+                properties: CellConfigFlags.DropsShadow,
                 mapColor: unchecked((int)0xFF204060));
 
         public float GetMoveCooldown(CellType cellType) => 0f;

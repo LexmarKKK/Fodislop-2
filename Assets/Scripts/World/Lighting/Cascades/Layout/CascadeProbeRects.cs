@@ -1,20 +1,14 @@
 #nullable enable
 
+using System;
+using System.Collections.Generic;
+
 namespace Kern.World.Lighting;
 
-// Tight per-cascade probe rect for dependency-mask solves.
-//
-// A probe entry changes only if its transport inputs changed: geometry or
-// glow along its ray segment, or the far-field values it reads. The far
-// cascade solves its own rect from the same dirty bounds, so a near probe is
-// covered when every probe whose segment can touch the dirty bounds is
-// dispatched. Segment reach is bounded by the cascade interval length, hence
-// the rect is the dirty bounds expanded by interval + margin, mapped into
-// probe space. Far cascades have huge intervals, so they naturally fall back
-// to the full grid (which is also where the cost is lowest: coarse grids).
-//
-// Pure C# (no UnityEngine) so tools/Kern.LightingTests links this file directly
-// for the full-vs-partial golden test.
+// Local ray bounds are only one input to a cascade dispatch. Every near tier
+// also reads four far probes at its receiver position. FillCascadeChain carries
+// those dependencies from far to near before any tier is skipped or clipped.
+// The shader's changed-entry mask still avoids tracing unchanged ray paths.
 public readonly record struct ProbeRect(int X, int Y, int Width, int Height)
 {
     public bool IsEmpty => Width <= 0 || Height <= 0;
@@ -22,9 +16,67 @@ public readonly record struct ProbeRect(int X, int Y, int Width, int Height)
 
 public static class CascadeProbeRects
 {
-    // Fraction of the cascade grid above which the tight rect is not worth
-    // it: dispatch the full grid instead (same cost class, simpler).
-    public const float FullFallbackFraction = 0.5f;
+    public static void FillCascadeChain(
+        int fieldMinX,
+        int fieldMinY,
+        int fieldMaxXExclusive,
+        int fieldMaxYExclusive,
+        int fieldWidth,
+        int fieldHeight,
+        IReadOnlyList<CascadeLayout> cascades,
+        float materialMarginTexels,
+        Span<ProbeRect> rectangles)
+    {
+        if (rectangles.Length < cascades.Count)
+        {
+            throw new ArgumentException("Every cascade needs a dispatch rectangle.", nameof(rectangles));
+        }
+
+        for (int index = cascades.Count - 1; index >= 0; index--)
+        {
+            CascadeLayout cascade = cascades[index];
+            if (cascade.ProbeSpacing <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(cascades), "Probe spacing must be positive.");
+            }
+
+            ProbeRect rect = ForCascade(
+                fieldMinX, fieldMinY, fieldMaxXExclusive, fieldMaxYExclusive,
+                fieldWidth, fieldHeight, cascade, materialMarginTexels + cascade.ProbeSpacing);
+            if (index + 1 < cascades.Count && !rectangles[index + 1].IsEmpty)
+            {
+                CascadeLayout far = cascades[index + 1];
+                ProbeRect farRect = rectangles[index + 1];
+
+                // floor(origin / farSpacing - .5) and its +1 neighbour are
+                // sampled with clamping in SolveCascade. Include their entire
+                // receiver support, including the outer clamped probe rows.
+                int minX = farRect.X == 0 ? 0 : Clamp(
+                    (int)Math.Floor((farRect.X - 0.5) * far.ProbeSpacing / cascade.ProbeSpacing - 0.5),
+                    0, cascade.ProbeWidth);
+                int minY = farRect.Y == 0 ? 0 : Clamp(
+                    (int)Math.Floor((farRect.Y - 0.5) * far.ProbeSpacing / cascade.ProbeSpacing - 0.5),
+                    0, cascade.ProbeHeight);
+                int maxX = farRect.X + farRect.Width >= far.ProbeWidth ? cascade.ProbeWidth : Clamp(
+                    (int)Math.Ceiling((farRect.X + farRect.Width + 0.5) * far.ProbeSpacing / cascade.ProbeSpacing - 0.5),
+                    0, cascade.ProbeWidth);
+                int maxY = farRect.Y + farRect.Height >= far.ProbeHeight ? cascade.ProbeHeight : Clamp(
+                    (int)Math.Ceiling((farRect.Y + farRect.Height + 0.5) * far.ProbeSpacing / cascade.ProbeSpacing - 0.5),
+                    0, cascade.ProbeHeight);
+                if (!rect.IsEmpty)
+                {
+                    minX = Math.Min(minX, rect.X);
+                    minY = Math.Min(minY, rect.Y);
+                    maxX = Math.Max(maxX, rect.X + rect.Width);
+                    maxY = Math.Max(maxY, rect.Y + rect.Height);
+                }
+
+                rect = new ProbeRect(minX, minY, maxX - minX, maxY - minY);
+            }
+
+            rectangles[index] = rect;
+        }
+    }
 
     public static ProbeRect ForCascade(
         int fieldMinX,
@@ -59,13 +111,6 @@ public static class CascadeProbeRects
         if (probeMaxX <= probeMinX || probeMaxY <= probeMinY)
         {
             return new ProbeRect(0, 0, 0, 0);
-        }
-
-        long tightArea = (long)(probeMaxX - probeMinX) * (probeMaxY - probeMinY);
-        long gridArea = (long)cascade.ProbeWidth * cascade.ProbeHeight;
-        if (tightArea >= gridArea * FullFallbackFraction)
-        {
-            return Full(cascade);
         }
 
         return new ProbeRect(probeMinX, probeMinY, probeMaxX - probeMinX, probeMaxY - probeMinY);

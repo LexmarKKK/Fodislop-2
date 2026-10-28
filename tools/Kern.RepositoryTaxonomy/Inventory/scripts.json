@@ -2156,13 +2156,6 @@
     "assembly_before": "Kern.World"
   },
   {
-    "old": "Assets/Scripts/World/Lighting/Solvers/DynamicPolarWorkBudget.cs",
-    "path": "Assets/Scripts/World/Lighting/Solvers/Dynamic/DynamicPolarWorkBudget.cs",
-    "meta_sha256": "a8e00fe1264ffd81d82ec5386eb76996d84f6bf550850403974851a6c0f00a94",
-    "guid": "9fe799242ed04e92aeb27edcb1c41f2e",
-    "assembly_before": "Kern.World"
-  },
-  {
     "old": "Assets/Scripts/World/Lighting/Solvers/DynamicLightBatch.cs",
     "path": "Assets/Scripts/World/Lighting/Solvers/Dynamic/DynamicLightBatch.cs",
     "meta_sha256": "f8581b28db3f070587280c7158ba71d955bd127270a5a612f83907bf42a7c65d",

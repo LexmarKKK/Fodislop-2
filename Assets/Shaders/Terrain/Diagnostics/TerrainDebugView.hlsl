@@ -92,7 +92,7 @@ float3 KernTerrainDebugSurfaceColor(
     if (_TerrainDebugView == KERN_TERRAIN_DEBUG_PRISMATIC_TINT)
     {
         float3 tintDelta = cellSurfaceEffect == (int)KERN_TERRAIN_SURFACE_EFFECT_PRISMATIC
-            ? animatedColor - sourceAlbedo
+            ? animatedColor - decalColor
             : float3(0.0, 0.0, 0.0);
         return KernTerrainDebugEncodeSignedDelta(tintDelta, deltaContrast);
     }
@@ -107,7 +107,7 @@ float3 KernTerrainDebugSurfaceColor(
 
     if (_TerrainDebugView == KERN_TERRAIN_DEBUG_DECAL_CONTRIBUTION)
     {
-        return KernTerrainDebugEncodeSignedDelta(decalColor - animatedColor, deltaContrast);
+        return KernTerrainDebugEncodeSignedDelta(decalColor - sourceAlbedo, deltaContrast);
     }
 
     return float3(1.0, 0.0, 0.8);

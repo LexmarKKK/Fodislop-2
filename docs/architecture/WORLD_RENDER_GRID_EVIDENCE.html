@@ -395,9 +395,8 @@ sampling; emitter layers do not interpolate into each other.</p>
 <p>TL-STAGE / TL-REV: TraceDynamicPolar writes (angle, radius, emitter) and
 PolarOpticalDepth samples the same layer. Dispatch remains ceil(rayFan/64) × 9,
 and the existing trace/solve/compose order and exact-source/material invalidations
-are preserved. Stable cached lights retain their tiles. MaximumDynamicPolarRayWorkUnits
-is now authored in VisualTuning; it controls the existing angular allocation,
-while ray distance is always complete.</p>
+are preserved. Stable cached lights retain their tiles. Angular quality comes
+directly from DynamicPolarDirectionCount, while ray distance is always complete.</p>
 <p>TL-PERF: scratch storage is 16 × (rayFan+2) × rayLength × 9 bytes. At the
 tested 4096×4096 field the actual scratch reached 73×3539×9 (about 35.5 MiB).
 Compared with the old truncated radius, the extra distance samples and DDA
@@ -630,8 +629,8 @@ GPU stress test после этого не запускались. Ни прич
 выходит до preflight. Изменение dimensions/format/capacity рассчитывает новую
 аллокацию; отказ происходит до уничтожения прежних ресурсов. Статическая и
 динамическая invalidation, каденс, world addressing, HDR units и packed encoders
-сохраняются. Maximum ray length вынесен в существующий DynamicPolarWorkBudget;
-он получает те же размеры, без изменения числа лучей. Terrain/Lighting API и
+сохраняются. Максимальная длина лучей вычисляется при подготовке размеров
+текстур; выбранное число направлений не уменьшается. Terrain/Lighting API и
 composition-root registrations не менялись.</p>
 <p>TL-VERIFY: <code>dotnet test tools/Kern.FrameHarness.Tests --no-restore</code>:
 184/184, включая 9 проверок памяти. Независимый byte oracle:

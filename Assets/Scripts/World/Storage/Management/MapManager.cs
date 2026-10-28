@@ -369,7 +369,7 @@ namespace Kern.World
 
                             if (config.Flags != 0)
                             {
-                                bool isPassable = ((CellConfigProperties)config.Flags).HasFlag(CellConfigProperties.Passable);
+                                bool isPassable = ((CellConfigFlags)config.Flags).HasFlag(CellConfigFlags.Passable);
                                 if (!isPassable)
                                 {
                                     Gizmos.color = new Color(1, 0, 0, 0.15f);

@@ -227,7 +227,7 @@ float TerrainDecalPlacement(uint rule, int worldX, int serverY)
         (((hash >> 10) & 1u) << KERN_TERRAIN_DECAL_MIRROR_SHIFT) +
         (((hash >> 12) & 3u) << KERN_TERRAIN_DECAL_OFFSET_X_SHIFT) +
         (((hash >> 14) & 3u) << KERN_TERRAIN_DECAL_OFFSET_Y_SHIFT);
-    return (float)((rule & KERN_TERRAIN_DECAL_RULE_ROCK) != 0u ? packed | KERN_TERRAIN_DECAL_ROCK_ATLAS : packed);
+    return (float)packed;
 }
 
 // Значение после записи в half вершины (TerrainVertex.H): мантисса
@@ -657,12 +657,14 @@ TerrainCellVertex LoadTerrainCellVertex(
     uint decalAtlas = TerrainTypeDecalAtlas(row);
     uint decalRule = decalAtlas == KERN_TERRAIN_DECAL_ATLAS_GROUND ? (uint)_TerrainGroundDecalRule
         : decalAtlas == KERN_TERRAIN_DECAL_ATLAS_ROCK ? (uint)_TerrainRockDecalRule
+        : decalAtlas == KERN_TERRAIN_DECAL_ATLAS_SAND ? (uint)_TerrainGroundDecalRule
         : 0u;
+    float decalPlacement = TerrainDecalPlacement(decalRule, gridX, serverY);
     v.lightContourDecal = float4(
-        0.0,
+        decalPlacement != 0.0 ? (float)decalAtlas : 0.0,
         (float)lightingFlags + TerrainTypeGlow(row) * KERN_TERRAIN_GLOW_FRACTION_SCALE,
         (float)contour,
-        TerrainDecalPlacement(decalRule, gridX, serverY));
+        decalPlacement);
 
     if (!foreground)
     {

@@ -77,52 +77,14 @@ public sealed class LightingQualityTuningTests
     }
 
     [Test]
-    public void MaximumAngularQualityIsAcceptedWhenFanCanBeReducedToFit()
-    {
-        var maximumQuality = new LightingQualityTuning(32, 32, 16, 64, 6f, 64, 4, 1024);
-        long required = DynamicPolarWorkBudget.EstimateWorstCaseRayWorkUnits(
-            lightWidth: 6144,
-            lightHeight: 4096,
-            maximumQuality,
-            maximumLightCount: 4);
-
-        Assert.That(required, Is.GreaterThan(LightingConfigHolder.MaximumDynamicPolarRayWorkUnits));
-        Assert.DoesNotThrow(() =>
-            DynamicPolarWorkBudget.ValidateWorstCaseQuality(6144, 4096, maximumQuality, 4));
-    }
-
-    [Test]
-    public void DynamicPolarWorkBudgetReducesFanWidthInsteadOfExceedingFrameLimit()
+    public void MaximumRequestedQualityIsPreservedExactly()
     {
         LightingQualityTuning original = LightingQualityTuningController.Current;
         try
         {
-            LightingQualityTuningController.Apply(new LightingQualityTuning(
-                original.FieldPixelsPerCell,
-                original.LightPixelsPerCell,
-                original.CascadeProbePixelsPerCell,
-                original.MaximumStaticCascadeDirections,
-                original.DynamicNearCells,
-                original.DynamicAngularSampleCount,
-                4,
-                1024));
-
-            const int lightCount = 64;
-            int rayLength = SystemInfo.maxTextureSize;
-            var fans = new int[lightCount];
-            var needsTrace = new bool[lightCount];
-            var sizes = new Vector2Int[lightCount];
-            Array.Fill(fans, 1024);
-            Array.Fill(needsTrace, true);
-            Array.Fill(sizes, new Vector2Int(1, rayLength));
-
-            int widest = DynamicPolarWorkBudget.AllocateRayFans(
-                lightCount, fans, needsTrace, sizes, out int longest);
-            long actualWork = (long)widest * LightingComputeBinder.DynamicEmitterPointCount * rayLength * lightCount;
-
-            Assert.That(widest, Is.LessThan(1024));
-            Assert.That(longest, Is.EqualTo(rayLength));
-            Assert.That(actualWork, Is.LessThanOrEqualTo(LightingConfigHolder.MaximumDynamicPolarRayWorkUnits));
+            var requested = new LightingQualityTuning(32, 32, 16, 64, 6f, 64, 4, 1024);
+            LightingQualityTuningController.Apply(requested);
+            Assert.That(LightingQualityTuningController.Current, Is.EqualTo(requested));
             Assert.That(LightingQualityTuningController.DynamicPolarDirectionCount, Is.EqualTo(1024));
         }
         finally
@@ -132,12 +94,33 @@ public sealed class LightingQualityTuningTests
     }
 
     [Test]
-    public void DynamicSdfBuildBudgetAcceptsPracticalMapAndRejectsOversizedMap()
+    public void VisibleLightsBeyondConfiguredCapacityAreRejectedInsteadOfDiscarded()
     {
-        Assert.DoesNotThrow(() => LightingResourceManager.ValidateDynamicDistanceFieldRequest(1024, 1024));
-        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
-            LightingResourceManager.ValidateDynamicDistanceFieldRequest(2048, 1024))!;
-        Assert.That(exception.Message, Does.Contain("JFA distance-field build"));
+        var lights = new DynamicLightManager();
+        lights.EnsureCapacity(1);
+        lights.SetDynamicLight(1, new Vector2(4f, 4f), Color.white, 1f);
+        lights.SetDynamicLight(2, new Vector2(5f, 4f), Color.white, 1f);
+
+        Assert.Throws<InvalidOperationException>(() => lights.UploadDynamicLights(
+            null!, null, new Vector4(0f, 0f, 16f, 16f), 1f, out _));
+    }
+
+    [TestCase(1024, 1024)]
+    [TestCase(2048, 1024)]
+    [TestCase(8192, 8192)]
+    public void DynamicSdfRequestDoesNotRejectPositiveDimensionsByEstimatedWork(int width, int height)
+    {
+        Assert.DoesNotThrow(() => LightingResourceManager.ValidateDynamicDistanceFieldRequest(width, height));
+    }
+
+    [TestCase(0, 1024)]
+    [TestCase(1024, 0)]
+    [TestCase(-1, 1024)]
+    [TestCase(1024, -1)]
+    public void DynamicSdfRequestRejectsEmptyDimensions(int width, int height)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            LightingResourceManager.ValidateDynamicDistanceFieldRequest(width, height));
     }
 
     private static LightingQualityTuning CreateTuning(

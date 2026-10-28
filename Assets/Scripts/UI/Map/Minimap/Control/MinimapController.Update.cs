@@ -26,7 +26,7 @@ internal sealed class MinimapRefreshLoop
         MinimapRefreshPolicy refreshPolicy,
         MapCellSampler cellSampler,
         Action reinitializeWorldState,
-        Action<int, int, bool> refreshTexture,
+        Func<int, int, bool, bool> refreshTexture,
         Action<bool> setVisible)
     {
         bool hadUI = ui?.IsCreated == true;
@@ -53,7 +53,7 @@ internal sealed class MinimapRefreshLoop
             bool hasServerPosition = player is { HasServerPosition: true };
             int centerX = hasServerPosition ? player!.Position.x : worldWidth / 2;
             int centerY = hasServerPosition ? player!.Position.y : worldHeight / 2;
-            refreshTexture(centerX, centerY, hasServerPosition);
+            lastRefreshHadLoadedCells = refreshTexture(centerX, centerY, hasServerPosition);
             refreshPolicy.RecordRefresh(Time.time, mapStorage.Revision, lastRefreshHadLoadedCells);
             invalidation.Clear();
         }
@@ -70,7 +70,7 @@ internal sealed class MinimapRefreshLoop
             bool minimapVisible = !mapModeState.IsOpen;
             if (minimapVisible)
             {
-                refreshTexture(player.Position.x, player.Position.y, true);
+                lastRefreshHadLoadedCells = refreshTexture(player.Position.x, player.Position.y, true);
             }
 
             refreshPolicy.RecordInitialRefresh(
@@ -87,8 +87,12 @@ internal sealed class MinimapRefreshLoop
             !mapModeState.IsOpen,
             true))
         {
-            cellSampler.Invalidate();
-            refreshTexture(player.Position.x, player.Position.y, true);
+            if (refreshPolicy.HasStorageRevisionChanged(currentRevision))
+            {
+                cellSampler.Invalidate();
+            }
+
+            lastRefreshHadLoadedCells = refreshTexture(player.Position.x, player.Position.y, true);
             refreshPolicy.RecordRefresh(Time.time, currentRevision, lastRefreshHadLoadedCells);
         }
         else if (refreshPolicy.ShouldRefreshOnChunkLoad(
@@ -97,7 +101,7 @@ internal sealed class MinimapRefreshLoop
             !mapModeState.IsOpen,
             true))
         {
-            refreshTexture(player.Position.x, player.Position.y, true);
+            lastRefreshHadLoadedCells = refreshTexture(player.Position.x, player.Position.y, true);
             refreshPolicy.RecordChunkLoadRefresh(Time.time, currentRevision, lastRefreshHadLoadedCells);
         }
     }

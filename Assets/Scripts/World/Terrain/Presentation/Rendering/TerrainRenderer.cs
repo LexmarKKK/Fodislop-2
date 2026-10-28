@@ -149,6 +149,7 @@ namespace Kern.World.Terrain
                 WorldChanges.HandleCellChanged,
                 WorldChanges.HandleRegionChanged,
                 OnTextureLoaded,
+                WorldChanges.HandleDecalAtlasLoaded,
                 OnWorldDataLoaded,
                 WorldChanges.HandleChunkLoaded);
             _subscriptions.Bind(_storage, _textureService, _mapManager);

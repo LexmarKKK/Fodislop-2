@@ -92,7 +92,7 @@ CellType.Road, CellType.Gate, CellType.BuildingDoor
         {
             bool p = PlayerMovementValidator.IsPassable(
                 types[random.Next(types.Length)],
-                CellPacket.Create(properties: CellConfigProperties.Passable));
+                CellPacket.Create(properties: CellConfigFlags.Passable));
             Assert.IsTrue(p, $"i={i}");
         }
     }

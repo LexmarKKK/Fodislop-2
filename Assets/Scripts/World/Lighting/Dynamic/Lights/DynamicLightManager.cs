@@ -134,12 +134,6 @@ public sealed class DynamicLightManager
         foreach (KeyValuePair<int, DynamicLightSource> pair in _externalLights)
         {
             DynamicLightSource source = pair.Value;
-            if (dynamicLightCount >= maximumLightCount)
-            {
-                _lastDroppedDynamicLightIds.Add(pair.Key);
-                continue;
-            }
-
             if (source.Intensity <= 0f)
             {
                 _lastDroppedDynamicLightIds.Add(pair.Key);
@@ -150,6 +144,13 @@ public sealed class DynamicLightManager
             {
                 _lastDroppedDynamicLightIds.Add(pair.Key);
                 continue;
+            }
+
+            if (dynamicLightCount >= maximumLightCount)
+            {
+                throw new InvalidOperationException(
+                    $"Visible dynamic lights exceed the configured capacity of {maximumLightCount}. " +
+                    "Increase LightingMaximumLightCount; visible sources cannot be silently discarded.");
             }
 
             DynamicLightGPUData dynamicLight = new(

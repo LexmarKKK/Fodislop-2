@@ -96,22 +96,18 @@ namespace Kern.UI.Map
             _playerTracker.OnPlayerRelocated += pos =>
             {
                 BindPathWalker(_localPlayer.Current as IClickPathWalker);
-                _followPlayer = true;
-                _viewCenterX = pos.x;
-                _viewCenterY = pos.y;
-                ClampViewCenter();
-                _renderRequested = true;
+                if (_followPlayer)
+                {
+                    _viewCenterX = pos.x;
+                    _viewCenterY = pos.y;
+                    ClampViewCenter();
+                    _renderRequested = true;
+                }
             };
             _playerTracker.OnBlinkFlipped += UpdatePlayerMarker;
 
             TryInitialize();
             _manager.OnWorldInitialized += OnWorldReady;
-            _manager.OnWorldDataLoaded += OnWorldReady;
-
-            if (IsWorldReady())
-            {
-                OnWorldReady();
-            }
         }
 
         private bool IsWorldReady() =>
@@ -154,7 +150,7 @@ namespace Kern.UI.Map
                 return;
             }
 
-            _pointerBinder.Bind(OnMapPointerDown, OnMapPointerMove, OnMapPointerUp, OnMapClick);
+            _pointerBinder.Bind(OnMapPointerDown, OnMapPointerMove, OnMapPointerUp, OnMapPointerCancel, OnMapClick);
 
             BindPathWalker(_localPlayer.Current as IClickPathWalker);
 
@@ -271,7 +267,7 @@ namespace Kern.UI.Map
         private void OnMapClick(ClickEvent evt)
         {
             Image? image = _panel.Image;
-            if (_interaction.WasDragging || image == null)
+            if (evt.button != 0 || _interaction.WasDragging || image == null)
             {
                 return;
             }
@@ -309,6 +305,8 @@ namespace Kern.UI.Map
         private void OnMapPointerUp(PointerUpEvent evt) =>
             _inputDispatcher.HandlePointerUp(evt);
 
+        private void OnMapPointerCancel(PointerCancelEvent evt) => _inputDispatcher.Reset();
+
         private void ResetWorldViewState(IWorldDataStorage storage)
         {
             _bounds.Bind(_manager, _manager.WorldWidth, _manager.WorldHeight);
@@ -344,7 +342,7 @@ namespace Kern.UI.Map
                 _documentRoot.UnregisterCallback<AttachToPanelEvent>(OnDocumentAttached);
             }
 
-            _pointerBinder?.Dispose(OnMapPointerDown, OnMapPointerMove, OnMapPointerUp, OnMapClick);
+            _pointerBinder?.Dispose();
 
             UnbindPathWalker();
             _pathOverlay.Dispose();
@@ -354,7 +352,6 @@ namespace Kern.UI.Map
             _viewportRenderer.Dispose();
 
             _manager.OnWorldInitialized -= OnWorldReady;
-            _manager.OnWorldDataLoaded -= OnWorldReady;
 
             _playerTracker?.Dispose();
 
@@ -487,6 +484,7 @@ namespace Kern.UI.Map
 
         public void Hide()
         {
+            _inputDispatcher.Reset();
             _panel.HidePlayerMarker();
             _panel.Hide();
             enabled = false;
@@ -546,14 +544,6 @@ namespace Kern.UI.Map
             if (requiresMip && !_mipSource.IsReady && !_mipSource.Failed)
             {
                 _mipSource.Begin();
-            }
-
-            // A mip upload rewrites every level of the overview texture. Let
-            // the bounded chunk queue drain first, then upload the final state
-            // once instead of re-uploading the full pyramid on every batch.
-            if (requiresMip && _mipSource.IsReady && _mipSource.HasPendingChunks)
-            {
-                return;
             }
 
             UpdateMipStatus(requiresMip);

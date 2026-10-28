@@ -76,8 +76,11 @@ internal sealed class WorldMapLayerBinding : IDisposable
         return true;
     }
 
-    public void BindMipScan(int worldWidth, int worldHeight, Color32[] cellColorTable) =>
+    public void BindMipScan(int worldWidth, int worldHeight, Color32[] cellColorTable)
+    {
         _mipSource.Bind(_subscribedCellLayer, _chunkSize, worldWidth, worldHeight, cellColorTable);
+        _mipSource.Begin();
+    }
 
     public void RebindCellEvents()
     {

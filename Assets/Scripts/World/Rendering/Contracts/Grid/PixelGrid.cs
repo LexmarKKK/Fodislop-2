@@ -6,34 +6,6 @@ namespace Kern.World;
 
 public static class PixelGrid
 {
-    public static float QuantizeRenderScale(float desiredScale, float minimumScale, float maximumScale)
-    {
-        if (desiredScale <= 0f)
-        {
-            return maximumScale;
-        }
-
-        float best = maximumScale;
-        float bestDistance = float.MaxValue;
-        for (int divisor = 1; divisor <= 8; divisor++)
-        {
-            float candidate = 1f / divisor;
-            if (candidate < minimumScale || candidate > maximumScale)
-            {
-                continue;
-            }
-
-            float distance = Mathf.Abs(candidate - desiredScale);
-            if (distance < bestDistance)
-            {
-                bestDistance = distance;
-                best = candidate;
-            }
-        }
-
-        return best;
-    }
-
     public static int RenderHeight(int screenHeight, float renderScale)
     {
         if (screenHeight <= 0 || renderScale <= 0f)

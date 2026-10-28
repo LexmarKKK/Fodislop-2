@@ -54,6 +54,9 @@ internal sealed class TerrainVolumeMesh : IDisposable
     private readonly List<int> _indices = new();
     private int _width;
     private int _height;
+    private int _boundsWidth;
+    private int _boundsHeight;
+    private float _cellSize;
     private ulong _version;
     private int _indexCount;
     private Mesh? _mesh;
@@ -65,9 +68,34 @@ internal sealed class TerrainVolumeMesh : IDisposable
     public void EnsureSize(int width, int height, float cellSize, int boundsWidth, int boundsHeight,
         TerrainVolumeTopology topology)
     {
-        if (_mesh != null && _width == width && _height == height &&
+        bool sameLayout = _width == width && _height == height &&
+            _boundsWidth == boundsWidth && _boundsHeight == boundsHeight && _cellSize == cellSize;
+        if (_mesh != null && sameLayout &&
             _version == topology.Version)
         {
+            return;
+        }
+        // Faces and indices are identical when the presentation dimensions and
+        // number of wall quads are unchanged. Update only wall vertices; the
+        // ground and foreground buffers remain intact.
+        if (_mesh != null && sameLayout &&
+            WallQuadCount == topology.Edges.Count)
+        {
+            _vertices.Clear();
+            foreach (TerrainVolumeEdge edge in topology.Edges)
+            {
+                for (int corner = 0; corner < 4; corner++)
+                {
+                    _vertices.Add(new TerrainVolumeVertex(edge.X, edge.Y, 3, corner, edge.Start, edge.End));
+                }
+            }
+            if (_vertices.Count > 0)
+            {
+                _mesh.SetVertexBufferData(_vertices, 0, width * height * 4, _vertices.Count, 0,
+                    MeshUpdateFlags.DontRecalculateBounds);
+            }
+            _version = topology.Version;
+            FrameEventLog.Record($"меш объёма: обновлены {_vertices.Count} вершин стенок");
             return;
         }
         _vertices.Clear();
@@ -123,6 +151,9 @@ internal sealed class TerrainVolumeMesh : IDisposable
         SetDraw(2, foregroundStart, _indices.Count - foregroundStart, bounds);
         _width = width;
         _height = height;
+        _boundsWidth = boundsWidth;
+        _boundsHeight = boundsHeight;
+        _cellSize = cellSize;
         _version = topology.Version;
         _indexCount = _indices.Count;
         FrameEventLog.Record($"меш объёма: {_vertices.Count} вершин, {WallQuadCount} боковых граней, " +
@@ -168,5 +199,8 @@ internal sealed class TerrainVolumeMesh : IDisposable
         _version = 0;
         _width = 0;
         _height = 0;
+        _boundsWidth = 0;
+        _boundsHeight = 0;
+        _cellSize = 0f;
     }
 }

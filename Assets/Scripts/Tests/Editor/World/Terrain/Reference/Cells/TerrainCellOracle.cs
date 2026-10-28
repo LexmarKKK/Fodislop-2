@@ -217,9 +217,11 @@ internal sealed class TerrainCellOracle
             (type.AtlasWH & 0xFFFu) / size, ((type.AtlasWH >> 12) & 0xFFFu) / size);
         float frameHeight = rect.w > 0f ? rect.w / tile : 1f;
         uint decal = (look >> 17) & 3u;
-        uint decalRule = decal == 1 ? _groundDecalRule
+        uint decalRule = decal == 1 || decal == 3 ? _groundDecalRule
             : decal == 2 ? _rockDecalRule
             : 0u;
+
+        float expectedDecal = Decal(decalRule, gridX, serverY);
 
         bool anchored = foreground && fgAnchored;
         if (!foreground)
@@ -266,10 +268,10 @@ internal sealed class TerrainCellOracle
             Assert.That(Mathf.HalfToFloat(v.UV5z), Is.EqualTo(cornersY[corner]), $"{at}: угол y");
             Assert.That(v.UV5w, Is.EqualTo(TerrainVertex.H(0f)), $"{at}: резерв");
 
-            AssertFloat(v.UV6.x, 0f, $"{at}: свободно");
+            AssertFloat(v.UV6.x, expectedDecal != 0f ? decal : 0f, $"{at}: атлас декали");
             AssertFloat(v.UV6.y, packedFlags, $"{at}: флаги света");
             AssertFloat(v.UV6.z, contour, $"{at}: контур");
-            AssertFloat(v.UV6.w, Decal(decalRule, gridX, serverY), $"{at}: декаль");
+            AssertFloat(v.UV6.w, expectedDecal, $"{at}: декаль");
         }
     }
 
@@ -430,7 +432,7 @@ internal sealed class TerrainCellOracle
             (((hash >> 10) & 1u) << 6) +
             (((hash >> 12) & 3u) << 7) +
             (((hash >> 14) & 3u) << 9);
-        return (rule & 0x8000u) != 0 ? packed | 4096u : packed;
+        return packed;
     }
 
     private static void AssertFloat(float actual, float expected, string what) =>

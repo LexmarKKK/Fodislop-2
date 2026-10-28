@@ -15,7 +15,7 @@
     "Unloaded": {
         "drawLayer": "Foreground",
         "outline": "Pliant",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -28,7 +28,7 @@
     "Pregener": {
         "drawLayer": "Foreground",
         "outline": "Pliant",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -41,7 +41,7 @@
     "BuildingRoad": {
         "drawLayer": "Background",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -54,7 +54,7 @@
     "Gate": {
         "drawLayer": "Background",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -67,7 +67,7 @@
     "VolcanoBackground": {
         "drawLayer": "Background",
         "outline": "Pliant",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -80,7 +80,7 @@
     "Empty": {
         "drawLayer": "Underlay",
         "outline": "Pliant",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "Ground",
@@ -93,7 +93,7 @@
     "BackgroundWithLightTraces": {
         "drawLayer": "Background",
         "outline": "Pliant",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -106,7 +106,7 @@
     "BackgroundWithHeavyTraces": {
         "drawLayer": "Background",
         "outline": "Pliant",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -119,7 +119,7 @@
     "Road": {
         "drawLayer": "Background",
         "outline": "Pliant",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -132,7 +132,7 @@
     "GoldenRoad": {
         "drawLayer": "Background",
         "outline": "Pliant",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -145,7 +145,7 @@
     "BuildingDoor": {
         "drawLayer": "Foreground",
         "outline": "Door",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -158,7 +158,7 @@
     "BuildingCorner": {
         "drawLayer": "Foreground",
         "outline": "Corner",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -171,7 +171,7 @@
     "PolymerRoad": {
         "drawLayer": "Background",
         "outline": "Pliant",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -184,7 +184,7 @@
     "BlackBoulder1": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -197,7 +197,7 @@
     "BlackBoulder2": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -210,7 +210,7 @@
     "BlackBoulder3": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -223,7 +223,7 @@
     "MetalBoulder1": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -236,7 +236,7 @@
     "MetalBoulder2": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -249,7 +249,7 @@
     "MetalBoulder3": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -262,7 +262,7 @@
     "QuadBlock": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -275,7 +275,7 @@
     "Support": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -288,7 +288,7 @@
     "AliveCyan": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -296,12 +296,12 @@
         "emission": true,
         "mapColor": "#65FFFF",
         "shaderAnimation": "None",
-        "frameAnimationSpeed": 6
+        "frameAnimationSpeed": 2.5
     },
     "AliveRed": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -309,12 +309,12 @@
         "emission": true,
         "mapColor": "#FF3333",
         "shaderAnimation": "None",
-        "frameAnimationSpeed": 6
+        "frameAnimationSpeed": 2.5
     },
     "AliveViol": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -322,12 +322,12 @@
         "emission": true,
         "mapColor": "#FF65FF",
         "shaderAnimation": "None",
-        "frameAnimationSpeed": 6
+        "frameAnimationSpeed": 2.5
     },
     "AliveBlack": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -335,12 +335,12 @@
         "emission": true,
         "mapColor": "#2265FF",
         "shaderAnimation": "None",
-        "frameAnimationSpeed": 6
+        "frameAnimationSpeed": 2.5
     },
     "AliveWhite": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -348,12 +348,12 @@
         "emission": true,
         "mapColor": "#EEFEFF",
         "shaderAnimation": "None",
-        "frameAnimationSpeed": 6
+        "frameAnimationSpeed": 2.5
     },
     "AliveRainbow": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -366,10 +366,10 @@
     "WhiteSand": {
         "drawLayer": "Foreground",
         "outline": "Round",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
-        "decalAtlas": "None",
+        "decalAtlas": "Sand",
         "reliefGroup": 1,
         "emission": false,
         "mapColor": "#CCCCCC",
@@ -379,10 +379,10 @@
     "DarkWhiteSand": {
         "drawLayer": "Foreground",
         "outline": "Round",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
-        "decalAtlas": "None",
+        "decalAtlas": "Sand",
         "reliefGroup": 1,
         "emission": false,
         "mapColor": "#DDDDDD",
@@ -392,10 +392,10 @@
     "RustySand": {
         "drawLayer": "Foreground",
         "outline": "Round",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
-        "decalAtlas": "None",
+        "decalAtlas": "Sand",
         "reliefGroup": 1,
         "emission": false,
         "mapColor": "#FFCCCC",
@@ -405,10 +405,10 @@
     "DarkRustySand": {
         "drawLayer": "Foreground",
         "outline": "Round",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
-        "decalAtlas": "None",
+        "decalAtlas": "Sand",
         "reliefGroup": 1,
         "emission": false,
         "mapColor": "#FFDDDD",
@@ -418,10 +418,10 @@
     "BlackSand": {
         "drawLayer": "Foreground",
         "outline": "Round",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
-        "decalAtlas": "None",
+        "decalAtlas": "Sand",
         "reliefGroup": 1,
         "emission": false,
         "mapColor": "#AAAAAA",
@@ -431,10 +431,10 @@
     "DarkBlackSand": {
         "drawLayer": "Foreground",
         "outline": "Round",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
-        "decalAtlas": "None",
+        "decalAtlas": "Sand",
         "reliefGroup": 1,
         "emission": false,
         "mapColor": "#BBBBBB",
@@ -443,8 +443,8 @@
     },
     "GrayAcid": {
         "drawLayer": "Foreground",
-        "outline": "Round",
-        "textureAnchor": "Cell",
+        "outline": "Rigid",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -452,12 +452,12 @@
         "emission": true,
         "mapColor": "#B89933",
         "shaderAnimation": "Blinking",
-        "frameAnimationSpeed": 0
+        "frameAnimationSpeed": 10
     },
     "PurpleAcid": {
         "drawLayer": "Foreground",
-        "outline": "Round",
-        "textureAnchor": "Cell",
+        "outline": "Rigid",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -465,11 +465,11 @@
         "emission": true,
         "mapColor": "#B888BB",
         "shaderAnimation": "Shimmer",
-        "frameAnimationSpeed": 0
+        "frameAnimationSpeed": 10
     },
     "Pearl": {
         "drawLayer": "Foreground",
-        "outline": "Wavy",
+        "outline": "Rigid",
         "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
@@ -478,15 +478,15 @@
         "emission": true,
         "mapColor": "#774444",
         "shaderAnimation": "None",
-        "frameAnimationSpeed": 6
+        "frameAnimationSpeed": 2
     },
     "DeepLazuriteSand": {
         "drawLayer": "Foreground",
         "outline": "Wavy",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
-        "decalAtlas": "None",
+        "decalAtlas": "Sand",
         "reliefGroup": 3,
         "emission": true,
         "mapColor": "#224499",
@@ -496,7 +496,7 @@
     "DeepMagmaBoulder": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -626,7 +626,7 @@
     "MilitaryBlockFrame": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -639,7 +639,7 @@
     "MilitaryBlock": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -652,7 +652,7 @@
     "MilitaryBlockSand": {
         "drawLayer": "Foreground",
         "outline": "Round",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -665,7 +665,7 @@
     "TeleportBlock": {
         "drawLayer": "Background",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -677,8 +677,8 @@
     },
     "PassiveAcid": {
         "drawLayer": "Foreground",
-        "outline": "Wavy",
-        "textureAnchor": "Cell",
+        "outline": "Rigid",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -691,7 +691,7 @@
     "SuperRainbow": {
         "drawLayer": "Foreground",
         "outline": "Pliant",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -704,7 +704,7 @@
     "Skull": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -717,7 +717,7 @@
     "Box": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -730,7 +730,7 @@
     "Lava": {
         "drawLayer": "Foreground",
         "outline": "Round",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Molten",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -743,7 +743,7 @@
     "Boulder1": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -756,7 +756,7 @@
     "Boulder2": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -769,7 +769,7 @@
     "Boulder3": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -781,7 +781,7 @@
     },
     "LivingActiveAcid": {
         "drawLayer": "Foreground",
-        "outline": "Wavy",
+        "outline": "Rigid",
         "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
@@ -794,7 +794,7 @@
     },
     "CorrosiveActiveAcid": {
         "drawLayer": "Foreground",
-        "outline": "Wavy",
+        "outline": "Rigid",
         "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
@@ -808,10 +808,10 @@
     "BlueSand": {
         "drawLayer": "Foreground",
         "outline": "Round",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
-        "decalAtlas": "None",
+        "decalAtlas": "Sand",
         "reliefGroup": 1,
         "emission": false,
         "mapColor": "#70A0B7",
@@ -821,10 +821,10 @@
     "DarkBlueSand": {
         "drawLayer": "Foreground",
         "outline": "Round",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
-        "decalAtlas": "None",
+        "decalAtlas": "Sand",
         "reliefGroup": 1,
         "emission": false,
         "mapColor": "#70BBCF",
@@ -834,10 +834,10 @@
     "YellowSand": {
         "drawLayer": "Foreground",
         "outline": "Round",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
-        "decalAtlas": "None",
+        "decalAtlas": "Sand",
         "reliefGroup": 1,
         "emission": false,
         "mapColor": "#DBD17D",
@@ -847,10 +847,10 @@
     "DarkYellowSand": {
         "drawLayer": "Foreground",
         "outline": "Round",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
-        "decalAtlas": "None",
+        "decalAtlas": "Sand",
         "reliefGroup": 1,
         "emission": false,
         "mapColor": "#B5A839",
@@ -860,7 +860,7 @@
     "GreenBlock": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -873,7 +873,7 @@
     "YellowBlock": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -899,7 +899,7 @@
     "FedBlock": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -912,7 +912,7 @@
     "RedBlock": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -925,7 +925,7 @@
     "BuildingWall": {
         "drawLayer": "Foreground",
         "outline": "Wall",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -1055,7 +1055,7 @@
     "AliveBlue": {
         "drawLayer": "Foreground",
         "outline": "Rigid",
-        "textureAnchor": "Cell",
+        "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,
         "decalAtlas": "None",
@@ -1063,7 +1063,7 @@
         "emission": true,
         "mapColor": "#1111FF",
         "shaderAnimation": "None",
-        "frameAnimationSpeed": 6
+        "frameAnimationSpeed": 2.5
     },
     "RedRock": {
         "drawLayer": "Foreground",
@@ -1080,7 +1080,7 @@
     },
     "AcidRock": {
         "drawLayer": "Foreground",
-        "outline": "Wavy",
+        "outline": "Rigid",
         "textureAnchor": "World",
         "surfaceEffect": "Plain",
         "surfaceEffectPalette": 0,

@@ -184,9 +184,7 @@ public static class TerrainCellData
             throw new ArgumentOutOfRangeException(nameof(rule));
         }
 
-        return rule.Percent |
-            (rule.Seed << TerrainCellFormat.DecalRuleSeedShift) |
-            (rule.RockAtlas ? TerrainCellFormat.DecalRuleRock : 0u);
+        return rule.Percent | (rule.Seed << TerrainCellFormat.DecalRuleSeedShift);
     }
 
     // Доля свечения — дробная часть флагов света: шейдер складывает её с
@@ -269,7 +267,7 @@ internal static class TerrainCellPacker
 }
 
 /// <summary>Где и с какой частотой ставится декаль; Percent == 0 — нигде.</summary>
-public readonly record struct TerrainDecalRule(uint Percent, uint Seed, bool RockAtlas);
+public readonly record struct TerrainDecalRule(uint Percent, uint Seed);
 
 public static class TerrainDecalCatalog
 {
@@ -280,19 +278,19 @@ public static class TerrainDecalCatalog
     // стоящие.
     private const uint RockPlacementPercent = 30;
 
-    // Декаль земли и камня одним правилом: процент, зерно хэша и атлас.
-    // Правило лежит в строке типа, и шейдер ставит декаль тем же хэшем, что
-    // и Place, — поэтому сама декаль в данных клетки не хранится.
+    // Семейство хранится в строке типа, а его правило передаётся глобально.
+    // Шейдер и Place используют одинаковый хэш мировых координат.
     public static readonly TerrainDecalRule GroundRule =
-        new(TerrainConfigHolder.GroundDecalPlacementPercent, Seed: 32u, RockAtlas: false);
+        new(TerrainConfigHolder.GroundDecalPlacementPercent, Seed: 32u);
 
     public static readonly TerrainDecalRule RockRule =
-        new(RockPlacementPercent, Seed: 7u, RockAtlas: true);
+        new(RockPlacementPercent, Seed: 7u);
 
     public static TerrainDecalRule RuleOf(CellDecalAtlas family) => family switch
     {
         CellDecalAtlas.Ground => GroundRule,
         CellDecalAtlas.Rock => RockRule,
+        CellDecalAtlas.Sand => GroundRule,
         _ => default,
     };
 
@@ -320,7 +318,7 @@ public static class TerrainDecalCatalog
             (mirror << TerrainCellFormat.DecalMirrorShift) +
             (offsetX << TerrainCellFormat.DecalOffsetXShift) +
             (offsetY << TerrainCellFormat.DecalOffsetYShift);
-        return rule.RockAtlas ? packed | (int)TerrainCellFormat.DecalRockAtlas : packed;
+        return packed;
     }
 
     private static uint Hash(int worldX, int serverY, uint seed)

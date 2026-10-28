@@ -3,6 +3,7 @@
 
 using System;
 using Kern.Rendering;
+using Kern.World.Lighting;
 using Kern.World.Lighting.Quality;
 using NUnit.Framework;
 
@@ -18,6 +19,25 @@ namespace Kern.Tests.World.Lighting;
 public sealed class LightingQualityWiringTests
 {
     private static readonly GraphicsQualityProfile s_profile = GraphicsQualityProfile.CreateDefault();
+
+    [TestCase(0.5f, 0, 1)]
+    [TestCase(0.65f, 2, 2)]
+    [TestCase(0.75f, 4, 4)]
+    [TestCase(0.9f, 8, 8)]
+    [TestCase(1f, 0, 1)]
+    public void RenderingPlanPreservesExplicitScaleAndAntialiasing(
+        float renderScale, int antiAliasing, int msaaSampleCount)
+    {
+        GraphicsQualitySettings settings = s_profile.Get(GraphicsPreset.Standard);
+        settings.RenderScale = renderScale;
+        settings.AntiAliasing = antiAliasing;
+
+        LightingUnityQuality.RenderingPlan plan = LightingUnityQuality.ResolveRenderingPlan(settings);
+
+        Assert.That(plan.RenderScale, Is.EqualTo(renderScale));
+        Assert.That(plan.AntiAliasing, Is.EqualTo(antiAliasing));
+        Assert.That(plan.MsaaSampleCount, Is.EqualTo(msaaSampleCount));
+    }
 
     [Test]
     public void ClassicPresetDisablesLighting()

@@ -190,14 +190,12 @@ TerrainTileUvResult ResolveTerrainTileUV(
     bool worldTextureAnchor = ((uint)packedColumn & KERN_TERRAIN_COLUMN_WORLD_TEXTURE_ANCHOR) != 0u;
     float tileGroupColumn = (float)((uint)packedColumn & KERN_TERRAIN_COLUMN_MASK);
 
-    // Кристаллы и камень адресуют лист по фактической позиции фрагмента в
-    // деформированной геометрии. Это сохраняет непрерывность текстуры через
-    // шов клеток и двигает рисунок вместе с дисторшном.
-    //
-    // Тайл на клетку этого не умеет. Его UV зажат в свою клетку, геометрия
-    // уезжает без него, и на каждой границе остаётся шов: массив читается
-    // кладкой из штампов, а не одним камнем.
-    if (worldTextureAnchor)
+    // Общая мировая картинка адресуется по позиции фрагмента. У тайлгруппы
+    // колонки листа — варианты по соседям, а не части общей картинки:
+    // колонка, отражения и поворот должны сохраняться при любой привязке.
+    // Контуры Wall/Corner/Door держат узлы сетки, поэтому их локальный UV
+    // остаётся на исходной сетке 32×32 без растяжения геометрией.
+    if (worldTextureAnchor && !isTiling)
     {
         float2 sheetPosition = float2(worldPos.x, -worldPos.y - 1.0) + geometryCellPosition;
         float2 sheetUV = frac(sheetPosition / tilesCount);
@@ -301,6 +299,27 @@ float2 TerrainPixelArtWidthTexels(
 {
     float cellsPerPixel = max(carrierPixelWidth.x, carrierPixelWidth.y);
     return cellsPerPixel * tileSize.xy * atlasTexelSize.zw;
+}
+
+half4 SampleTerrainSurfaceTexel(
+    int atlasSlot,
+    TerrainTileUvResult tile,
+    float4 atlasTexelSize,
+    float4 tileSize,
+    float2 carrierPixelWidth)
+{
+    float2 uv = PixelArtSampleUV(
+        tile.finalUV,
+        atlasTexelSize.zw,
+        TerrainPixelArtWidthTexels(carrierPixelWidth, tileSize, atlasTexelSize));
+    uv = ClampTerrainTileUV(uv, tile);
+    [branch]
+    if (_PixelArtFiltering < 0.5)
+    {
+        return TerrainSampleAtlas(atlasSlot, sampler_PointClamp, uv);
+    }
+
+    return TerrainSampleAtlas(atlasSlot, sampler_LinearClamp, uv);
 }
 
 #endif

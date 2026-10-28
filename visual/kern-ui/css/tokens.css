@@ -1,30 +1,39 @@
 /* Kern UI — токены. Все размеры заданы для эталонного кадра высотой 1080 px
    (Kern PanelSettings: 1920×1080, масштаб по высоте); стенд масштабирует кадр целиком.
 
+   Образ — Kern, «ядро»: шахта, за которую воюют кланы и работают роботы по коду. Интерфейс — приборная панель бюро
+   глубокого бурения: базальт, волосяные линии, засечки, индексы, один оранжевый сигнал бура.
+
    Три слоя:
    1. Палитра — каналы RGB (--rgb-*). Из них собираются и сплошные цвета, и прозрачные:
       rgb(var(--rgb-well) / .45). Сменить тон всей темы = сменить канал.
    2. Смысловые токены — ими пользуются компоненты (поверхность, текст, акцент, состояние, данные).
-   3. Шкалы — шаг, скругления, шрифт, размеры элементов, тени, слои, время.
+   3. Шкалы — шаг, скругления, шрифт, размеры элементов, тени, слои, время, микрографика.
    В файлах компонентов цветов-литералов нет; прозрачность, встречающаяся один раз, пишется
    через канал палитры прямо на месте. Исключение — цвета мира и сервера в разметке и JS. */
-@font-face { font-family: "Exo 2"; src: url("../fonts/Exo2.ttf"); font-weight: 100 900; }
+
+/* Шрифты — SIL Open Font License (лицензии рядом в fonts/). Коробка строки у всех трёх приведена к 1.2 em —
+   как у прежней гарнитуры: фиксированные высоты строк в раскладке рассчитаны на неё */
+@font-face { font-family: "Tektur"; ascent-override: 96%; descent-override: 24%; line-gap-override: 0%; src: url("../fonts/Tektur.ttf"); font-weight: 400 900; font-stretch: 75% 100%; }
+@font-face { font-family: "Onest"; ascent-override: 96%; descent-override: 24%; line-gap-override: 0%; src: url("../fonts/Onest.ttf"); font-weight: 100 900; }
+@font-face { font-family: "JetBrains Mono"; ascent-override: 96%; descent-override: 24%; line-gap-override: 0%; src: url("../fonts/JetBrainsMono.ttf"); font-weight: 100 800; }
 
 :root {
   /* ── 1. Палитра ─────────────────────────────────────────────── */
   --rgb-black: 0 0 0;
   --rgb-white: 255 255 255;
-  --rgb-void: 4 6 8;            /* глубже колодца: затемнение, космос меню */
-  --rgb-well: 11 15 18;         /* углубление */
-  --rgb-graphite: 18 23 27;     /* корпус */
-  --rgb-plate: 26 33 39;        /* поле, кнопка */
-  --rgb-seam: 44 53 61;         /* рамка */
-  --rgb-bone: 228 232 234;      /* основной текст */
-  --rgb-ash: 141 151 158;       /* вторичный текст */
-  --rgb-signal: 232 176 74;     /* янтарь Kern */
-  --rgb-ok: 121 217 138;
+  --rgb-void: 6 5 10;           /* глубже колодца: затемнение, фон экранов */
+  --rgb-well: 10 9 15;          /* углубление */
+  --rgb-graphite: 17 16 24;     /* базальт — корпус */
+  --rgb-plate: 26 24 37;        /* поле, кнопка */
+  --rgb-seam: 50 47 70;         /* волосяная линия */
+  --rgb-bone: 216 213 238;      /* лаванда-кость: основной текст и знаки */
+  --rgb-ash: 139 135 166;       /* вторичный текст */
+  --rgb-signal: 255 90 31;      /* оранжевый бура — единственный сигнал */
+  --rgb-cobalt: 98 112 255;     /* кобальт — штриховка, выбор второго уровня */
+  --rgb-ok: 126 224 160;
 
-  /* ── 2. Поверхности: цельный графит; HUD делает их полупрозрачными (hud.css, --hud-a) ── */
+  /* ── 2. Поверхности: цельный базальт; HUD делает их полупрозрачными (hud.css, --hud-a) ── */
   --black: rgb(var(--rgb-black));
   --white: rgb(var(--rgb-white));
   --void: rgb(var(--rgb-void));
@@ -34,58 +43,60 @@
   --well: var(--well-solid);          /* углубление: полосы, поле ввода, клетка */
   --graphite: var(--graphite-solid);  /* корпус панели */
   --plate: var(--plate-solid);        /* поле внутри панели, кнопка */
-  --plate-hover: #222b32;
-  --seam: rgb(var(--rgb-seam));       /* рамка */
-  --seam-strong: #3d4851;
+  --plate-hover: #242135;
+  --seam: rgb(var(--rgb-seam));       /* волосяная рамка */
+  --seam-strong: #4a4668;
   --seam-soft: rgb(var(--rgb-seam) / .6);   /* разделитель на фоне сцены */
 
   /* Подложки поверх мира и сцены */
   --float: rgb(var(--rgb-graphite) / .9);   /* плашка: подсказка, служебная строка */
-  --tag: rgb(var(--rgb-well) / .82);        /* ярлык на мире и карте */
-  --tag-soft: rgb(var(--rgb-well) / .58);   /* ярлык поверх миникарты */
-  --scrim: rgb(var(--rgb-void) / .55);      /* затемнение под окном */
-  --scrim-strong: rgb(var(--rgb-void) / .72);
-  --track: rgb(var(--rgb-ash) / .14);       /* пустая часть тонкой шкалы */
-  --track-strong: rgb(var(--rgb-ash) / .25);
-  --scroll-track: rgb(var(--rgb-white) / .04);
+  --tag: rgb(var(--rgb-well) / .84);        /* ярлык на мире и карте */
+  --tag-soft: rgb(var(--rgb-well) / .62);   /* ярлык поверх миникарты */
+  --scrim: rgb(var(--rgb-void) / .62);      /* затемнение под окном */
+  --scrim-strong: rgb(var(--rgb-void) / .78);
+  --track: rgb(var(--rgb-ash) / .16);       /* пустая часть тонкой шкалы */
+  --track-strong: rgb(var(--rgb-ash) / .28);
+  --scroll-track: rgb(var(--rgb-bone) / .05);
   --scroll-thumb: var(--dim);
   --scroll-thumb-hover: var(--ash);
 
-  /* Текст: четыре ступени яркости */
+  /* Текст: пять ступеней яркости */
   --bone: rgb(var(--rgb-bone));  /* основной */
-  --mist: #b3bdc4;               /* подпись под иконкой, пояснение */
+  --mist: #b4b0d2;               /* подпись под иконкой, пояснение */
   --ash: rgb(var(--rgb-ash));    /* вторичный */
-  --dim: #6b767e;                /* служебный */
-  --smoke: #5d676e;              /* третичный, неактивный */
+  --dim: #6c6889;                /* служебный: индексы, метки микрографики */
+  --smoke: #575372;              /* третичный, неактивный */
   --on-bright: var(--well-solid);/* текст на цветной плашке данных */
 
-  /* Единственный акцент интерфейса — янтарь Kern (активное, выбранное, основное действие) */
+  /* Сигнал — оранжевый бура (активное, выбранное, основное действие) */
   --signal: rgb(var(--rgb-signal));
-  --signal-hover: #f0bd5e;
+  --signal-hover: #ff7a45;
   --signal-soft: rgb(var(--rgb-signal) / .14);
-  --signal-wash: rgb(var(--rgb-signal) / .06);   /* фон выбранной вкладки */
-  --signal-line: rgb(var(--rgb-signal) / .45);   /* рамка выделенного */
-  --signal-pressed: #2a2414;                     /* нажатая тач-кнопка */
-  --on-signal: #1b1406;
+  --signal-wash: rgb(var(--rgb-signal) / .07);   /* фон выбранной вкладки */
+  --signal-line: rgb(var(--rgb-signal) / .5);    /* рамка выделенного */
+  --signal-pressed: #2b1209;                     /* нажатая тач-кнопка */
+  --on-signal: #160602;
+  --cobalt: rgb(var(--rgb-cobalt));
+  --cobalt-soft: rgb(var(--rgb-cobalt) / .16);
 
   /* Состояния */
-  --danger: #ff6b5e;
-  --danger-hover: #ff8a7f;
+  --danger: #ff3f6a;
+  --danger-hover: #ff6587;
   --on-danger: var(--white);
   --ok: rgb(var(--rgb-ok));
   --ok-soft: rgb(var(--rgb-ok) / .16);
-  --live: #6cc644;               /* в сети, свои, прибыль */
+  --live: #7bdc7e;               /* в сети, свои, прибыль */
 
-  /* Цвета данных — из Legacy GUIManager / SkillButton, приглушены до общей яркости */
+  /* Цвета данных — смысловые (кристаллы, деньги), подогнаны к яркости лаванды */
   --money: var(--ok);
-  --creds: #e4e36a;
-  --cry-g: #3ee86b; --cry-r: #ff7a74; --cry-b: #6f8cff; --cry-v: #f15fd6; --cry-w: #eef1f3; --cry-c: #39e8f0;
+  --creds: #e8e27a;
+  --cry-g: #4fe885; --cry-r: #ff6f86; --cry-b: #7a8cff; --cry-v: #ee6fe0; --cry-w: #eceaf8; --cry-c: #4fe6f0;
 
   /* Метки карты */
   --mark-clan: var(--live);
-  --mark-build: #5a9bff;
-  --mark-spawn: #e6ccff;
-  --mark-own: #45d3e6;
+  --mark-build: var(--cobalt);
+  --mark-spawn: #e2d4ff;
+  --mark-own: #4fe6f0;
 
   /* Кнопки геймпадов — цвета производителей */
   --pad-xbox-a: #6cc644; --pad-xbox-b: #ff5f5f; --pad-xbox-x: #5a9bff; --pad-xbox-y: #f2c037;
@@ -96,17 +107,23 @@
   --calib-hp: #a8e63c;
 
   /* Стенд — рамка вокруг кадра, в игру не входит */
-  --stand-bg: #07090b;
-  --stand-bar: #0c0f12;
-  --stand-line: #1e252b;
-  --stand-line-hover: #2e373e;
-  --stand-bezel: #15191d;
-  --stand-bezel-edge: #262d33;
+  --stand-bg: #050409;
+  --stand-bar: #0b0a11;
+  --stand-line: #1f1c2c;
+  --stand-line-hover: #34304a;
+  --stand-bezel: #131119;
+  --stand-bezel-edge: #27243a;
 
   /* ── 3. Шкалы ───────────────────────────────────────────────── */
-  /* Шрифт один — Exo 2 (Kern); цифры табличные */
-  --font: "Exo 2", system-ui, sans-serif;
+  /* Три гарнитуры: Tektur — заголовки и марка, Onest — текст, JetBrains Mono — числа и метки.
+     Китайский — системный запасной в конце каждого стека */
+  --cjk: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei";
+  --font-text: "Onest", var(--cjk), system-ui, sans-serif;
+  --font-display: "Tektur", "Onest", var(--cjk), system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", var(--cjk), ui-monospace, monospace;
+  --font: var(--font-text);
   /* Шкала кеглей — фиксированная; её не переопределяют */
+  --t-0: 8px;
   --t-1: 9px;  --t-2: 10px; --t-3: 11px; --t-4: 12px; --t-5: 13px; --t-6: 14px; --t-7: 15px;
   --t-8: 16px; --t-9: 17px; --t-10: 18px; --t-11: 19px; --t-12: 20px; --t-13: 22px;
   --t-14: 24px; --t-15: 28px; --t-16: 32px; --t-17: 34px; --t-18: 48px; --t-19: 60px;
@@ -116,11 +133,12 @@
   --t-strong: var(--t-9);   /* ник, заголовок окна */
   --t-title: var(--t-13);
   --fw-normal: 400;
-  --fw-semi: 600;
-  --fw-bold: 700;
-  --fw-heavy: 800;
-  --ls-caps: .06em;     /* разрядка заглавных */
-  --ls-caps-wide: .08em;
+  --fw-semi: 500;
+  --fw-bold: 600;
+  --fw-heavy: 700;
+  --ls-caps: .08em;     /* разрядка заглавных */
+  --ls-caps-wide: .14em;
+  --ls-mono: .02em;
 
   /* Шаг — 2 px; --sp-N = N шагов. Сетка 8 px = --sp-4 */
   --sp-1: 2px;  --sp-2: 4px;  --sp-3: 6px;  --sp-4: 8px;  --sp-5: 10px;
@@ -129,12 +147,12 @@
   --margin: var(--sp-12);  /* поле экрана */
   --col: 264px;            /* левая колонка — одна ширина для всех блоков */
 
-  /* Скругления */
-  --r-xs: 2px;
-  --r-s: 3px;
-  --radius: 4px;
-  --r-l: 6px;
-  --r-pill: 999px;   /* капсула: высота задаёт форму */
+  /* Скругления — форма прямая; круг остаётся только у круглых по смыслу (навык, стик) */
+  --r-xs: 0px;
+  --r-s: 1px;
+  --radius: 2px;
+  --r-l: 2px;
+  --r-pill: 2px;
   --r-round: 50%;
 
   /* Размеры элементов — фиксированная шкала */
@@ -147,12 +165,39 @@
   --ctl-xxl: 64px;
   --row: var(--ctl-m);   /* роль: строка-кнопка; на таче — --hit */
 
-  /* Тени */
-  --shadow-panel: 0 1px 0 rgb(var(--rgb-white) / .03) inset, 0 6px 18px rgb(var(--rgb-black) / .35);
-  --shadow-float: 0 2px 10px rgb(var(--rgb-black) / .45);   /* тач-кнопка над миром */
-  --shadow-pop: 0 8px 24px rgb(var(--rgb-black) / .45);     /* всплывающее окно */
-  --shadow-text: 1px 1px 0 rgb(var(--rgb-black) / .8);      /* текст над миром */
-  --shadow-drop: drop-shadow(0 1px 2px rgb(var(--rgb-black) / .7));
+  /* Тени — глубину дают линия и рельеф, а не размытая тень */
+  --shadow-panel: inset 0 1px 0 rgb(var(--rgb-bone) / .06);
+  --shadow-float: 0 0 0 1px rgb(var(--rgb-black) / .5);    /* тач-кнопка над миром */
+  --shadow-pop: 0 0 0 1px rgb(var(--rgb-black) / .6), 6px 6px 0 rgb(var(--rgb-black) / .35);  /* всплывающее окно: отбивка, а не размытие */
+  --shadow-text: 1px 1px 0 rgb(var(--rgb-black) / .85);     /* текст над миром */
+  --shadow-drop: drop-shadow(1px 1px 0 rgb(var(--rgb-black) / .75));
+
+  /* ── Микрографика ── */
+  --hair: 1px;                                   /* толщина любой линии */
+  --notch: 10px;                                 /* срез правого верхнего угла панели */
+  --tick: 6px;                                   /* засечка-уголок */
+  --tick-c: rgb(var(--rgb-bone) / .55);          /* цвет засечек */
+  /* Засечки по четырём углам — слоями фона, без псевдоэлементов */
+  --ticks:
+    linear-gradient(var(--tick-c), var(--tick-c)) left top / var(--tick) 1px no-repeat,
+    linear-gradient(var(--tick-c), var(--tick-c)) left top / 1px var(--tick) no-repeat,
+    linear-gradient(var(--tick-c), var(--tick-c)) left bottom / var(--tick) 1px no-repeat,
+    linear-gradient(var(--tick-c), var(--tick-c)) left bottom / 1px var(--tick) no-repeat,
+    linear-gradient(var(--tick-c), var(--tick-c)) right bottom / var(--tick) 1px no-repeat,
+    linear-gradient(var(--tick-c), var(--tick-c)) right bottom / 1px var(--tick) no-repeat;
+  /* Штрих-код — метка в нижнем правом углу крупных панелей */
+  --barcode: repeating-linear-gradient(90deg, var(--tick-c) 0 1px, transparent 1px 3px, var(--tick-c) 3px 5px, transparent 5px 6px, var(--tick-c) 6px 7px, transparent 7px 10px)
+    right 14px bottom 3px / 38px 3px no-repeat;
+  /* Диагональ среза — та же волосяная линия */
+  --notch-line: linear-gradient(225deg, transparent calc(var(--notch) * .7071 - 1px), var(--seam-strong) calc(var(--notch) * .7071 - 1px) calc(var(--notch) * .7071), transparent calc(var(--notch) * .7071));
+  --notch-clip: polygon(0 0, calc(100% - var(--notch)) 0, 100% var(--notch), 100% 100%, 0 100%);
+  /* Штриховка пустого: косые волосяные полосы через 4 px */
+  --hatch: repeating-linear-gradient(135deg, rgb(var(--rgb-bone) / .1) 0 1px, transparent 1px 4px);
+  --hatch-signal: repeating-linear-gradient(135deg, rgb(var(--rgb-signal) / .35) 0 1px, transparent 1px 4px);
+  /* Точечная сетка фона экранов и затемнения */
+  --dots: radial-gradient(rgb(var(--rgb-bone) / .09) 1px, transparent 1.2px) 0 0 / 16px 16px;
+  /* Зерно — статичный шум, как у выдавленного металла */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .85 0 0 0 0 .84 0 0 0 0 .93 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 
   /* Слои кадра */
   --z-pad: 4;        /* подсказки геймпада */

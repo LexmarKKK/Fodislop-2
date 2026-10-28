@@ -9,6 +9,9 @@ SAMPLER(sampler_TerrainDecalAtlas);
 TEXTURE2D(_TerrainDecalRockAtlas);
 SAMPLER(sampler_TerrainDecalRockAtlas);
 
+TEXTURE2D(_TerrainDecalSandAtlas);
+SAMPLER(sampler_TerrainDecalSandAtlas);
+
 float2 TerrainTransformDecalUV(float2 uv, uint rotation, bool mirror)
 {
     if (mirror)
@@ -36,32 +39,19 @@ float2 TerrainTransformDecalUV(float2 uv, uint rotation, bool mirror)
 
 // Код декали — DecalCode в TerrainCellFormat.hlsl.
 
-// Ground-декали — пыль по полу: только осветляют и лишь на треть. Силу
-// приносит свойство _GroundDecalStrength.
+// All atlases use hard light on linear surface color before illumination.
 
-// Rock-декали лежат на красноскале и черноскале — очень тёмной основе.
-// Там одно осветление на трети силы давало прибавку в пару единиц из 255:
-// трещину нельзя было нарисовать трещиной. Поэтому у камня hard light:
-// тёмный пиксель атласа затемняет (трещина), светлый осветляет (скол, блик
-// руды), серый 0.5 нейтрален — и сила своя, свойство _RockDecalStrength.
-
-float3 TerrainDecalHardLight(float3 baseColor, float3 decal)
-{
-    float3 darken = baseColor * (2.0 * decal);
-    float3 lighten = 1.0 - (1.0 - baseColor) * (2.0 - 2.0 * decal);
-    return lerp(darken, lighten, step(0.5, decal));
-}
-
-float3 ApplyTerrainDecal(float3 baseColor, float2 localUV, float packedPlacement)
+float3 ApplyTerrainDecal(float3 baseColor, float2 localUV, float packedFamily, float packedPlacement)
 {
     if (packedPlacement < 0.5)
     {
         return baseColor;
     }
 
-    uint rawCode   = (uint)round(packedPlacement);
-    bool useRock  = (rawCode & KERN_TERRAIN_DECAL_ROCK_ATLAS) != 0u;
-    uint code      = (rawCode & ~KERN_TERRAIN_DECAL_ROCK_ATLAS) - 1u;
+    uint family = (uint)round(packedFamily);
+    bool useSand = family == KERN_TERRAIN_DECAL_ATLAS_SAND;
+    bool useRock = family == KERN_TERRAIN_DECAL_ATLAS_ROCK;
+    uint code = (uint)round(packedPlacement) - 1u;
 
     uint variant   = code & KERN_TERRAIN_DECAL_VARIANT_MASK;
     uint rotation  = (code >> KERN_TERRAIN_DECAL_ROTATION_SHIFT) & 3u;
@@ -90,6 +80,14 @@ float3 ApplyTerrainDecal(float3 baseColor, float2 localUV, float packedPlacement
             atlasUV,
             0.0);
     }
+    else if (useSand)
+    {
+        decal = SAMPLE_TEXTURE2D_LOD(
+            _TerrainDecalSandAtlas,
+            sampler_TerrainDecalSandAtlas,
+            atlasUV,
+            0.0);
+    }
     else
     {
         decal = SAMPLE_TEXTURE2D_LOD(
@@ -99,14 +97,11 @@ float3 ApplyTerrainDecal(float3 baseColor, float2 localUV, float packedPlacement
             0.0);
     }
 
-    if (useRock)
-    {
-        float3 hardLight = TerrainDecalHardLight(baseColor, decal.rgb);
-        return lerp(baseColor, hardLight, decal.a * _RockDecalStrength);
-    }
-
-    float3 screen = 1.0 - (1.0 - baseColor) * (1.0 - decal.rgb);
-    return lerp(baseColor, screen, decal.a * _GroundDecalStrength);
+    float strength = (useRock || useSand) ? _RockDecalStrength : _GroundDecalStrength;
+    float3 darken = baseColor * (2.0 * decal.rgb);
+    float3 lighten = 1.0 - (1.0 - baseColor) * (2.0 - 2.0 * decal.rgb);
+    float3 hardLight = lerp(darken, lighten, step(0.5, decal.rgb));
+    return lerp(baseColor, hardLight, decal.a * strength);
 }
 
 #endif

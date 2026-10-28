@@ -23,14 +23,28 @@ Specializations are implemented as skills and auto-load based on task triggers. 
 
 Terrain and lighting changes MUST follow the review gates in
 [`TERRAIN_LIGHTING_STANDARD.md`](docs/architecture/TERRAIN_LIGHTING_STANDARD.md).
-Treat it as the normative target; attach its required evidence bundle and pass
-its merge gates. Do not extend its documented conformance debt or waive a failed
-invariant in a PR comment.
+Treat it as the normative target; record the required evidence within the
+documentation scope below and pass its merge gates. Do not extend its documented
+conformance debt or waive a failed invariant in a PR comment.
 The first Terrain-to-Lighting orchestration migration MUST follow gates A–D in
 that standard in order; do not replace the direct reference with a forwarding
 facade.
 
 Code is the source of truth if reference context is stale. Don't read everything — only what the task requires.
+
+## Documentation scope
+
+For ordinary fixes, summarize the cause, change, checks and any unverified results
+briefly in the final response or the requested PR description.
+Do not create standalone reports, evidence bundles, audits, checklists, dated
+documents or explanatory pages unless the user explicitly requests them.
+Update existing documentation only when the change affects its documented
+contract, architecture or usage; make the smallest relevant edit.
+
+This scope overrides requirements to create separate documentation artifacts in
+project guides and skills, including `TERRAIN_LIGHTING_STANDARD.md`. Put required
+evidence concisely in the response or PR; all applicable implementation and
+verification gates remain mandatory. A missing report file is not a failed gate.
 
 ## Repository taxonomy
 

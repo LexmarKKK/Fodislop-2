@@ -38,7 +38,6 @@ public sealed class LightingEngineEditor : UnityEditor.Editor
         EditorGUILayout.FloatField("_TransmittanceDebugDistanceCells", engine.TransmittanceDebugDistanceCells);
         EditorGUILayout.EnumPopup("_DebugView", engine.ActiveDebugView);
         EditorGUILayout.IntField("_MaterialYFlip", engine.MaterialYFlip);
-        EditorGUILayout.IntField("_MaximumIntervalSteps", engine.MaximumIntervalSteps);
         EditorGUILayout.IntField("Cascade count", engine.CascadeCount);
         foreach (string summary in engine.GetCascadeUniformSummaries())
         {

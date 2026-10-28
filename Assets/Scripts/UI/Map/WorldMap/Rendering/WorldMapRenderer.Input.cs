@@ -127,5 +127,11 @@ namespace Kern.UI.Map
             _pinch.Up(evt, _panel.Image);
             _interaction.HandlePointerUp(evt, _panel.Image);
         }
+
+        public void Reset()
+        {
+            _pinch.Reset(_panel.Image);
+            _interaction.Reset(_panel.Image);
+        }
     }
 }

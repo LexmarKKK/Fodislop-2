@@ -130,11 +130,11 @@ public sealed class TerrainTestWorld
 
         public CellConfigurationPacket GetCellConfig(CellType type)
         {
-            CellConfigProperties properties = type switch
+            CellConfigFlags properties = type switch
             {
-                CellType.Empty or CellType.Road => CellConfigProperties.Passable,
-                CellType.BuildingDoor => CellConfigProperties.Passable,
-                _ => CellConfigProperties.DropsShadow,
+                CellType.Empty or CellType.Road => CellConfigFlags.Passable,
+                CellType.BuildingDoor => CellConfigFlags.Passable,
+                _ => CellConfigFlags.DropsShadow,
             };
             CellOutlineKind outline = type switch
             {
@@ -195,6 +195,12 @@ public sealed class TerrainTestWorld
             remove { }
         }
 
+        public event Action? OnTerrainDecalAtlasLoaded
+        {
+            add { }
+            remove { }
+        }
+
         public int PendingCellTextureRequests => 0;
 
         public Texture2D? PrismaticFlowMapTexture => null;
@@ -203,6 +209,7 @@ public sealed class TerrainTestWorld
 
         public Texture2D? TerrainDecalAtlasTexture => null;
         public Texture2D? TerrainDecalRockAtlasTexture => null;
+        public Texture2D? TerrainDecalSandAtlasTexture => null;
 
         public void RequestTexture(CellType cellType)
         {

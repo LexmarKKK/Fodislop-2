@@ -19,6 +19,7 @@ internal static class Program
         "wall-variant-ignores-bottom",
         "node-edge-jitter-sign",
         "round-rim-follows-cell-sides",
+        "world-anchor-skips-autotiles",
     ];
 
     public static int Main()
@@ -54,6 +55,9 @@ internal static class Program
         string aoShim = Read(root, "tools/Kern.TerrainRasterTests/Native/AmbientOcclusion/ao-field.cpp");
         string ao = Read(root, "Assets/Shaders/Terrain/Occlusion/TerrainAmbientOcclusion.hlsl");
         string terrainSampling = Read(root, "Assets/Shaders/Terrain/Textures/TerrainSampling.hlsl");
+        string tileAddressing = Read(root, "Assets/Shaders/Terrain/Autotiling/TerrainTileAddressing.hlsl");
+        string tileUvResult = SliceBetween(terrainSampling, "struct TerrainTileUvResult", "float TerrainUvCross(");
+        string tileSampling = SliceBetween(terrainSampling, "void TerrainSetResolvedTileIdentity(", "// Ширина экранного пикселя");
         string lighting = Read(root, "Assets/Shaders/Terrain/Lighting/TerrainLightingData.hlsl");
         string terrainGeometryUv = SliceBetween(
                 terrainSampling,
@@ -87,7 +91,9 @@ internal static class Program
             return Fail("Expected exactly one surface parse in each terrain pass");
         }
 
-        if (Regex.Matches(terrainShader + Read(root, "Assets/Shaders/Terrain/Lighting/TerrainLightingFieldCommon.hlsl"), "PixelArtSampleUV\\(").Count != 2)
+        if (Regex.Matches(terrainSampling, "PixelArtSampleUV\\(").Count != 1 ||
+            !terrainShader.Contains("SampleTerrainSurfaceTexel(", StringComparison.Ordinal) ||
+            !Read(root, "Assets/Shaders/Terrain/Lighting/TerrainLightingFieldCommon.hlsl").Contains("SampleTerrainSurfaceTexel(", StringComparison.Ordinal))
         {
             return Fail("Visible and field albedo paths must share the pixel-grid UV correction");
         }
@@ -172,6 +178,8 @@ internal static class Program
             float sign(float value) { return (value > 0) - (value < 0); }
             using bool4 = int4;
             float4 frac(float4 a) { return {frac(a.x), frac(a.y), frac(a.z), frac(a.w)}; }
+            float2 clamp(float2 a, float lo, float hi) { return {std::clamp(a.x,lo,hi),std::clamp(a.y,lo,hi)}; }
+            float2 clamp(float2 a, float2 lo, float2 hi) { return {std::clamp(a.x,lo.x,hi.x),std::clamp(a.y,lo.y,hi.y)}; }
             using uint4 = unsigned __attribute__((ext_vector_type(4)));
             uint asuint(int value) { return (uint)value; }
             uint asuint(float value) { uint result; std::memcpy(&result, &value, 4); return result; }
@@ -228,6 +236,15 @@ internal static class Program
             {
                 string candidateLoader = loader;
                 string candidateDepth = terrainDepth;
+                string candidateTileSampling = tileSampling;
+                if (mutation == "world-anchor-skips-autotiles")
+                {
+                    candidateTileSampling = candidateTileSampling.Replace(
+                        "if (worldTextureAnchor && !isTiling)",
+                        "if (worldTextureAnchor)",
+                        StringComparison.Ordinal);
+                    if (candidateTileSampling == tileSampling) return Fail("world-anchor-skips-autotiles mutation is stale");
+                }
                 if (mutation == "depth-face-without-bounds")
                 {
                     candidateDepth = candidateDepth.Replace("surface.anchored = 1.0;", "surface.anchored = 0.0;", StringComparison.Ordinal);
@@ -315,7 +332,8 @@ internal static class Program
                     .Replace("SamplerState", "int", StringComparison.Ordinal);
                 string source = shim + extra + aoShim + terrainUniforms + Translate(
                     terrainGeometryContract + candidateGeometry + format + candidateLoader + lighting +
-                    contour + quantizeUv + roundCoverage + candidateRim + terrainGeometryUv + candidateAo + screenCoverage + candidateDepth) + depthScenario + scenario;
+                    contour + quantizeUv + roundCoverage + candidateRim + terrainGeometryUv +
+                    tileAddressing + tileUvResult + candidateTileSampling + candidateAo + screenCoverage + candidateDepth) + depthScenario + scenario;
                 File.WriteAllText(cppPath, source);
 
                 ProcessResult compile = Run("clang++", ["-std=c++20", "-O2", "-ffp-contract=off", cppPath, "-o", executablePath], temporaryDirectory);
@@ -361,6 +379,8 @@ internal static class Program
             .Replace("StructuredBuffer<", "ShimBuffer<", StringComparison.Ordinal)
             .Replace("(TerrainCellVertex)0", "TerrainCellVertex{}", StringComparison.Ordinal);
         source = Regex.Replace(source, @"\(int2\)round\(([^)]+)\)", "make_int2(round($1))", RegexOptions.CultureInvariant);
+        // HLSL vector casts convert components; a C++ vector cast reinterprets bits.
+        source = Regex.Replace(source, @"\(float2\)(clamp\([^;\n]+\))", "make_float2($1)", RegexOptions.CultureInvariant);
         return Regex.Replace(source, @"\b(float[234]|int[23]|uint[23])\(", "make_$1(", RegexOptions.CultureInvariant);
     }
 

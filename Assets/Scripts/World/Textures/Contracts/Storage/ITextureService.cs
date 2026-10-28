@@ -11,6 +11,7 @@ namespace Kern.Core.Interfaces;
 public interface ITextureService
 {
     event Action<string, Texture2D>? OnTextureLoaded;
+    event Action? OnTerrainDecalAtlasLoaded;
     int PendingCellTextureRequests { get; }
     void RequestTexture(CellType cellType);
     AtlasCoordinate GetCellTextureCoordinate(CellType cellType);
@@ -24,6 +25,7 @@ public interface ITextureService
     Texture2D? FlowMapTexture { get; }
     Texture2D? TerrainDecalAtlasTexture { get; }
     Texture2D? TerrainDecalRockAtlasTexture { get; }
+    Texture2D? TerrainDecalSandAtlasTexture { get; }
     IReadOnlyList<IAtlasDescriptor> GetAllAtlases();
     string GetCacheStats();
     void FlushDirtyAtlases();

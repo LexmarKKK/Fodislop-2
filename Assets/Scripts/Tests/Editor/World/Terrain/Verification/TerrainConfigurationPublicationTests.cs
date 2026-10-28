@@ -16,6 +16,34 @@ namespace Kern.Tests.World.Terrain;
 public sealed class TerrainConfigurationPublicationTests
 {
     [Test]
+    public void DecalAtlasLoadPublishesLightingMaterialChange()
+    {
+        var window = new TerrainWindow();
+        using var telemetry = new FrameTelemetry();
+        var exchange = new TerrainLightingExchange();
+        var publisher = new TerrainLightingFramePublisher(exchange);
+        publisher.BeginWorldGeneration();
+        publisher.PublishCommittedChanges(1, new List<RectInt>(), textureRefreshOutstanding: false);
+        var changes = new TerrainWorldChangeHandler(window, telemetry,
+            () => null, () => null, () => null, () => null, () => publisher);
+        try
+        {
+            changes.HandleDecalAtlasLoaded();
+            Assert.That(window.NeedsRefresh, Is.True);
+            Assert.That(changes.RequestedContentRevision, Is.EqualTo(2));
+            publisher.PublishCommittedChanges(changes.RequestedContentRevision, new List<RectInt>(),
+                textureRefreshOutstanding: false);
+            Assert.That(exchange.TryReadNextTerrainChange(publisher.WorldGeneration, 1, out var change), Is.True);
+            Assert.That(change.Kind, Is.EqualTo(TerrainLightingChangeKind.FullReset));
+            Assert.That(change.FullResetReason, Is.EqualTo(TerrainLightingFullResetReason.LightingVisibleTextureChanged));
+        }
+        finally
+        {
+            window.Dispose();
+        }
+    }
+
+    [Test]
     public void ConfigurationChangeSchedulesMaterialPublicationWithoutCameraOrCellChanges()
     {
         var window = new TerrainWindow();

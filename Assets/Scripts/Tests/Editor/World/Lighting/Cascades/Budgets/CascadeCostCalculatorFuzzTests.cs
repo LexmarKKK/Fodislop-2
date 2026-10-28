@@ -24,7 +24,7 @@ public class CascadeCostCalculatorFuzzTests
             IntervalEnd: 1.4142136573791504f);
         var samples = new List<CascadeCostSample>();
 
-        CascadeCostCalculator.CollectCascadeCosts(new[] { cascade }, int.MaxValue, samples);
+        CascadeCostCalculator.CollectCascadeCosts(new[] { cascade }, samples);
 
         // sqrt(2) * IntervalEnd is just above 2 in exact arithmetic. The
         // conservative DDA bound must account for the third crossed texel.
@@ -61,46 +61,15 @@ public class CascadeCostCalculatorFuzzTests
                 random.Next(1, 4097),
                 random.Next(64, 8193),
                 cascades);
-            int maximumSteps = random.Next(1, 257);
 
             // Pre-seed garbage: the collector must wipe it, every time.
             var destination = new List<CascadeCostSample> { default, default };
-            CascadeCostCalculator.CollectCascadeCosts(cascades, maximumSteps, destination);
+            CascadeCostCalculator.CollectCascadeCosts(cascades, destination);
 
             Assert.That(destination.Count, Is.EqualTo(cascades.Count), $"seed {seed}, iteration {iteration}");
             for (int i = 0; i < cascades.Count; i++)
             {
-                AssertSampleMatchesReference(destination[i], cascades, i, maximumSteps, seed, iteration);
-            }
-        }
-    }
-
-    [Test]
-    public void HostileStepBudgetsNeverThrowAndStillMatchTheReference([ValueSource(nameof(s_seeds))] int seed)
-    {
-        var random = new System.Random(seed);
-        int[] budgets = new[] {
-0, -1, int.MinValue, 1, 63, 64, 256, int.MaxValue
- };
-
-        for (int iteration = 0; iteration < 1000; iteration++)
-        {
-            var cascades = new List<CascadeLayout>();
-            CascadeLayoutBuilder.BuildCascadeLayouts(
-                random.Next(1, 4097),
-                random.Next(1, 4097),
-                random.Next(64, 8193),
-                cascades);
-
-            int maximumSteps = Pick(random, budgets);
-            var destination = new List<CascadeCostSample>();
-            Assert.DoesNotThrow(
-                () => CascadeCostCalculator.CollectCascadeCosts(cascades, maximumSteps, destination),
-                $"seed {seed}, iteration {iteration}, maximumSteps {maximumSteps}");
-            Assert.That(destination.Count, Is.EqualTo(cascades.Count), $"seed {seed}, iteration {iteration}");
-            for (int i = 0; i < cascades.Count; i++)
-            {
-                AssertSampleMatchesReference(destination[i], cascades, i, maximumSteps, seed, iteration);
+                AssertSampleMatchesReference(destination[i], cascades, i, seed, iteration);
             }
         }
     }
@@ -130,17 +99,14 @@ public class CascadeCostCalculatorFuzzTests
                 offset += entryCount;
             }
 
-            // Budgets go negative on purpose: the documented clamp rule
-            // must still produce a defined answer, not an exception.
-            int maximumSteps = random.Next(-5, 65);
             var destination = new List<CascadeCostSample>();
             Assert.DoesNotThrow(
-                () => CascadeCostCalculator.CollectCascadeCosts(cascades, maximumSteps, destination),
+                () => CascadeCostCalculator.CollectCascadeCosts(cascades, destination),
                 $"seed {seed}, iteration {iteration}");
             Assert.That(destination.Count, Is.EqualTo(cascades.Count), $"seed {seed}, iteration {iteration}");
             for (int i = 0; i < cascades.Count; i++)
             {
-                AssertSampleMatchesReference(destination[i], cascades, i, maximumSteps, seed, iteration);
+                AssertSampleMatchesReference(destination[i], cascades, i, seed, iteration);
             }
         }
     }
@@ -160,7 +126,7 @@ public class CascadeCostCalculatorFuzzTests
                 cascades);
 
             var destination = new List<CascadeCostSample>();
-            CascadeCostCalculator.CollectCascadeCosts(cascades, random.Next(1, 257), destination);
+            CascadeCostCalculator.CollectCascadeCosts(cascades, destination);
 
             long rays = 0;
             long raySteps = 0;
@@ -187,7 +153,6 @@ public class CascadeCostCalculatorFuzzTests
         CascadeCostSample sample,
         IReadOnlyList<CascadeLayout> cascades,
         int index,
-        int maximumSteps,
         int seed,
         int iteration)
     {

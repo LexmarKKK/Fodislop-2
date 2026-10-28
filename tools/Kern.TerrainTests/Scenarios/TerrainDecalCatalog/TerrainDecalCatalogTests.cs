@@ -1,6 +1,9 @@
 #nullable enable
 
 using System.Linq;
+using System.IO;
+using System.Text.Json;
+using Kern.Core.Interfaces;
 using Kern.World;
 using Kern.World.Terrain;
 using MinesServer.Data;
@@ -11,6 +14,46 @@ namespace Kern.TerrainTests;
 [TestFixture]
 public sealed class TerrainDecalCatalogTests
 {
+    [Test]
+    public void PlacementValuesRemainExactInHalfPrecision()
+    {
+        for (int code = 0; code <= 2048; code++)
+        {
+            Assert.That((float)(System.Half)code, Is.EqualTo((float)code), $"placement {code}");
+        }
+    }
+
+    [Test]
+    public void PublishedAtlasNamesCoverEveryFamily()
+    {
+        Assert.That(TerrainDecalAssets.Contains(TerrainDecalAssets.Ground), Is.True);
+        Assert.That(TerrainDecalAssets.Contains(TerrainDecalAssets.Rock.ToUpperInvariant()), Is.True);
+        Assert.That(TerrainDecalAssets.Contains(TerrainDecalAssets.Sand), Is.True);
+        Assert.That(TerrainDecalAssets.Contains("terrain-decals-other.png"), Is.False);
+    }
+
+    [Test]
+    public void EachPublishedAtlasHasOneExistingStagingSource()
+    {
+        DirectoryInfo? root = new DirectoryInfo(System.AppContext.BaseDirectory);
+        while (root != null && !File.Exists(Path.Combine(root.FullName, "Assets/Settings/Build/Textures/TextureStagingCatalog.json")))
+        {
+            root = root.Parent;
+        }
+
+        Assert.That(root, Is.Not.Null, "Project root was not found.");
+        using JsonDocument catalog = JsonDocument.Parse(File.ReadAllText(
+            Path.Combine(root!.FullName, "Assets/Settings/Build/Textures/TextureStagingCatalog.json")));
+        foreach (string name in new[] { TerrainDecalAssets.Ground, TerrainDecalAssets.Rock, TerrainDecalAssets.Sand })
+        {
+            JsonElement[] entries = catalog.RootElement.GetProperty("Entries").EnumerateArray()
+                .Where(entry => entry.GetProperty("Published").GetString() == name).ToArray();
+            Assert.That(entries, Has.Length.EqualTo(1), name);
+            string source = entries[0].GetProperty("Source").GetString()!;
+            Assert.That(File.Exists(Path.Combine(root.FullName, "Assets/Textures", source)), Is.True, source);
+        }
+    }
+
     // Семья — из cells.json. Камень — только красно- и черноскал: атлас
     // нарисован под их гамму.
     [TestCase(CellType.Empty, CellDecalAtlas.Ground)]
@@ -18,7 +61,9 @@ public sealed class TerrainDecalCatalogTests
     [TestCase(CellType.RedRock, CellDecalAtlas.Rock)]
     [TestCase(CellType.BlackRock, CellDecalAtlas.Rock)]
     [TestCase(CellType.Rock, CellDecalAtlas.None)]
-    [TestCase(CellType.WhiteSand, CellDecalAtlas.None)]
+    [TestCase(CellType.WhiteSand, CellDecalAtlas.Sand)]
+    [TestCase(CellType.BlackSand, CellDecalAtlas.Sand)]
+    [TestCase(CellType.DarkBlueSand, CellDecalAtlas.Sand)]
     [TestCase(CellType.Road, CellDecalAtlas.None)]
     [TestCase(CellType.Lava, CellDecalAtlas.None)]
     [TestCase(CellType.BuildingWall, CellDecalAtlas.None)]
@@ -28,11 +73,23 @@ public sealed class TerrainDecalCatalogTests
     }
 
     [Test]
+    public void AllSandTypesUseSandDecals()
+    {
+        foreach (CellType type in System.Enum.GetValues<CellType>().Where(type => type != CellType.MilitaryBlockSand && type.ToString().EndsWith("Sand", System.StringComparison.Ordinal)))
+        {
+            Assert.That(BlockRegistry.Get(type).DecalAtlas, Is.EqualTo(CellDecalAtlas.Sand), type.ToString());
+        }
+
+        Assert.That(BlockRegistry.Get(CellType.MilitaryBlockSand).DecalAtlas, Is.EqualTo(CellDecalAtlas.None));
+    }
+
+    [Test]
     public void RuleOf_FollowsTheDrawnTypeFamily()
     {
         Assert.That(TerrainDecalCatalog.RuleOf(BlockRegistry.Get(CellType.Empty).DecalAtlas), Is.EqualTo(TerrainDecalCatalog.GroundRule));
         Assert.That(TerrainDecalCatalog.RuleOf(BlockRegistry.Get(CellType.RedRock).DecalAtlas), Is.EqualTo(TerrainDecalCatalog.RockRule));
         Assert.That(TerrainDecalCatalog.RuleOf(BlockRegistry.Get(CellType.BlackRock).DecalAtlas), Is.EqualTo(TerrainDecalCatalog.RockRule));
+        Assert.That(TerrainDecalCatalog.RuleOf(BlockRegistry.Get(CellType.WhiteSand).DecalAtlas), Is.EqualTo(TerrainDecalCatalog.GroundRule));
         Assert.That(TerrainDecalCatalog.RuleOf(BlockRegistry.Get(CellType.Rock).DecalAtlas), Is.EqualTo(default(TerrainDecalRule)));
         Assert.That(TerrainDecalCatalog.RuleOf(BlockRegistry.Get(CellType.Road).DecalAtlas), Is.EqualTo(default(TerrainDecalRule)));
     }
@@ -47,7 +104,7 @@ public sealed class TerrainDecalCatalogTests
         {
             int first = TerrainDecalCatalog.Place(TerrainDecalCatalog.RockRule, i, i * 17);
             Assert.That(TerrainDecalCatalog.Place(TerrainDecalCatalog.RockRule, i, i * 17), Is.EqualTo(first));
-            Assert.That(first == 0 || (first & 4096) != 0, Is.True, "камень — в своём атласе");
+            Assert.That(first, Is.InRange(0, 2048), "код размещения не содержит семейство");
             rock += first > 0 ? 1 : 0;
             ground += TerrainDecalCatalog.Place(TerrainDecalCatalog.GroundRule, i, i * 17) > 0 ? 1 : 0;
         }

@@ -54,7 +54,6 @@ namespace Kern.World.Lighting
             }
 
             ActivePreset = preset;
-            LightingUnityQualityApplier.ApplyQualityLevel();
             Settings = settings;
             LightingQualityMode resolvedQuality = settings.LightingQuality;
             QualityMode = resolvedQuality;

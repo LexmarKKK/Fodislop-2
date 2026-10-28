@@ -13,6 +13,37 @@ namespace Kern.Tests.UI;
 public sealed class WorldMapMipPyramidTests
 {
     [Test]
+    public void DeferredStoredScan_MatchesIncrementalParentsForSparseOddWorld()
+    {
+        var colors = new Color32[256];
+        colors[1] = new Color32(12, 70, 160, 255);
+        colors[2] = new Color32(220, 170, 30, 255);
+        var unknown = new Color32(38, 35, 53, 255);
+        var incremental = new WorldMapMipPyramid(5, 3, 1, 5, 3, colors, unknown);
+        var deferred = new WorldMapMipPyramid(5, 3, 1, 5, 3, colors, unknown);
+
+        deferred.BeginStoredScan();
+        for (int index = 0; index < 15; index++)
+        {
+            if (index % 4 == 0)
+            {
+                continue;
+            }
+
+            var cell = (CellType)(index % 2 + 1);
+            incremental.AddStoredRun(index, cell, 1);
+            deferred.AddStoredRun(index, cell, 1);
+        }
+
+        incremental.CompleteStoredScan();
+        deferred.CompleteStoredScan();
+        for (int level = 0; level < incremental.MipLevelCount; level++)
+        {
+            Assert.That(deferred.GetLevel(level), Is.EqualTo(incremental.GetLevel(level)), $"Mip level {level}");
+        }
+    }
+
+    [Test]
     public void Constructor_RejectsWholeTrailingChunksOutsideWorldBounds()
     {
         Assert.Throws<System.ArgumentOutOfRangeException>(() => new WorldMapMipPyramid(

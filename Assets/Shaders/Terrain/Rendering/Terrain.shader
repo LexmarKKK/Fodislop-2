@@ -9,6 +9,7 @@ Shader "Universal Render Pipeline/Custom/Terrain"
         _FlowMap ("Shimmer Flow Map", 2D) = "black" {}
         _TerrainDecalAtlas ("Terrain Decal Atlas", 2D) = "black" {}
         _TerrainDecalRockAtlas ("Terrain Decal Rock Atlas", 2D) = "black" {}
+        _TerrainDecalSandAtlas ("Terrain Decal Sand Atlas", 2D) = "black" {}
         _ShimmerColor ("Shimmer Color", Color) = (0,0,0,0)
         _FlowScale ("Flow Scale", Vector) = (0,0,0,0)
         _ShimmerSpeedScale ("Shimmer Speed Scale", Float) = 0
@@ -27,7 +28,7 @@ Shader "Universal Render Pipeline/Custom/Terrain"
         // свойствами материала, дефолт здесь — те же числа.
         _GroundDecalStrength ("Ground Decal Strength", Float) = 0.35
         _RockDecalStrength ("Rock Decal Strength", Float) = 0.7
-        _DecalPlacementOffset ("Decal Placement Offset", Float) = 0.5
+        _DecalPlacementOffset ("Decal Placement Offset", Float) = 0.125
         _TerrainDebugDeltaContrast ("Terrain Debug Delta Contrast", Float) = 128
         _FacetedGlintDirection ("Faceted Glint Direction", Vector) = (0.62,0.38,0,0)
         _FacetedGlintSweepStart ("Faceted Glint Sweep Start", Float) = -0.12
@@ -144,17 +145,6 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                 nointerpolation float isDepth : TEXCOORD14;
                 float2 materialCellSample : TEXCOORD15;
             };
-
-            half4 SampleAtlasColor(int slot, float2 uv)
-            {
-                [branch]
-                if (_PixelArtFiltering < 0.5)
-                {
-                    return TerrainSampleAtlas(slot, sampler_PointClamp, uv);
-                }
-
-                return TerrainSampleAtlas(slot, sampler_LinearClamp, uv);
-            }
 
             float MissingTextureHash(float2 position)
             {
@@ -464,14 +454,8 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                 float3 flowSample = TerrainResolveFlowSample(
                     cellSurfaceEffect, cellAnimationType, input.worldPos, input.packedData, _FlowScale);
 
-                float2 finalUV = tileUV.finalUV;
-                finalUV = PixelArtSampleUV(
-                    finalUV,
-                    atlasTexelSize.zw,
-                    TerrainPixelArtWidthTexels(carrierPixelWidth, input.tileSizeUV, atlasTexelSize));
-                finalUV = ClampTerrainTileUV(finalUV, tileUV);
-
-                half4 texColor = SampleAtlasColor(atlasSlot, finalUV);
+                half4 texColor = SampleTerrainSurfaceTexel(
+                    atlasSlot, tileUV, atlasTexelSize, input.tileSizeUV, carrierPixelWidth);
                 if (texColor.a < _AlphaCutoff)
                 {
                     return half4(0.0, 0.0, 0.0, 0.0);
@@ -483,8 +467,16 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                     return half4(texColor.rgb, cellCoverage);
                 }
 
-                float3 animatedRGB = AnimateTerrainColor(
+                // Decals are part of the sampled surface albedo. Both the
+                // visible and material-field passes compose them before any
+                // presentation animation or illumination.
+                float3 decalRGB = ApplyTerrainDecal(
                     texColor.rgb,
+                    textureCellSample,
+                    input.lightContourDecal.x,
+                    input.lightContourDecal.w);
+                float3 animatedRGB = AnimateTerrainColor(
+                    decalRGB,
                     texColor.rgb,
                     terrainTileUv,
                     TerrainAnimationWorldPosition(input.worldPos, input.packedData),
@@ -495,14 +487,10 @@ Shader "Universal Render Pipeline/Custom/Terrain"
                     _ShimmerColor.rgb,
                     _ShimmerSpeedScale,
                     _BlinkingSpeedScale);
-                float3 decalRGB = ApplyTerrainDecal(
-                    animatedRGB,
-                    terrainTileUv,
-                    input.lightContourDecal.w);
                 // The bevel is a surface-lighting term: apply after animated
                 // color and decals, before incoming world illumination.
                 float rimBevel = TerrainRimBevel(surface);
-                float3 finalRGB = decalRGB * rimBevel;
+                float3 finalRGB = animatedRGB * rimBevel;
                 [branch]
                 if (_KernTerrainBenchmarkStage == 4)
                 {
@@ -696,7 +684,8 @@ Shader "Universal Render Pipeline/Custom/Terrain"
 
                 surfaceAlbedo = ApplyTerrainDecal(
                     surfaceAlbedo,
-                    geometryTileUv,
+                    input.packedData.yz,
+                    input.lightContourDecal.x,
                     input.lightContourDecal.w);
                 float4 sourceEmission = 0.0;
                 if (glow > 0.0)

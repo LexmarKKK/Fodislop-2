@@ -557,6 +557,84 @@ static void checkDistortedAutotileUvSeam()
     }
 }
 
+static void checkWorldAnchoredPackTiles()
+{
+    const float unit = 1.0f / 32.0f;
+    const float2 texel{1.0f / 1024.0f, 1.0f / 1024.0f};
+    const float4 squareX{0, 1, 1, 0};
+    const float4 squareY{0, 0, 1, 1};
+    long samples = 0;
+    for (int columns : {14, 16})
+    for (int descriptor = 0; descriptor < 256; ++descriptor)
+    for (int worldX : {-32769, -1, 0, 1, 1024})
+    for (int pixel = 0; pixel < 32; ++pixel)
+    {
+        float2 local{(pixel + 0.5f) / 32.0f, 0.375f};
+        float2 transformed = TerrainResolveGeometryTileUV(
+            local, local, squareX, squareY,
+            (float)TerrainCornerUvBits((uint)descriptor, true), 1.0f);
+        TerrainTileUvResult tile = ResolveTerrainTileUV(
+            transformed, local, float4{0.125f, 0.25f, columns * unit, unit},
+            float4{unit, unit, 1, 1},
+            float4{(float)worldX, 7, (float)((descriptor & 31) | 32), 1},
+            float4{0, 0, 0, 0}, float4{0, 0, 0, 0}, 0.0f, texel);
+
+        // Independent descriptor oracle: quarter-turn, then mirror axes.
+        float expectedU = (descriptor & 128) ? 1.0f - local.y : local.x;
+        float expectedV = (descriptor & 128) ? local.x : local.y;
+        if (descriptor & 64) expectedU = 1.0f - expectedU;
+        if (descriptor & 32) expectedV = 1.0f - expectedV;
+        int column = std::min(descriptor & 31, columns - 1);
+        float2 expected{
+            0.125f + (column + expectedU) * unit,
+            0.25f + expectedV * unit};
+        if (!tile.isValid ||
+            std::fabs(tile.finalUV.x - expected.x) > 1e-6f ||
+            std::fabs(tile.finalUV.y - expected.y) > 1e-6f ||
+            std::fabs(tile.minTileUV.x - (0.125f + column * unit + texel.x * 0.5f)) > 1e-6f ||
+            std::fabs(tile.maxTileUV.x - (0.125f + (column + 1) * unit - texel.x * 0.5f)) > 1e-6f)
+        {
+            throw std::runtime_error("World anchor lost the pack variant, transform or tile sampling bounds: columns=" +
+                std::to_string(columns) + " descriptor=" + std::to_string(descriptor) +
+                " pixel=" + std::to_string(pixel) + " actual=" + std::to_string(tile.finalUV.x) +
+                "," + std::to_string(tile.finalUV.y) + " expected=" + std::to_string(expected.x) +
+                "," + std::to_string(expected.y));
+        }
+        ++samples;
+    }
+
+    // No tile group: the complete sheet must keep world-position addressing,
+    // independent of the supplied corner UV and variant column.
+    struct SheetCase { int x, y, column, row; };
+    const SheetCase sheets[] = {{17, 11, 7, 8}, {-13, -8, 7, 7}, {0, 0, 0, 9}};
+    for (const auto& sample : sheets)
+    {
+        TerrainTileUvResult tile = ResolveTerrainTileUV(
+            float2{0.9f, 0.1f}, float2{0.375f, 0.625f},
+            float4{0.125f, 0.25f, 10 * unit, 10 * unit},
+            float4{unit, unit, 1, 1},
+            float4{(float)sample.x, (float)sample.y, 47, 0},
+            float4{0, 0, 0, 0}, float4{0, 0, 0, 0}, 0.0f, texel);
+        if (std::fabs(tile.finalUV.x - (0.125f + (sample.column + 0.375f) * unit)) > 1e-6f ||
+            std::fabs(tile.finalUV.y - (0.25f + (sample.row + 0.625f) * unit)) > 1e-6f)
+        {
+            throw std::runtime_error("Ungrouped World sheet no longer follows world-position addressing");
+        }
+    }
+
+    TerrainTileUvResult animated = ResolveTerrainTileUV(
+        float2{0.25f, 0.75f}, float2{0.25f, 0.75f},
+        float4{0.125f, 0.25f, 14 * unit, unit}, float4{unit, unit, 4, 1},
+        float4{1, 7, 37, 1}, float4{0, 6, 0, 0}, float4{0, 0, 0, 0}, 0.5f, texel);
+    if (std::fabs(animated.finalUV.x - (0.125f + 5.25f * unit)) > 1e-6f ||
+        std::fabs(animated.finalUV.y - (0.25f + 3.75f * unit)) > 1e-6f)
+    {
+        throw std::runtime_error("World-anchored pack animation changed its variant or frame offset");
+    }
+    std::cout << "World pack UVs: " << samples
+        << " samples, 256 descriptors, 14/16 columns, 32 texel centers; world sheets and animation passed.\n";
+}
+
 static void checkAffineGeometryUv()
 {
     // Independent forward construction from known UVs; non-axis-aligned,
@@ -931,6 +1009,7 @@ int runChecks(const char* worldDirectory)
     checkDepth();
     checkAffineGeometryUv();
     checkDistortedAutotileUvSeam();
+    checkWorldAnchoredPackTiles();
     checkThousandthsPhase();
     checkHarnessWorlds(worldDirectory);
     checkBufferReads();

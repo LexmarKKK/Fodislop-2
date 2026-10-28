@@ -8,6 +8,32 @@ namespace Kern.TerrainTests.Volume;
 public sealed class VolumeMeshTests
 {
     [Test]
+    public void EqualWallCountUpdatesOnlyWallVertices()
+    {
+        var buffers = new TerrainCellBuffers();
+        buffers.Type(1, 0);
+        buffers.Set(2, 2, 1);
+        var topology = new TerrainVolumeTopology();
+        topology.Publish(buffers, Vector2Int.zero, 8, 8, false);
+        using var volume = new TerrainVolumeMesh();
+        volume.EnsureSize(4, 4, 1, 8, 8, topology);
+        Mesh mesh = volume.Mesh!;
+        var oldVertices = (TerrainVolumeVertex[])mesh.Vertices.Clone();
+        int indexUploads = mesh.IndexUploadCount;
+        buffers.Set(2, 2, 2);
+        buffers.Set(3, 2, 1);
+        topology.Publish(buffers, Vector2Int.zero, 8, 8, false);
+        volume.EnsureSize(4, 4, 1, 8, 8, topology);
+        Assert.That(mesh.LastUploadDestination, Is.EqualTo(4 * 4 * 4));
+        Assert.That(mesh.LastUploadCount, Is.EqualTo(4 * 4));
+        Assert.That(mesh.IndexUploadCount, Is.EqualTo(indexUploads));
+        var vertices = (TerrainVolumeVertex[])mesh.Vertices;
+        Assert.That(vertices[0].Address, Is.EqualTo(oldVertices[0].Address));
+        Assert.That(vertices[vertices.Length - 1].Address, Is.EqualTo(oldVertices[oldVertices.Length - 1].Address));
+        Assert.That(vertices[4 * 4 * 4].Address, Is.Not.EqualTo(oldVertices[4 * 4 * 4].Address));
+    }
+
+    [Test]
     public void MeshHasRealWallQuadsBetweenBaseAndRaisedFaceAndDoesNotUploadOnStableFrame()
     {
         var buffers = new TerrainCellBuffers();

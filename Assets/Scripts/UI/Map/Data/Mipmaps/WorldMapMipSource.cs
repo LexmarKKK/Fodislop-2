@@ -31,7 +31,14 @@ internal sealed class WorldMapMipSource : IMapMipTextureSource, IDisposable
     private IWorldLayer<CellType>? _cellLayer;
     private CancellationTokenSource? _scanCancellation;
     private int _mipBlockSize;
+    private int _widthChunks;
+    private int _heightChunks;
+    private int _chunkSize;
+    private int _worldWidth;
+    private int _worldHeight;
+    private Color32[]? _cellColorTable;
     private bool _textureDirty = true;
+    private bool _pendingChanges;
     private bool _failed;
     private int _progress;
     private int _total;
@@ -77,41 +84,30 @@ internal sealed class WorldMapMipSource : IMapMipTextureSource, IDisposable
         _failed = false;
         _progress = 0;
         _total = 0;
+        _pendingChanges = false;
         while (_pendingChunks.TryDequeue(out _))
         {
         }
         _queuedChunkSet.Clear();
 
-        int widthChunks = cellLayer?.WidthChunks ?? 0;
-        int heightChunks = cellLayer?.HeightChunks ?? 0;
-        if (widthChunks <= 0 || heightChunks <= 0 || chunkSize <= 0 || worldWidth <= 0 || worldHeight <= 0)
+        _widthChunks = cellLayer?.WidthChunks ?? 0;
+        _heightChunks = cellLayer?.HeightChunks ?? 0;
+        _chunkSize = chunkSize;
+        _worldWidth = worldWidth;
+        _worldHeight = worldHeight;
+        _cellColorTable = (Color32[])cellColorTable.Clone();
+        if (_widthChunks <= 0 || _heightChunks <= 0 || chunkSize <= 0 || worldWidth <= 0 || worldHeight <= 0)
         {
             return;
         }
 
-        try
-        {
-            _mipBlockSize = WorldMapMipPyramid.ChooseBlockSize(worldWidth, worldHeight, chunkSize);
-            _pyramid = new WorldMapMipPyramid(
-                widthChunks,
-                heightChunks,
-                chunkSize,
-                worldWidth,
-                worldHeight,
-                cellColorTable,
-                MapProjection.UnknownCellSolidColor,
-                _mipBlockSize);
-        }
-        catch (InvalidOperationException exception)
-        {
-            _failed = true;
-            Debug.LogException(exception);
-        }
+        _mipBlockSize = WorldMapMipPyramid.ChooseBlockSize(worldWidth, worldHeight, chunkSize);
     }
 
     public void Begin()
     {
-        if (IsReady || _failed || _scanCancellation != null || _pyramid == null || _cellLayer == null)
+        if (IsReady || _failed || _scanCancellation != null || _cellLayer == null ||
+            _widthChunks <= 0 || _heightChunks <= 0 || _chunkSize <= 0 || _cellColorTable == null)
         {
             return;
         }
@@ -122,14 +118,12 @@ internal sealed class WorldMapMipSource : IMapMipTextureSource, IDisposable
 
     public void QueueChunk(int chunkX, int chunkY)
     {
-        WorldMapMipPyramid? pyramid = _pyramid;
-        if (pyramid == null || chunkX < 0 || chunkY < 0 ||
-            chunkX >= pyramid.WidthChunks || chunkY >= pyramid.HeightChunks)
+        if (chunkX < 0 || chunkY < 0 || chunkX >= _widthChunks || chunkY >= _heightChunks)
         {
             return;
         }
 
-        int chunkIndex = chunkY + (chunkX * pyramid.HeightChunks);
+        int chunkIndex = chunkY + (chunkX * _heightChunks);
         if (_queuedChunkSet.TryAdd(chunkIndex, 0))
         {
             _pendingChunks.Enqueue(chunkIndex);
@@ -160,10 +154,13 @@ internal sealed class WorldMapMipSource : IMapMipTextureSource, IDisposable
         if (changed)
         {
             _textureDirty = true;
-            if (_pendingChunks.IsEmpty)
-            {
-                _requestRender?.Invoke();
-            }
+            _pendingChanges = true;
+        }
+
+        if (_pendingChanges && _pendingChunks.IsEmpty)
+        {
+            _pendingChanges = false;
+            _requestRender?.Invoke();
         }
     }
 
@@ -176,15 +173,35 @@ internal sealed class WorldMapMipSource : IMapMipTextureSource, IDisposable
     private async UniTask PrepareAsync(CancellationTokenSource scanCancellation)
     {
         CancellationToken cancellationToken = scanCancellation.Token;
-        WorldMapMipPyramid? pyramid = _pyramid;
         IWorldLayer<CellType>? layer = _cellLayer;
-        if (pyramid == null || layer == null)
+        Color32[]? colors = _cellColorTable;
+        if (layer == null || colors == null)
         {
             return;
         }
 
+        int widthChunks = _widthChunks;
+        int heightChunks = _heightChunks;
+        int chunkSize = _chunkSize;
+        int worldWidth = _worldWidth;
+        int worldHeight = _worldHeight;
+        int blockSize = _mipBlockSize;
+
         try
         {
+            WorldMapMipPyramid pyramid = await UniTask.RunOnThreadPool(
+                () => new WorldMapMipPyramid(
+                    widthChunks, heightChunks, chunkSize, worldWidth, worldHeight,
+                    colors, MapProjection.UnknownCellSolidColor, blockSize),
+                cancellationToken: cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!ReferenceEquals(_scanCancellation, scanCancellation) || !ReferenceEquals(_cellLayer, layer))
+            {
+                return;
+            }
+
+            _pyramid = pyramid;
+            pyramid.BeginStoredScan();
             if (layer is IStoredChunkSource<CellType> source)
             {
                 await source.VisitStoredChunkRunsAsync(
@@ -203,15 +220,19 @@ internal sealed class WorldMapMipSource : IMapMipTextureSource, IDisposable
                 return;
             }
 
-            pyramid.CompleteStoredScan();
+            await UniTask.RunOnThreadPool(
+                pyramid.CompleteStoredScan,
+                cancellationToken: cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!IsCurrentScan(scanCancellation, pyramid, layer))
+            {
+                return;
+            }
+
             foreach (int chunkIndex in layer.GetLoadedChunkIndices())
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                ChunkReadResult<CellType> result = layer.ReadChunk(chunkIndex, touchLRU: false);
-                if (result.Status == ChunkReadStatus.Available && result.Data != null)
-                {
-                    pyramid.SetChunkCells(chunkIndex, result.Data);
-                }
+                QueueChunk(chunkIndex / pyramid.HeightChunks, chunkIndex % pyramid.HeightChunks);
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -222,16 +243,23 @@ internal sealed class WorldMapMipSource : IMapMipTextureSource, IDisposable
 
             IsReady = true;
             _requestRender?.Invoke();
+            while (HasPendingChunks)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                ApplyPending();
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            }
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            if (IsCurrentScan(scanCancellation, pyramid, layer))
+            if (ReferenceEquals(_scanCancellation, scanCancellation) && ReferenceEquals(_cellLayer, layer))
             {
                 Debug.LogException(exception);
                 _failed = true;
+                _requestRender?.Invoke();
             }
         }
         finally
@@ -289,6 +317,9 @@ internal sealed class WorldMapMipSource : IMapMipTextureSource, IDisposable
     {
         _pyramid = null;
         _cellLayer = null;
+        _cellColorTable = null;
+        _widthChunks = 0;
+        _heightChunks = 0;
         _textureDirty = true;
         if (_texture != null)
         {

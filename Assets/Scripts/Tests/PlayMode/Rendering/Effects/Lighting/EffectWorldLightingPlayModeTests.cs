@@ -29,6 +29,39 @@ public sealed class EffectWorldLightingPlayModeTests
 
     [UnityTest]
     [Timeout(120_000)]
+    public IEnumerator GunShotReusesRenderersAfterEffectIsCleared()
+    {
+        _authentication = DummyAuthenticationScope.Seed("playmode-gunshot-reuse");
+        yield return PlayModeHarness.StartAtGateway();
+        var bootstrap = PlayModeHarness.FindBootstrap()!;
+        yield return PlayModeHarness.EnterMainGame(bootstrap);
+        var effects = PlayModeHarness.RequireInGame<ServerAudioEventManager>();
+        var local = PlayModeHarness.RequireInGame<ILocalPlayerState>().Current!;
+        effects.ClearAllEffects();
+        try
+        {
+            effects.PlayEffect(VFX.GunShot, checked((ushort)local.Position.x), checked((ushort)local.Position.y),
+                checked((ushort)local.BotId));
+            LineRenderer[] first = Object.FindObjectsByType<LineRenderer>()
+                .Where(line => line.transform.parent != null && line.transform.parent.name == "SpriteAnimations/GunShot")
+                .ToArray();
+            Assert.That(first.Length, Is.EqualTo(44));
+            effects.ClearAllEffects();
+            effects.PlayEffect(VFX.GunShot, checked((ushort)local.Position.x), checked((ushort)local.Position.y),
+                checked((ushort)local.BotId));
+            LineRenderer[] second = Object.FindObjectsByType<LineRenderer>()
+                .Where(line => line.transform.parent != null && line.transform.parent.name == "SpriteAnimations/GunShot")
+                .ToArray();
+            Assert.That(second, Is.EquivalentTo(first));
+        }
+        finally
+        {
+            effects.ClearAllEffects();
+        }
+    }
+
+    [UnityTest]
+    [Timeout(120_000)]
     public IEnumerator MainGame_HealHurtMining_EmitAndRemoveDynamicRadiance()
     {
         _authentication = DummyAuthenticationScope.Seed("playmode-effect-world-light");

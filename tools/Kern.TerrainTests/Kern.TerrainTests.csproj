@@ -66,6 +66,7 @@
     <Compile Include="$(Game)/World/Cells/Contracts/BlockDefinition.cs" Link="Game/BlockDefinition.cs" />
     <Compile Include="$(Game)/World/Cells/Contracts/IBlockRegistry.cs" Link="Game/IBlockRegistry.cs" />
     <Compile Include="$(Game)/World/Cells/Contracts/CellVisualProtocol.cs" Link="Game/CellVisualProtocolContracts.cs" />
+    <Compile Include="$(Game)/World/Textures/Contracts/Storage/TerrainDecalAssets.cs" Link="Game/TerrainDecalAssets.cs" />
     <Compile Include="$(Game)/World/Cells/Palette/MapBlockColors.cs" Link="Game/MapBlockColors.cs" />
     <Compile Include="$(Game)/World/Cells/Registry/BlockRegistry.cs" Link="Game/BlockRegistry.cs" />
     <Compile Include="$(Game)/World/Cells/Registry/MapCellConfigCatalog.cs" Link="Game/MapCellConfigCatalog.cs" />
@@ -122,11 +123,13 @@
              LinkBase="Tests/Geometry" />
     <Compile Include="$(Game)/Tests/Shared/World/Terrain/Quantization/TerrainQuantizationOracle.cs" Link="Tests/Shared/World/Terrain/Quantization/TerrainQuantizationOracle.cs" />
     <Compile Include="$(Game)/Tests/Editor/World/Lighting/Fields/Regions/LightingRegionCalculator*.cs" LinkBase="Tests/Lighting" />
+    <Compile Include="$(Game)/World/Lighting/Fields/AmbientOcclusion/LightingAmbientOcclusionUpdatePolicy.cs" Link="Game/LightingAmbientOcclusionUpdatePolicy.cs" />
+    <Compile Include="$(Game)/Tests/Editor/World/Lighting/Fields/AmbientOcclusion/LightingAmbientOcclusionUpdatePolicyTests.cs" Link="Tests/Lighting/LightingAmbientOcclusionUpdatePolicyTests.cs" />
     <Compile Include="$(Game)/Tests/Editor/World/Lighting/Runtime/State/LightingRuntimeStateTests.cs" Link="Tests/Lighting/LightingRuntimeStateTests.cs" />
     <Compile Include="$(Game)/Tests/Editor/World/Streaming/Control/StreamingGovernorTests.cs" Link="Tests/Streaming/StreamingGovernorTests.cs" />
     <Compile Include="$(Game)/Tests/Editor/World/Terrain/Build/Scheduling/TerrainBuildSchedulerTests.cs" Link="Tests/Streaming/TerrainBuildSchedulerTests.cs" />
     <Compile Include="$(Game)/Tests/Editor/Networking/Connection/Transport/Inbound/PacketAdmissionBudgetTests.cs" Link="Tests/Networking/PacketAdmissionBudgetTests.cs" />
-    <Compile Include="$(Game)/Tests/Editor/UI/Map/Minimap/Templates/MinimapRefreshPolicy*.cs" LinkBase="Tests/UI" />
+    <Compile Include="$(Game)/Tests/Editor/UI/Map/Minimap/Control/MinimapRefreshPolicy*.cs" LinkBase="Tests/UI" />
     <!-- Тесты кодека чанков: те же файлы, что гоняет Unity, но проверяются
          здесь за секунды и без редактора. -->
     <Compile Include="$(Game)/Tests/Editor/World/Persistence/WorldChunkRleCodec*.cs" LinkBase="Tests/Persistence" />

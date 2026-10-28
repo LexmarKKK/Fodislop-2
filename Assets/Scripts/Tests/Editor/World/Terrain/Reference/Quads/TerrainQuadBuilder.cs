@@ -229,9 +229,8 @@ internal static class TerrainQuadBuilder
             TerrainDecalCatalog.RuleOf(block.DecalAtlas),
             gridX,
             serverY);
-        // x свободен: цвет блика шейдер берёт из альбедо.
         Vector4 glowVec = new Vector4(
-            0f,
+            decalPlacement != 0f ? (float)block.DecalAtlas : 0f,
             lightingData.PackedFlags,
             lightingData.PackedContour,
             decalPlacement);

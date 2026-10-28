@@ -24,7 +24,7 @@ public class CascadeCostCalculatorTests
     public void StepCountBoundsDdaTraversalAndConnectedMergePaths()
     {
         var destination = new List<CascadeCostSample>();
-        CascadeCostCalculator.CollectCascadeCosts(ThreeCascades(), maximumSteps: 64, destination);
+        CascadeCostCalculator.CollectCascadeCosts(ThreeCascades(), destination);
 
         // Bounds include all 16 child connections in each merging cascade.
         Assert.That(destination[0].StepCount, Is.EqualTo(128));
@@ -44,28 +44,16 @@ public class CascadeCostCalculatorTests
         };
 
         var destination = new List<CascadeCostSample>();
-        CascadeCostCalculator.CollectCascadeCosts(degenerate, maximumSteps: 64, destination);
+        CascadeCostCalculator.CollectCascadeCosts(degenerate, destination);
 
         Assert.That(destination[0].StepCount, Is.EqualTo(2));
-    }
-
-    [Test]
-    public void LegacyStepBudgetCannotReduceGeometryTraversal()
-    {
-        var destination = new List<CascadeCostSample>();
-        CascadeCostCalculator.CollectCascadeCosts(ThreeCascades(), maximumSteps: 2, destination);
-
-        // Changing the obsolete sampling budget cannot change DDA costs.
-        Assert.That(destination[0].StepCount, Is.EqualTo(128));
-        Assert.That(destination[1].StepCount, Is.EqualTo(288));
-        Assert.That(destination[2].StepCount, Is.EqualTo(19));
     }
 
     [Test]
     public void RayCountAndRayStepCountFollowTheLayoutEntryCount()
     {
         var destination = new List<CascadeCostSample>();
-        CascadeCostCalculator.CollectCascadeCosts(ThreeCascades(), maximumSteps: 64, destination);
+        CascadeCostCalculator.CollectCascadeCosts(ThreeCascades(), destination);
 
         Assert.That(destination[0].RayCount, Is.EqualTo(100));
         Assert.That(destination[0].RayStepCount, Is.EqualTo(12800));
@@ -81,7 +69,7 @@ public class CascadeCostCalculatorTests
     public void MergeTapsOnlyExistWhenACoarserCascadeFollows()
     {
         var destination = new List<CascadeCostSample>();
-        CascadeCostCalculator.CollectCascadeCosts(ThreeCascades(), maximumSteps: 64, destination);
+        CascadeCostCalculator.CollectCascadeCosts(ThreeCascades(), destination);
 
         // branch = clamp(next.Directions / cur.Directions, 1, 4) = 4
         // taps = EntryCount * branch * 4
@@ -105,7 +93,7 @@ public class CascadeCostCalculatorTests
         };
 
         var destination = new List<CascadeCostSample>();
-        CascadeCostCalculator.CollectCascadeCosts(list, maximumSteps: 64, destination);
+        CascadeCostCalculator.CollectCascadeCosts(list, destination);
 
         Assert.That(destination[0].MergeTapCount, Is.EqualTo(400)); // 100 * 1 * 4
     }
@@ -119,7 +107,7 @@ public class CascadeCostCalculatorTests
             new(-1, 0, 0, 0, 0f, 0f, 0, 0, 0, 0),
         };
 
-        CascadeCostCalculator.CollectCascadeCosts(ThreeCascades(), maximumSteps: 64, destination);
+        CascadeCostCalculator.CollectCascadeCosts(ThreeCascades(), destination);
 
         Assert.That(destination.Count, Is.EqualTo(3));
         // The garbage sample is gone - every sample has a real index.
@@ -132,7 +120,6 @@ public class CascadeCostCalculatorTests
         var destination = new List<CascadeCostSample> { default };
         CascadeCostCalculator.CollectCascadeCosts(
             new List<CascadeLayout>(),
-            maximumSteps: 64,
             destination);
 
         Assert.That(destination, Is.Empty);
@@ -144,7 +131,6 @@ public class CascadeCostCalculatorTests
         Assert.Throws<ArgumentNullException>(
             () => CascadeCostCalculator.CollectCascadeCosts(
                 null!,
-                maximumSteps: 64,
                 new List<CascadeCostSample>()));
     }
 
@@ -154,7 +140,6 @@ public class CascadeCostCalculatorTests
         Assert.Throws<ArgumentNullException>(
             () => CascadeCostCalculator.CollectCascadeCosts(
                 ThreeCascades(),
-                maximumSteps: 64,
                 null!));
     }
 }

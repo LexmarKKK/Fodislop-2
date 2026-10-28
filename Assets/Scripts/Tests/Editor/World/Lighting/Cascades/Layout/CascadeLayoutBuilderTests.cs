@@ -150,7 +150,7 @@ public class CascadeLayoutBuilderTests
         var cascades = new List<CascadeLayout>();
         CascadeLayoutBuilder.BuildCascadeLayouts(384, 256, 4096, cascades, 4);
         var samples = new List<CascadeCostSample>();
-        CascadeCostCalculator.CollectCascadeCosts(cascades, int.MaxValue, samples);
+        CascadeCostCalculator.CollectCascadeCosts(cascades, samples);
 
         long measured = 0;
         foreach (CascadeCostSample sample in samples)

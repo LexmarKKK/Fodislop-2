@@ -51,6 +51,7 @@ namespace Kern.World
         public Texture2D? FlowMapTexture => _auxiliaryAssets.FlowMapTexture;
         public Texture2D? TerrainDecalAtlasTexture => _auxiliaryAssets.TerrainDecalAtlasTexture;
         public Texture2D? TerrainDecalRockAtlasTexture => _auxiliaryAssets.TerrainDecalRockAtlasTexture;
+        public Texture2D? TerrainDecalSandAtlasTexture => _auxiliaryAssets.TerrainDecalSandAtlasTexture;
         private ConcurrentDictionary<CellType, TextureRequest> _pendingRequests = null!;
         private readonly CellTextureRetryTracker _retryTracker = new();
         private readonly SemaphoreSlim _textureLoadSlots = new(
@@ -84,7 +85,7 @@ namespace Kern.World
                 GetCachedTexture);
             _pendingRequests = new ConcurrentDictionary<CellType, TextureRequest>();
 
-            _auxiliaryAssets.Initialize(_textureStorage, _operations, RaiseTextureLoaded);
+            _auxiliaryAssets.Initialize(_textureStorage, _operations, RaiseTerrainDecalAtlasLoaded);
         }
 
         private void EnsureInitialized()
@@ -96,8 +97,10 @@ namespace Kern.World
         }
 
         public event Action<string, Texture2D>? OnTextureLoaded;
+        public event Action? OnTerrainDecalAtlasLoaded;
 
-        private void RaiseTextureLoaded(string name, Texture2D texture) => OnTextureLoaded?.Invoke(name, texture);
+        private void RaiseTerrainDecalAtlasLoaded() =>
+            OnTerrainDecalAtlasLoaded?.Invoke();
 
         public void RequestTexture(CellType cellType)
         {

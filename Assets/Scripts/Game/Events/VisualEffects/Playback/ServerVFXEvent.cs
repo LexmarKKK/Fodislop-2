@@ -315,14 +315,14 @@ public sealed class ServerVFXEvent : IServerWorldEffect
         ReleaseSlot();
     }
 
-    private UniTask LoadVisualWithCancellationAsync(
+    private async UniTask LoadVisualWithCancellationAsync(
         CancellationToken eventToken,
         CancellationToken supervisorToken)
     {
         using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
             eventToken,
             supervisorToken);
-        return LoadVisualAsync(linkedCancellation.Token);
+        await LoadVisualAsync(linkedCancellation.Token);
     }
 
     private async UniTask LoadVisualAsync(CancellationToken token)
@@ -608,6 +608,10 @@ public sealed class ServerVFXEvent : IServerWorldEffect
     private UniTask CreateCrystalDigitsAsync(CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+        if (_parsedParams.CrystalCount < 2)
+        {
+            return UniTask.CompletedTask;
+        }
 
         if (_crystalCollectionVariant == CrystalCollectionVisualVariant.SourceMineralAtlas)
         {
@@ -616,9 +620,7 @@ public sealed class ServerVFXEvent : IServerWorldEffect
                 throw new InvalidOperationException("Source crystal collection requires its world root.");
             }
 
-            string count = _parsedParams.CrystalCount < 2
-                ? string.Empty
-                : _parsedParams.CrystalCount.ToString(CultureInfo.InvariantCulture);
+            string count = _parsedParams.CrystalCount.ToString(CultureInfo.InvariantCulture);
             _sourceCollectionCanvasObject = CreateSourceCollectionCounter(
                 _sceneObjects,
                 _gameObject.transform,
@@ -634,9 +636,7 @@ public sealed class ServerVFXEvent : IServerWorldEffect
         _digitRowOffset = 0.25f;
         _digitRowVerticalOffset = 0f;
         _collectionLabel = _worldLabels.Create(WorldLabelKind.Collection);
-        _collectionLabel.SetText(_parsedParams.CrystalCount < 2
-            ? string.Empty
-            : _parsedParams.CrystalCount.ToString(CultureInfo.InvariantCulture));
+        _collectionLabel.SetText(_parsedParams.CrystalCount.ToString(CultureInfo.InvariantCulture));
         _collectionLabel.SetPosition(_intendedWorldPosition +
             new Vector3(_digitRowOffset, _digitRowVerticalOffset, 0f));
         _collectionLabel.SetVisible(true);

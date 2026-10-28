@@ -23,6 +23,23 @@ internal sealed class MapPinchGesture
 
     public bool IsPinching => _first >= 0 && _second >= 0;
 
+    public void Reset(VisualElement? image)
+    {
+        if (image != null && _first >= 0 && image.HasPointerCapture(_first))
+        {
+            image.ReleasePointer(_first);
+        }
+
+        if (image != null && _second >= 0 && image.HasPointerCapture(_second))
+        {
+            image.ReleasePointer(_second);
+        }
+
+        _first = -1;
+        _second = -1;
+        _lastDistance = 0f;
+    }
+
     // Возвращает true, если это касание начало пинч.
     public bool Down(PointerDownEvent evt, VisualElement image)
     {

@@ -55,20 +55,10 @@ internal sealed class LightingRuntimeState
 
     public bool ActivatePendingRegionIfVisible(RectInt visibleRegion)
     {
-        return ActivatePendingRegionsBudgeted(visibleRegion, maxAreaCells: int.MaxValue);
-    }
-
-    public bool ActivatePendingRegionsBudgeted(RectInt visibleRegion, int maxAreaCells)
-    {
         bool activated = false;
-        long allocatedArea = 0;
         if (_pendingRegionInvalidations.Count == 0)
         {
             return false;
-        }
-        if (_pendingRegionInvalidations.Count > 1)
-        {
-            SortPendingRegions(visibleRegion);
         }
 
         for (int index = _pendingRegionInvalidations.Count - 1; index >= 0; index--)
@@ -79,16 +69,8 @@ internal sealed class LightingRuntimeState
                 continue;
             }
 
-            long regionArea = (long)pending.width * pending.height;
-            if (allocatedArea > 0 && allocatedArea + regionArea > maxAreaCells)
-            {
-                // Defer further regions to subsequent frames to preserve the frame budget.
-                continue;
-            }
-
             _pendingRegionInvalidations.RemoveAt(index);
             _activeRegionInvalidations.Add(pending);
-            allocatedArea += regionArea;
             activated = true;
         }
 
@@ -98,27 +80,6 @@ internal sealed class LightingRuntimeState
         }
 
         return activated;
-    }
-
-    private void SortPendingRegions(RectInt visibleRegion)
-    {
-        Vector2 viewportCenter = new(
-            visibleRegion.xMin + visibleRegion.width * 0.5f,
-            visibleRegion.yMin + visibleRegion.height * 0.5f);
-
-        // Sort pending regions descending by distance so that the nearest regions are at the end,
-        // allowing efficient RemoveAt(Count - 1) in O(1).
-        _pendingRegionInvalidations.Sort((a, b) =>
-        {
-            Vector2 centerA = new(a.xMin + a.width * 0.5f, a.yMin + a.height * 0.5f);
-            Vector2 centerB = new(b.xMin + b.width * 0.5f, b.yMin + b.height * 0.5f);
-            float distSqA = (centerA.x - viewportCenter.x) * (centerA.x - viewportCenter.x) +
-                (centerA.y - viewportCenter.y) * (centerA.y - viewportCenter.y);
-            float distSqB = (centerB.x - viewportCenter.x) * (centerB.x - viewportCenter.x) +
-                (centerB.y - viewportCenter.y) * (centerB.y - viewportCenter.y);
-            return distSqB.CompareTo(distSqA);
-        });
-
     }
 
     public void ClearPendingRegionInvalidation()

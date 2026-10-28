@@ -34,7 +34,6 @@ public static class TerrainCellFormat
 
     // Правило декали.
     public const int DecalRuleSeedShift = 7;
-    public const uint DecalRuleRock = 1u << 15;
 
     // Код декали клетки.
     public const uint DecalVariants = 16u;
@@ -42,7 +41,6 @@ public static class TerrainCellFormat
     public const int DecalMirrorShift = 6;
     public const int DecalOffsetXShift = 7;
     public const int DecalOffsetYShift = 9;
-    public const uint DecalRockAtlas = 1u << 12;
 
     // Флаги света.
     public const float GlowFractionScale = 0.25f;

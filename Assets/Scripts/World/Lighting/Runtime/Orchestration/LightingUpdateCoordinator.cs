@@ -166,15 +166,13 @@ internal sealed class LightingUpdateCoordinator
 
         // Consume every pending geometry change in this frame. Transport
         // dependencies reduce work; an area cap would publish stale lighting.
-        const int maxInvalidationAreaPerFrame = int.MaxValue;
         bool fieldWasDirty = _state.FieldDirty;
-        _state.ActivatePendingRegionsBudgeted(
+        _state.ActivatePendingRegionIfVisible(
             new RectInt(
                 Mathf.RoundToInt(lightingRegion.x) - 1,
                 Mathf.RoundToInt(lightingRegion.y) - 1,
                 Mathf.RoundToInt(lightingRegion.z) + 2,
-                Mathf.RoundToInt(lightingRegion.w) + 2),
-            maxInvalidationAreaPerFrame);
+                Mathf.RoundToInt(lightingRegion.w) + 2));
 
         int gridWidth = Mathf.RoundToInt(lightingRegion.z);
         int gridHeight = Mathf.RoundToInt(lightingRegion.w);

@@ -13,6 +13,10 @@
       "Published": "perspective.png"
     },
     {
+      "Source": "World/Terrain/Decals/terrain-decals-sand.png",
+      "Published": "terrain-decals-sand.png"
+    },
+    {
       "Source": "World/Terrain/Decals/terrain-decals-rock.png",
       "Published": "terrain-decals-rock.png"
     },
@@ -759,6 +763,14 @@
     {
       "Source": "Pack/Market/0/0.png",
       "Published": "Pack/Market/0.png"
+    },
+    {
+      "Source": "Cells/Liquids/Acid/Blue/BlueAcid.png",
+      "Published": "Cells/Pearl.png"
+    },
+    {
+      "Source": "Cells/Liquids/Acid/Yellow/YellowAcid.png",
+      "Published": "Cells/YellowAcid.png"
     }
   ]
 }

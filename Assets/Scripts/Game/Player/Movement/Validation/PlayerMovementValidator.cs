@@ -37,7 +37,7 @@ public static class PlayerMovementValidator
     public static bool IsPassable(CellType cellType, in CellConfigurationPacket cellConfig)
     {
         return cellType is not (CellType.Unloaded or CellType.Pregener) &&
-               ((CellConfigProperties)cellConfig.Flags).HasFlag(CellConfigProperties.Passable);
+               ((CellConfigFlags)cellConfig.Flags).HasFlag(CellConfigFlags.Passable);
     }
 
     public static bool TryEvaluateStep(

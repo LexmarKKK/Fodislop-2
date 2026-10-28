@@ -129,6 +129,7 @@ static const uint KERN_TERRAIN_OUTLINE_CORNER = 5u;
 // decalAtlas (CellDecalAtlas).
 static const uint KERN_TERRAIN_DECAL_ATLAS_GROUND = 1u;
 static const uint KERN_TERRAIN_DECAL_ATLAS_ROCK = 2u;
+static const uint KERN_TERRAIN_DECAL_ATLAS_SAND = 3u;
 
 // animationType (CellAnimationType): вид анимации текстуры.
 static const uint KERN_TERRAIN_ANIMATION_TYPE_BLINKING = 1u;
@@ -155,24 +156,22 @@ static const uint KERN_TERRAIN_WALL_BASE_COLUMN = 8u;
 
 // ─── ПРАВИЛО ДЕКАЛИ: глобал на семью (TerrainCellData.PackDecal) ─────────
 //
-// struct DecalRule { percent:7; seed:8; rockAtlas:1; };
+// struct DecalRule { percent:7; seed:8; };
 static const uint KERN_TERRAIN_DECAL_RULE_PERCENT_MASK = 0x7Fu;
 static const uint KERN_TERRAIN_DECAL_RULE_SEED_SHIFT = 7u;
 static const uint KERN_TERRAIN_DECAL_RULE_SEED_MASK = 0xFFu;
-static const uint KERN_TERRAIN_DECAL_RULE_ROCK = 1u << 15;
 
 // ─── ДЕКАЛЬ КЛЕТКИ: код в вершине, 0 — нет декали ────────────────────────
 //
-// struct DecalCode { (variant:4 | rotation:2 | mirror:1 | offsetX:2 |
-//                     offsetY:2) + 1; :1; rockAtlas:1; };
-// Код вариантов доходит до 2048, поэтому бит 11 занят и атлас камня — бит 12.
+// placement = (variant:4 | rotation:2 | mirror:1 | offsetX:2 | offsetY:2) + 1.
+// Family is carried separately in lightContourDecal.x; placement is in .w.
+// All values up to 2048 are exactly representable in float16.
 static const uint KERN_TERRAIN_DECAL_VARIANTS = 16u;
 static const uint KERN_TERRAIN_DECAL_VARIANT_MASK = 15u;
 static const uint KERN_TERRAIN_DECAL_ROTATION_SHIFT = 4u;
 static const uint KERN_TERRAIN_DECAL_MIRROR_SHIFT = 6u;
 static const uint KERN_TERRAIN_DECAL_OFFSET_X_SHIFT = 7u;
 static const uint KERN_TERRAIN_DECAL_OFFSET_Y_SHIFT = 9u;
-static const uint KERN_TERRAIN_DECAL_ROCK_ATLAS = 1u << 12;
 
 // ─── ФЛАГИ СВЕТА: lightContourDecal.y — целая часть, дробная — glow ──────
 //
@@ -214,7 +213,7 @@ struct TerrainCellVertex
     float4 worldPos;          // gridX, serverY, PackedColumn, autotiling
     float4 animData;          // animationType, frameAnimationSpeed, phase, surfaceEffect
     float4 packedData;        // anchored, carrierCorner.xy, reserved
-    float4 lightContourDecal; // 0, LightingFlags + glow, Contour, DecalCode
+    float4 lightContourDecal; // DecalAtlas, LightingFlags + glow, Contour, DecalCode
     float4 geometryCornersX;
     float4 geometryCornersY;
     float uvBits;

@@ -22,8 +22,8 @@ internal sealed class GunShotWorldEffect : IServerWorldEffect
     private readonly LineRenderer[] _sparkLines = new LineRenderer[LifetimeTicks + 1];
     private readonly LineRenderer[] _sparkGlows = new LineRenderer[LifetimeTicks + 1];
     private readonly Vector3[] _points = new Vector3[LifetimeTicks + 1];
-    private readonly Vector3 _target;
-    private readonly double _createdAt;
+    private Vector3 _target;
+    private double _createdAt;
     private uint _random;
     private int _tick;
     private int _count = 1;
@@ -31,10 +31,6 @@ internal sealed class GunShotWorldEffect : IServerWorldEffect
     internal GunShotWorldEffect(Vector3 origin, Vector3 target,
         SpriteAnimationLibrary library, ISceneObjectFactory objects, uint seed)
     {
-        _target = target;
-        _points[0] = origin;
-        _random = seed;
-        _createdAt = Time.timeAsDouble;
         _object = objects.Create("SpriteAnimations/GunShot", RuntimeOwner.VFX);
         _line = CreateLine("Line", 0.14f, LineSortingOrder, library.GunLineMaterial, objects);
         _glow = CreateLine("Glow", 1.25f, GlowSortingOrder, library.GunGlowMaterial, objects);
@@ -46,6 +42,29 @@ internal sealed class GunShotWorldEffect : IServerWorldEffect
             _sparkLines[index].startColor = _sparkLines[index].endColor = _glow.startColor;
             _sparkGlows[index].startColor = _sparkGlows[index].endColor = _glow.startColor;
         }
+        Activate(origin, target, seed);
+    }
+
+    internal void Activate(Vector3 origin, Vector3 target, uint seed)
+    {
+        _target = target;
+        _points[0] = origin;
+        _random = seed;
+        _createdAt = Time.timeAsDouble;
+        _tick = 0;
+        _count = 1;
+        _line.positionCount = 0;
+        _glow.positionCount = 0;
+        _line.startColor = _line.endColor = Color.white;
+        for (int index = 0; index < _sparkLines.Length; index++)
+        {
+            _sparkLines[index].enabled = false;
+            _sparkGlows[index].enabled = false;
+            _sparkLines[index].positionCount = 0;
+            _sparkGlows[index].positionCount = 0;
+        }
+        IsDisposed = false;
+        _object.SetActive(true);
     }
 
     public bool IsDisposed { get; private set; }
@@ -130,6 +149,7 @@ internal sealed class GunShotWorldEffect : IServerWorldEffect
 
         IsDisposed = true;
         _object.SetActive(false);
-        Object.Destroy(_object);
     }
+
+    internal void Destroy() => Object.Destroy(_object);
 }

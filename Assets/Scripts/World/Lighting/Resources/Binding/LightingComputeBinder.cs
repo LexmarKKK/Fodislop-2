@@ -370,22 +370,6 @@ internal static class LightingComputeBinder
         BindFieldTextures(commandBuffer, compute, compositeLightingKernel, materialField, glowField);
     }
 
-    public static int ResolveCascadeScrollDelta(int cellDelta, int fieldSize, int cellGridSize, int probeSpacing)
-    {
-        if (cellGridSize <= 0 || fieldSize <= 0 || fieldSize % cellGridSize != 0 || probeSpacing <= 0)
-        {
-            throw new ArgumentException("Atlas scrolling requires an integer texel scale and positive probe spacing.");
-        }
-
-        long texelDelta = (long)cellDelta * (fieldSize / cellGridSize);
-        if (texelDelta % probeSpacing != 0)
-        {
-            throw new ArgumentException("Atlas scrolling cannot reuse probes with a different world-space phase.");
-        }
-
-        return checked((int)(texelDelta / probeSpacing));
-    }
-
     public static void BindCascadeParameters(
         CommandBuffer commandBuffer,
         ComputeShader compute,

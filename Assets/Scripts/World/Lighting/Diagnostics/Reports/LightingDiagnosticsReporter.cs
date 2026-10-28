@@ -17,8 +17,7 @@ internal readonly record struct LightingDiagnosticsContext(
     bool Initialized,
     LightingQualityMode Quality,
     Vector4 WorldRect,
-    float CellSize,
-    int MaximumIntervalSteps);
+    float CellSize);
 
 /// <summary>
 /// Отчётность освещения: стоимость каскадов и дамп кадра.
@@ -42,11 +41,10 @@ internal sealed class LightingDiagnosticsReporter
     }
 
     public void CollectCascadeCosts(
-        List<CascadeCostSample> destination,
-        in LightingDiagnosticsContext context)
+        List<CascadeCostSample> destination)
     {
         CascadeCostCalculator.CollectCascadeCosts(
-            _resources.Cascades, context.MaximumIntervalSteps, destination);
+            _resources.Cascades, destination);
     }
 
     public string? DumpCurrentFrame(

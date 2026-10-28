@@ -15,7 +15,6 @@ using Kern.Diagnostics.Memory;
 namespace Kern.World.Lighting;
 internal sealed class LightingResourceManager
 {
-    private const long MaximumDynamicSdfBuildWorkUnits = 200_000_000;
     // Authored transport quality is independent of field density and camera
     // coverage. Cost estimates are diagnostics, never an automatic LOD.
     private static int MaximumStaticCascadeDirections => LightingQualityTuningController.MaximumStaticCascadeDirections;
@@ -294,30 +293,23 @@ internal sealed class LightingResourceManager
 
     public void ValidateRequestedQuality(
         LightingQualityTuning quality,
-        in GraphicsQualitySettings settings,
-        int activeDynamicLightCount)
+        in GraphicsQualitySettings settings)
     {
         if (CellGridWidth <= 0 || CellGridHeight <= 0)
         {
             throw new InvalidOperationException("Дождись готовности мирового поля перед применением качества.");
         }
         LightingResourceLayout.Validate(CellGridWidth, CellGridHeight, quality, settings, new List<CascadeLayout>());
-        DynamicPolarWorkBudget.ValidateWorstCaseQuality(
-            checked(CellGridWidth * quality.LightPixelsPerCell),
-            checked(CellGridHeight * quality.LightPixelsPerCell),
-            quality,
-            Math.Min(activeDynamicLightCount, settings.LightingMaximumLightCount));
     }
 
     public bool TryApplyQualityTuning(
         LightingQualityTuning quality,
         in GraphicsQualitySettings settings,
-        int activeDynamicLightCount,
         out string rejection)
     {
         try
         {
-            ValidateRequestedQuality(quality, settings, activeDynamicLightCount);
+            ValidateRequestedQuality(quality, settings);
             LightingQualityTuningController.Apply(quality);
             rejection = string.Empty;
             return true;
@@ -355,8 +347,7 @@ internal sealed class LightingResourceManager
         EnsureAmbientOcclusionClearMaterial();
         // Resource identity depends on coverage and settings, never camera pose.
         // Cache the selected probe layout as well as textures: repeating the
-        // selector allocates scratch lists and can replace an already budgeted
-        // layout with its unbudgeted candidate on every stable frame.
+        // builder allocates scratch lists even when the layout is unchanged.
         if (CellGridWidth == gridWidth && CellGridHeight == gridHeight &&
             _allocatedQuality.Equals(qualitySettings) &&
             FieldWidth == checked(gridWidth * effectivePixelsPerCell) &&
@@ -618,22 +609,6 @@ internal sealed class LightingResourceManager
         if (width <= 0 || height <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(width), "JFA requires a non-empty transport field.");
-        }
-
-        int largestSide = Math.Max(width, height);
-        int jumpPasses = 1;
-        for (int jump = 1; jump < largestSide; jump = checked(jump << 1))
-        {
-            jumpPasses++;
-        }
-
-        long texelCount = checked((long)width * height);
-        long workUnits = checked(texelCount * (jumpPasses * 9L + 9L));
-        if (workUnits > MaximumDynamicSdfBuildWorkUnits)
-        {
-            throw new InvalidOperationException(
-                $"JFA distance-field build requires {workUnits:N0} neighbor checks; " +
-                $"limit is {MaximumDynamicSdfBuildWorkUnits:N0}. Reduce transport-map density before selecting SDF.");
         }
     }
 

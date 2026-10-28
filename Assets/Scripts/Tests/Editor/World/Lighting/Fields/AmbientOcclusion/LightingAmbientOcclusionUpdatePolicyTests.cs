@@ -101,9 +101,9 @@ public sealed class LightingAmbientOcclusionUpdatePolicyTests
     }
 
     [Test]
-    public void TooManyDistantEdits_FallBackToOneBoundedDraw()
+    public void NineDistantEdits_PreserveSeparateSupportsInsteadOfRasterizingTheirBoundingBox()
     {
-        var edits = new RectInt[LightingAmbientOcclusionUpdatePolicy.MaximumPartialRasterRects + 1];
+        var edits = new RectInt[9];
         for (int i = 0; i < edits.Length; i++)
         {
             edits[i] = new RectInt(5 + (i * 10), 5 + (i * 10), 1, 1);
@@ -111,8 +111,70 @@ public sealed class LightingAmbientOcclusionUpdatePolicyTests
 
         IReadOnlyList<RectInt> rects = LightingAmbientOcclusionUpdatePolicy.ResolveRasterRects(
             edits, new RectInt(0, 0, 128, 128), 32, false);
-        Assert.That(rects, Has.Count.EqualTo(1));
-        AssertRect(rects[0], 64, 64, 2784, 2784);
+        Assert.That(rects, Has.Count.EqualTo(9));
+        long rasterPixels = 0;
+        for (int i = 0; i < rects.Count; i++)
+        {
+            AssertRect(rects[i], 64 + (i * 320), 64 + (i * 320), 224, 224);
+            rasterPixels += (long)rects[i].width * rects[i].height;
+        }
+
+        Assert.That(rasterPixels, Is.EqualTo(451_584));
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void MergingPreservesDirtySupportWithoutIncreasingTotalRasterArea(bool rowsTopDown)
+    {
+        var random = new System.Random(90210);
+        var field = new RectInt(-8, -6, 32, 32);
+        for (int iteration = 0; iteration < 32; iteration++)
+        {
+            var edits = new RectInt[16];
+            long separatePixels = 0;
+            for (int i = 0; i < edits.Length; i++)
+            {
+                edits[i] = new RectInt(random.Next(-14, 30), random.Next(-12, 32), random.Next(1, 6), random.Next(1, 6));
+                int width = Math.Max(0, Math.Min(24, edits[i].xMax + 3) - Math.Max(-8, edits[i].xMin - 3));
+                int height = Math.Max(0, Math.Min(26, edits[i].yMax + 3) - Math.Max(-6, edits[i].yMin - 3));
+                separatePixels += (long)width * height * 4;
+            }
+
+            IReadOnlyList<RectInt> rects = LightingAmbientOcclusionUpdatePolicy.ResolveRasterRects(
+                edits, field, 2, rowsTopDown);
+            long mergedPixels = 0;
+            var covered = new bool[64, 64];
+            foreach (RectInt rect in rects)
+            {
+                mergedPixels += (long)rect.width * rect.height;
+                for (int y = rect.yMin; y < rect.yMax; y++)
+                {
+                    for (int x = rect.xMin; x < rect.xMax; x++)
+                    {
+                        covered[x, y] = true;
+                    }
+                }
+            }
+
+            Assert.That(mergedPixels, Is.LessThanOrEqualTo(separatePixels));
+            for (int y = 0; y < 64; y++)
+            {
+                float worldY = -6f + ((rowsTopDown ? 63 - y : y) + 0.5f) / 2f;
+                for (int x = 0; x < 64; x++)
+                {
+                    float worldX = -8f + (x + 0.5f) / 2f;
+                    foreach (RectInt edit in edits)
+                    {
+                        if (worldX >= edit.xMin - 3 && worldX < edit.xMax + 3 &&
+                            worldY >= edit.yMin - 3 && worldY < edit.yMax + 3)
+                        {
+                            Assert.That(covered[x, y], Is.True, $"Support lost at {x},{y}; iteration {iteration}.");
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     [Test]

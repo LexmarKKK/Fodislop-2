@@ -84,21 +84,33 @@ namespace Kern.World.Terrain
                 _window.Driver.Presentation.SetTerrainShader(_getTerrainShader());
                 _window.Driver.Presentation.InitializeShader();
                 _window.PendingTextureCellTypes.Add(cellType);
-                _contentRevision.RecordLightingVisibleTextureChange();
-                _getLightingFramePublisher().RequestFullReset(
-                    TerrainLightingFullResetReason.LightingVisibleTextureChanged);
             }
-            else if (TerrainCellTextureName.IsDecalAtlas(filename))
+            else
             {
-                ITextureService? textureService = _getTextureService();
-                if (textureService != null)
-                {
-                    _window.Driver.Presentation.BindAtlasTextures(
-                        textureService.GetAllAtlases(), textureService);
-                }
-
-                _window.NeedsRefresh = true;
+                return;
             }
+
+            RecordLightingVisibleTextureChange();
+        }
+
+        public void HandleDecalAtlasLoaded()
+        {
+            ITextureService? textureService = _getTextureService();
+            if (textureService != null)
+            {
+                _window.Driver.Presentation.BindAtlasTextures(
+                    textureService.GetAllAtlases(), textureService);
+            }
+
+            _window.NeedsRefresh = true;
+            RecordLightingVisibleTextureChange();
+        }
+
+        private void RecordLightingVisibleTextureChange()
+        {
+            _contentRevision.RecordLightingVisibleTextureChange();
+            _getLightingFramePublisher().RequestFullReset(
+                TerrainLightingFullResetReason.LightingVisibleTextureChanged);
         }
 
         public void HandleWorldDataLoaded(Action ensureSubscriptions)
