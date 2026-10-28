@@ -59,13 +59,13 @@ public sealed class ShaderDeadUniformRule : IRule
             string full = Path.Combine(context.ProjectRoot, root);
             if (!Directory.Exists(full))
                 continue;
-            foreach (string file in SourceScanner.EnumerateShaderFiles(full))
+            foreach (string file in UnitySourceFiles.EnumerateShaderFiles(full))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 string raw = File.ReadAllText(file);
-                string code = SourceScanner.StripComments(raw);
+                string code = CSharpSourceText.StripComments(raw);
                 sources.Add((
-                    SourceScanner.GetProjectRelativePath(context.ProjectRoot, file),
+                    ProjectSourcePaths.GetProjectRelativePath(context.ProjectRoot, file),
                     code,
                     raw.Split('\n')));
             }

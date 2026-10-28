@@ -11,8 +11,14 @@
         "Kern.World",
         "Kern.AssetPipeline",
         "Kern.Contracts",
+        "Kern.Persistence",
+        "MinesServer.Data",
+        "UniTask",
         "Unity.TextMeshPro",
-        "VContainer"
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "VContainer",
+        "Kern.Diagnostics"
     ],
     "includePlatforms": [
         "Editor"

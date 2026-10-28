@@ -328,6 +328,9 @@ MonoBehaviour:
   blendDistance: 0
   weight: 1
   sharedProfile: {fileID: 11400000, guid: 206966c4ca5de44b39d08f96da3803ab, type: 2}
+  m_SceneObjectReference:
+    m_OverrideState: 0
+    m_Value: {fileID: 0}
 --- !u!4 &358710301
 Transform:
   m_ObjectHideFlags: 0
@@ -1114,6 +1117,7 @@ MonoBehaviour:
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_WorldSpaceCollider: {fileID: 0}
+  m_GenerateAccessibilityHierarchy: 1
 --- !u!4 &1108560719
 Transform:
   m_ObjectHideFlags: 0
@@ -1822,31 +1826,31 @@ MonoBehaviour:
   - _managerType: Kern.World.WorldTextureManager, Kern.World, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: World
     _target: {fileID: 310136117}
-  - _managerType: Kern.Game.Managers.ServerAudioEventManager, Kern.Application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.Game.Events.Audio.ServerAudioEventManager, Kern.Application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: Audio
     _target: {fileID: 881552890}
-  - _managerType: Kern.Game.VFXPool, Kern.Application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.Game.VisualEffects.Pooling.VFXPool, Kern.Application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: Rendering
     _target: {fileID: 1150380009}
-  - _managerType: Kern.Game.WorldEntityBatchRenderer, Kern.Application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.Game.Rendering.WorldEntityBatchRenderer, Kern.Application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: Rendering
     _target: {fileID: 1880757875}
-  - _managerType: Kern.UI.GlobalChatUI, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.UI.Chat.GlobalChatUI, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: UI
     _target: {fileID: 1857202663}
-  - _managerType: Kern.UI.FPSCounter, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.UI.Diagnostics.FPSCounter, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: UI
     _target: {fileID: 1458764064}
-  - _managerType: Kern.UI.FloatingChatManager, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.UI.Chat.FloatingChatManager, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: UI
     _target: {fileID: 2030377783}
-  - _managerType: Kern.UI.ReconnectUI, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.UI.Connection.ReconnectUI, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: UI
     _target: {fileID: 1812687274}
-  - _managerType: Kern.UI.AssetLoadingIndicator, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.UI.Loading.AssetLoadingIndicator, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: UI
     _target: {fileID: 2017390606}
-  - _managerType: Kern.UI.MissionArrowUI, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.UI.Missions.MissionArrowUI, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: UI
     _target: {fileID: 32888240}
   - _managerType: Kern.Rendering.PostProcessing.PostProcessController, Kern.Presentation, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
@@ -1858,28 +1862,28 @@ MonoBehaviour:
   - _managerType: Kern.World.SurfaceRenderer, Kern.World, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: Rendering
     _target: {fileID: 801820429}
-  - _managerType: Kern.Player.CameraFollow, Kern.Application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.Game.Player.Cameras.CameraFollow, Kern.Application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: Rendering
     _target: {fileID: 1403310852}
-  - _managerType: Kern.UI.HUD.Player.View.PlayerHUDView, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.UI.HUD.PlayerHUDView, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: UI
     _target: {fileID: 857961948}
   - _managerType: Kern.UI.Inventory.InventoryView, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: UI
     _target: {fileID: 378316189}
-  - _managerType: Kern.UI.PauseMenu, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.UI.Settings.PauseMenu, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: UI
     _target: {fileID: 1920060539}
-  - _managerType: Kern.UI.MinimapController, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.UI.Map.MinimapController, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: UI
     _target: {fileID: 68980589}
-  - _managerType: Kern.UI.WorldMapController, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.UI.Map.WorldMapController, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: UI
     _target: {fileID: 1103923418}
-  - _managerType: Kern.UI.WorldMapRenderer, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.UI.Map.WorldMapRenderer, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: UI
     _target: {fileID: 996933188}
-  - _managerType: Kern.UI.InGameDebugOverlay, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - _managerType: Kern.UI.Diagnostics.InGameDebugOverlay, Kern.UI, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _serviceGroup: UI
     _target: {fileID: 1833245202}
 --- !u!4 &2000000002

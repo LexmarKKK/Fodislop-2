@@ -28,7 +28,7 @@ public sealed class UITransitionGuardRule : IRule
         var projectRoot = context.ProjectRoot;
 
         // MainMenu Play button guard
-        var mainMenuPath = Path.Combine(projectRoot, "Assets/Scripts/UI/Menu/Core/MainMenu.cs");
+        var mainMenuPath = Path.Combine(projectRoot, "Assets/Scripts/UI/Menu/Navigation/MainMenu.cs");
         if (!File.Exists(mainMenuPath))
             mainMenuPath = Path.Combine(projectRoot, "Assets/Scripts/UI/Menu/MainMenu.cs");
 
@@ -42,15 +42,15 @@ public sealed class UITransitionGuardRule : IRule
                     RuleId = Id,
                     Message = "MainMenu Play transition должен быть защищён от дублированных кликов во время загрузки или завершения.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/UI/Menu/Core/MainMenu.cs"
+                    TypeName = "Assets/Scripts/UI/Menu/Navigation/MainMenu.cs"
                 });
             }
         }
 
         // Gateway guard
-        var gatewayPath = Path.Combine(projectRoot, "Assets/Scripts/UI/Menus/Gateway/GatewayController.cs");
+        var gatewayPath = Path.Combine(projectRoot, "Assets/Scripts/UI/Gateway/Templates/Gateway/GatewayController.cs");
         if (!File.Exists(gatewayPath))
-            gatewayPath = Path.Combine(projectRoot, "Assets/Scripts/UI/Menus/GatewayController.cs");
+            gatewayPath = Path.Combine(projectRoot, "Assets/Scripts/UI/Gateway/Templates/GatewayController.cs");
 
         if (File.Exists(gatewayPath))
         {
@@ -62,7 +62,7 @@ public sealed class UITransitionGuardRule : IRule
                     RuleId = Id,
                     Message = "Gateway-to-menu transition должен быть защищён от дублированной активации.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/UI/Menus/Gateway/GatewayController.cs"
+                    TypeName = "Assets/Scripts/UI/Gateway/Templates/Gateway/GatewayController.cs"
                 });
             }
         }

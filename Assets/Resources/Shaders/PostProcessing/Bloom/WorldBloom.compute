@@ -1,0 +1,104 @@
+#pragma kernel Prefilter
+#pragma kernel Downsample
+#pragma kernel Upsample
+
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
+
+Texture2D<float4> _Scene;
+Texture2D<float4> _Glow;
+Texture2D<float4> _Source;
+Texture2D<float4> _Base;
+RWTexture2D<float4> _Output;
+SamplerState sampler_LinearClamp;
+SamplerState sampler_PointClamp;
+float4 _OutputSize;
+float4 _SourceUv;
+float4 _SourceTexelSize;
+float4 _GlowUv;
+float _Threshold;
+float _SoftKnee;
+float _Radius;
+float _Scatter;
+float4 _Tint;
+
+float3 PrefilterTap(int2 scenePixel)
+{
+    if (any(scenePixel < 0) || any(scenePixel >= (int2)_SourceTexelSize.zw))
+    {
+        return 0.0;
+    }
+
+    float2 sceneUv = (scenePixel + 0.5) * _SourceTexelSize.xy;
+    float2 glowUv = sceneUv * _GlowUv.xy + _GlowUv.zw;
+    if (any(glowUv < 0.0) || any(glowUv >= 1.0))
+    {
+        return 0.0;
+    }
+
+    float4 glow = _Glow.SampleLevel(sampler_PointClamp, glowUv, 0);
+    if (glow.a <= 0.001 || !any(glow.rgb > 0.0))
+    {
+        return 0.0;
+    }
+
+    // Threshold individual HDR pixels, before spatial averaging can erase peaks.
+    float3 color = _Scene.Load(int3(scenePixel, 0)).rgb;
+    float luminance = Luminance(color);
+    float knee = max(_Threshold * _SoftKnee, 1e-4);
+    float soft = clamp(luminance - _Threshold + knee, 0.0, 2.0 * knee);
+    soft = soft * soft / (4.0 * knee + 1e-4);
+    float contribution = max(soft, luminance - _Threshold) / max(luminance, 1e-4);
+    return color * max(contribution, 0.0);
+}
+
+[numthreads(8, 8, 1)]
+void Prefilter(uint3 id : SV_DispatchThreadID)
+{
+    if (any(id.xy >= (uint2)_OutputSize.xy)) return;
+    float2 uv = ((id.xy + 0.5) * _OutputSize.zw) * _SourceUv.xy + _SourceUv.zw;
+    int2 firstPixel = (int2)round(uv * _SourceTexelSize.zw - 2.0);
+    float3 color = 0.0;
+    [unroll]
+    for (int y = 0; y < 4; y++)
+    {
+        [unroll]
+        for (int x = 0; x < 4; x++)
+        {
+            color += PrefilterTap(firstPixel + int2(x, y));
+        }
+    }
+    _Output[id.xy] = float4(color * (1.0 / 16.0) * _Tint.rgb, 0.0);
+}
+
+float3 Tent(float2 uv, float radius)
+{
+    float2 d = _SourceTexelSize.xy * radius;
+    // Separable [1, 2, 1] weights: the center and axes must contribute too.
+    float3 color = 4.0 * _Source.SampleLevel(sampler_LinearClamp, uv, 0).rgb;
+    color += 2.0 * (_Source.SampleLevel(sampler_LinearClamp, uv + float2(-d.x, 0.0), 0).rgb +
+        _Source.SampleLevel(sampler_LinearClamp, uv + float2(d.x, 0.0), 0).rgb +
+        _Source.SampleLevel(sampler_LinearClamp, uv + float2(0.0, -d.y), 0).rgb +
+        _Source.SampleLevel(sampler_LinearClamp, uv + float2(0.0, d.y), 0).rgb);
+    color += _Source.SampleLevel(sampler_LinearClamp, uv + float2(-d.x, -d.y), 0).rgb +
+        _Source.SampleLevel(sampler_LinearClamp, uv + float2(d.x, -d.y), 0).rgb +
+        _Source.SampleLevel(sampler_LinearClamp, uv + float2(-d.x, d.y), 0).rgb +
+        _Source.SampleLevel(sampler_LinearClamp, uv + float2(d.x, d.y), 0).rgb;
+    return color * (1.0 / 16.0);
+}
+
+[numthreads(8, 8, 1)]
+void Downsample(uint3 id : SV_DispatchThreadID)
+{
+    if (any(id.xy >= (uint2)_OutputSize.xy)) return;
+    float2 uv = (id.xy + 0.5) * _OutputSize.zw;
+    _Output[id.xy] = float4(Tent(uv * _SourceUv.xy + _SourceUv.zw, 1.0), 0.0);
+}
+
+[numthreads(8, 8, 1)]
+void Upsample(uint3 id : SV_DispatchThreadID)
+{
+    if (any(id.xy >= (uint2)_OutputSize.xy)) return;
+    float2 uv = (id.xy + 0.5) * _OutputSize.zw;
+    float3 local = _Base.SampleLevel(sampler_LinearClamp, uv, 0).rgb;
+    _Output[id.xy] = float4(local + _Scatter * Tent(uv * _SourceUv.xy + _SourceUv.zw, _Radius), 0.0);
+}

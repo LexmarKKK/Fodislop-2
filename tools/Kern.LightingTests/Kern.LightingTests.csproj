@@ -12,22 +12,24 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Program.cs" />
-    <Compile Include="LightingOracle.cs" />
-    <Compile Include="FreezeReport.cs" />
-    <Compile Include="NativeHarness.cs" />
-    <Compile Include="LightingShim.cs" />
+    <Compile Include="Cli/Program.cs" />
+    <Compile Include="Runtime/LightingOracle/LightingOracle.cs" />
+    <Compile Include="Runtime/FreezeReport/FreezeReport.cs" />
+    <Compile Include="Runtime/NativeHarness/NativeHarness.cs" />
+    <Compile Include="Compatibility/LightingShim.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Quality\Contracts\LightingQualityTuning.cs" Link="Game\LightingQualityTuning.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Quality\LightingQualityTuningController.cs" Link="Game\LightingQualityTuningController.cs" />
-    <Compile Include="ProbeRectTests.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Cascades\LightingCascadeLayout.cs" Link="Game\LightingCascadeLayout.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Cascades\CascadeLayoutBuilder.cs" Link="Game\CascadeLayoutBuilder.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Cascades\CascadeCostCalculator.cs" Link="Game\CascadeCostCalculator.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Resources\LightingComputeBinder.cs" Link="Game\LightingComputeBinder.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\Rendering\Settings\Contracts\DisplayOutputPrecision.cs" Link="Game\DisplayOutputPrecision.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Cascades\CascadeProbeRects.cs" Link="Game\CascadeProbeRects.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Streaming\StreamingPolicy.cs" Link="Game\StreamingPolicy.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Streaming\StreamingPlan.cs" Link="Game\StreamingPlan.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Streaming\StreamingGovernor.cs" Link="Game\StreamingGovernor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Quality\Control\LightingQualityTuningController.cs" Link="Game\LightingQualityTuningController.cs" />
+    <Compile Include="Scenarios/ProbeRect/ProbeRectTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Cascades\Layout\LightingCascadeLayout.cs" Link="Game\LightingCascadeLayout.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Cascades\Layout\CascadeLayoutBuilder.cs" Link="Game\CascadeLayoutBuilder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Cascades\Budgets\CascadeCostCalculator.cs" Link="Game\CascadeCostCalculator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Resources\Binding\LightingComputeBinder.cs" Link="Game\LightingComputeBinder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\Rendering\Display\Contracts\Output\DisplayOutputPrecision.cs" Link="Game\DisplayOutputPrecision.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Cascades\Layout\CascadeProbeRects.cs" Link="Game\CascadeProbeRects.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Lighting\Runtime\Invalidation\StaticLightingDirty.cs" Link="Game\StaticLightingDirty.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Coordinates\Contracts\Grid\WorldGridDefaults.cs" Link="Game\WorldGridDefaults.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Streaming\Planning\StreamingPolicy.cs" Link="Game\StreamingPolicy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Streaming\Planning\StreamingPlan.cs" Link="Game\StreamingPlan.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\Assets\Scripts\World\Streaming\Control\StreamingGovernor.cs" Link="Game\StreamingGovernor.cs" />
   </ItemGroup>
 </Project>

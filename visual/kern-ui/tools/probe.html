@@ -1,0 +1,13 @@
+<!doctype html>
+<!-- Проба вычисленных стилей: ?page=…&sel=…&props=a,b — пишет значения в title -->
+<html><head><meta charset="utf-8"></head><body style="margin:0"><iframe id="f" style="border:0;width:1920px;height:1080px"></iframe>
+<script>
+const q = new URLSearchParams(location.search), f = document.getElementById('f');
+f.onload = () => setTimeout(() => {
+  const d = f.contentDocument, el = d.querySelector(q.get('sel'));
+  if (!el) { document.title = 'NO ELEMENT'; return; }
+  const cs = f.contentWindow.getComputedStyle(el);
+  document.title = q.get('props').split(',').map(p => p + '=' + cs.getPropertyValue(p)).join(' | ');
+}, 800);
+f.src = q.get('page');
+</script></body></html>

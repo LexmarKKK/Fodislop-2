@@ -26,30 +26,22 @@ public sealed class DisplayTransformRule : IRule
         var violations = new List<RuleViolation>();
         string shaderRoot = Path.Combine(
             context.ProjectRoot,
-            "Assets",
-            "Resources",
-            "Shaders",
-            "PostProcessing");
+            "Assets/Resources/Shaders/PostProcessing");
 
-        CheckFile(violations, Path.Combine(shaderRoot, "ColorGrading.hlsl"), CheckColorGrading);
-        CheckFile(violations, Path.Combine(shaderRoot, "PostProcess.compute"), CheckPostProcessShader);
-        CheckFile(violations, Path.Combine(shaderRoot, "WorldBloom.compute"), CheckWorldBloomShader);
-        CheckFile(violations, Path.Combine(shaderRoot, "WorldBloomAdd.shader"), CheckWorldBloomAddShader);
-        CheckFile(violations, Path.Combine(shaderRoot, "Scopes.compute"), CheckScopesShader);
+        CheckFile(violations, Path.Combine(shaderRoot, "ColorGrading/ColorGrading.hlsl"), CheckColorGrading);
+        CheckFile(violations, Path.Combine(shaderRoot, "Display/PostProcess.compute"), CheckPostProcessShader);
+        CheckFile(violations, Path.Combine(shaderRoot, "Bloom/WorldBloom.compute"), CheckWorldBloomShader);
+        CheckFile(violations, Path.Combine(shaderRoot, "Bloom/WorldBloomAdd.shader"), CheckWorldBloomAddShader);
+        CheckFile(violations, Path.Combine(shaderRoot, "Scopes/Scopes.compute"), CheckScopesShader);
         CheckFile(
             violations,
-            Path.Combine(context.ProjectRoot, "Assets", "Scripts", "Rendering", "PostProcessing", "Scopes", "ScopesRenderPass.cs"),
+            Path.Combine(context.ProjectRoot, "Assets/Scripts/Rendering/PostProcessing/Scopes/Rendering/ScopesRenderPass.cs"),
             CheckHDRDisplayAccess);
         CheckFile(
             violations,
             Path.Combine(
                 context.ProjectRoot,
-                "Assets",
-                "Scripts",
-                "Rendering",
-                "PostProcessing",
-                "Pipeline",
-                "PostProcessRenderPass.cs"),
+                "Assets/Scripts/Rendering/PostProcessing/Pipeline/Execution/PostProcessRenderPass.cs"),
             CheckRenderPassSource);
 
         return Task.FromResult<IReadOnlyList<RuleViolation>>(violations);

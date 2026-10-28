@@ -37,12 +37,12 @@ public sealed class ShaderIncludeIntegrityRule : IRule
             return Task.FromResult<IReadOnlyList<RuleViolation>>(violations);
         }
 
-        foreach (string file in SourceScanner.EnumerateShaderFiles(assetsRoot))
+        foreach (string file in UnitySourceFiles.EnumerateShaderFiles(assetsRoot))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            string code = SourceScanner.StripComments(File.ReadAllText(file));
+            string code = CSharpSourceText.StripComments(File.ReadAllText(file));
             string fileDir = Path.GetDirectoryName(file) ?? assetsRoot;
-            string relativeSource = SourceScanner.GetProjectRelativePath(context.ProjectRoot, file);
+            string relativeSource = ProjectSourcePaths.GetProjectRelativePath(context.ProjectRoot, file);
 
             foreach (Match match in IncludeRegex.Matches(code))
             {

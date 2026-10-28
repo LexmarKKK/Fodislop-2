@@ -1,0 +1,95 @@
+#nullable enable
+
+using Kern.World;
+using Kern.World.Terrain;
+using NUnit.Framework;
+using UnityEngine;
+
+namespace Kern.Tests.World;
+
+[TestFixture]
+public class WorldCoordinateConverterTests
+{
+    private const int TEST_WORLD_HEIGHT = 256;
+
+    [Test]
+    public void ServerToUnityY_TopLeftZero_ReturnsCorrectCenteredY()
+    {
+        // For world height 256, server Y=0 maps to (256 - 1 - 0) + 0.5 = 255.5f in Unity world space
+        float unityY = WorldCoordinateConverter.ServerToUnityY(0, TEST_WORLD_HEIGHT);
+        Assert.AreEqual(255.5f, unityY, 0.001f);
+    }
+
+    [Test]
+    public void UnityToServerY_FloorConversion_ReturnsOriginalServerY()
+    {
+        // Unity Y 255.5f corresponds to Server Y 0
+        int serverY = WorldCoordinateConverter.UnityToServerY(255.5f, TEST_WORLD_HEIGHT);
+        Assert.AreEqual(0, serverY);
+
+        // Unity Y 0.5f corresponds to Server Y 255
+        serverY = WorldCoordinateConverter.UnityToServerY(0.5f, TEST_WORLD_HEIGHT);
+        Assert.AreEqual(255, serverY);
+    }
+
+    [Test]
+    public void Roundtrip_ServerToUnityToServer_IsPreserved()
+    {
+        for (int y = 0; y < 100; y += 10)
+        {
+            float unityY = WorldCoordinateConverter.ServerToUnityY(y, TEST_WORLD_HEIGHT);
+            int roundtripY = WorldCoordinateConverter.UnityToServerY(unityY, TEST_WORLD_HEIGHT);
+            Assert.AreEqual(y, roundtripY, $"Roundtrip failed for server Y={y}");
+        }
+    }
+
+    [Test]
+    public void ServerToUnityPos_ValidCoordinates_ReturnsCenteredVector()
+    {
+        Vector3 unityPos = WorldCoordinateConverter.ServerToUnityPos(10, 20, TEST_WORLD_HEIGHT, -1f);
+
+        Assert.AreEqual(10.5f, unityPos.x, 0.001f);
+        Assert.AreEqual(235.5f, unityPos.y, 0.001f); // 256 - 1 - 20 + 0.5 = 235.5
+        Assert.AreEqual(-1f, unityPos.z, 0.001f);
+    }
+
+    [Test]
+    public void UnityToServerPos_ValidVector_ReturnsExactGridPos()
+    {
+        Vector3 unityPos = new Vector3(10.2f, 235.8f, 0f);
+        Vector2Int serverPos = WorldCoordinateConverter.UnityToServerPos(unityPos, TEST_WORLD_HEIGHT);
+
+        Assert.AreEqual(10, serverPos.x);
+        Assert.AreEqual(20, serverPos.y);
+    }
+
+    [TestCase(-0.5f, 255.5f, -1, 0)]
+    [TestCase(256.5f, 255.5f, 256, 0)]
+    [TestCase(3.5f, -0.5f, 3, 256)]
+    [TestCase(3.5f, 256.5f, 3, -1)]
+    [TestCase(10.2f, 235.8f, 10, 20)]
+    public void BoundaryPicking_PreservesSignedCellCoordinates(float x, float y, int expectedX, int expectedY)
+    {
+        Vector2Int cell = WorldCoordinateConverter.UnityToServerCellIncludingBoundary(
+            new Vector3(x, y, 0f), TEST_WORLD_HEIGHT);
+        Assert.That(cell.x, Is.EqualTo(expectedX));
+        Assert.That(cell.y, Is.EqualTo(expectedY));
+        Vector3 center = WorldCoordinateConverter.ServerToUnityPos(cell.x, cell.y, TEST_WORLD_HEIGHT);
+        Assert.That(center.x, Is.EqualTo(expectedX + 0.5f));
+        Assert.That(center.y, Is.EqualTo(255.5f - expectedY));
+    }
+
+    [Test]
+    public void UnityToServerY_NegativeUnityY_IsRejected()
+    {
+        Assert.Throws<System.ArgumentOutOfRangeException>(
+            () => WorldCoordinateConverter.UnityToServerY(-0.5f, TEST_WORLD_HEIGHT));
+    }
+
+    [Test]
+    public void UnityToServerY_AboveWorldHeight_IsRejected()
+    {
+        Assert.Throws<System.ArgumentOutOfRangeException>(
+            () => WorldCoordinateConverter.UnityToServerY(TEST_WORLD_HEIGHT + 0.5f, TEST_WORLD_HEIGHT));
+    }
+}

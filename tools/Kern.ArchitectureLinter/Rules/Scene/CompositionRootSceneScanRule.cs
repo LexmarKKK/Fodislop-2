@@ -21,10 +21,10 @@ public sealed class CompositionRootSceneScanRule : IRule
 
     private static readonly string[] CompositionRoots =
     {
-        "Assets/Scripts/Core/Bootstrap/Scopes/BootstrapLifetimeScope.cs",
-        "Assets/Scripts/Core/Bootstrap/Scopes/GameLifetimeScope.cs",
-        "Assets/Scripts/Core/Bootstrap/Scopes/GatewayLifetimeScope.cs",
-        "Assets/Scripts/Core/Bootstrap/Scopes/MainMenuLifetimeScope.cs",
+        "Assets/Scripts/Bootstrap/Scenes/Scopes/BootstrapLifetimeScope.cs",
+        "Assets/Scripts/Bootstrap/Scenes/Scopes/GameLifetimeScope.cs",
+        "Assets/Scripts/Bootstrap/Scenes/Scopes/GatewayLifetimeScope.cs",
+        "Assets/Scripts/Bootstrap/Scenes/Scopes/MainMenuLifetimeScope.cs",
     };
 
     private static readonly Regex Forbidden = new(
@@ -44,7 +44,7 @@ public sealed class CompositionRootSceneScanRule : IRule
             if (!File.Exists(path)) continue;
 
             var content = File.ReadAllText(path);
-            var stripped = SourceScanner.StripComments(content);
+            var stripped = CSharpSourceText.StripComments(content);
 
             foreach (Match m in Forbidden.Matches(stripped))
             {

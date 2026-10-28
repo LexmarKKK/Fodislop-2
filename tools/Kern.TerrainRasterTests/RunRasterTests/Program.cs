@@ -7,6 +7,10 @@ internal static class Program
 {
     private static readonly string[] Mutations =
     [
+        "depth-face-without-bounds",
+        "depth-reversed",
+        "depth-without-quantization",
+        "volume-normal-reversed",
         "double-quantize-fragments",
         "ao-flat-contact",
         "ao-to-black",
@@ -14,25 +18,47 @@ internal static class Program
         "background-ignores-occlusion",
         "wall-variant-ignores-bottom",
         "node-edge-jitter-sign",
-        "organic-noise-truncates",
         "round-rim-follows-cell-sides",
+        "world-anchor-skips-autotiles",
     ];
 
     public static int Main()
     {
         string root = FindProjectRoot();
-        string shim = Read(root, "tools/Kern.LightingTests/NativeTransportShim.cpp");
-        string format = Read(root, "Assets/Shaders/Terrain/TerrainCellFormat.hlsl");
-        string loader = Read(root, "Assets/Shaders/Terrain/TerrainCellData.hlsl");
-        string terrainContour = Read(root, "Assets/Shaders/Terrain/TerrainContour.hlsl");
-        string terrainGeometryContract = Read(root, "Assets/Shaders/Terrain/TerrainGeometryContract.hlsl");
-        string terrainGeometry = Read(root, "Assets/Shaders/Terrain/TerrainGeometry.hlsl");
-        string terrainShader = Read(root, "Assets/Shaders/Terrain/Terrain.shader");
-        string scenario = Read(root, "tools/Kern.TerrainRasterTests/scenario.cpp");
-        string aoShim = Read(root, "tools/Kern.TerrainRasterTests/ao-field.cpp");
-        string ao = Read(root, "Assets/Shaders/Terrain/TerrainAmbientOcclusion.hlsl");
-        string terrainSampling = Read(root, "Assets/Shaders/Terrain/TerrainSampling.hlsl");
-        string lighting = Read(root, "Assets/Shaders/Terrain/TerrainLightingData.hlsl");
+        // HLSL round uses nearest-even; std::round rounds ties away from zero.
+        string shim = Read(root, "tools/Kern.LightingTests/Native/Transport/Shims/NativeTransportShim.cpp")
+            .Replace("std::round(a.x)", "std::nearbyint(a.x)", StringComparison.Ordinal)
+            .Replace("std::round(a.y)", "std::nearbyint(a.y)", StringComparison.Ordinal);
+        string format = Read(root, "Assets/Shaders/Terrain/Cells/TerrainCellFormat.hlsl");
+        string loader = Read(root, "Assets/Shaders/Terrain/Cells/TerrainCellData.hlsl");
+        string terrainContour = Read(root, "Assets/Shaders/Terrain/Geometry/TerrainContour.hlsl");
+        string terrainGeometryContract = Read(root, "Assets/Shaders/Terrain/Geometry/TerrainGeometryContract.hlsl");
+        string screenCoverage = SliceBetween(terrainContour, "// The visible terrain", "float TerrainCellOccupancy(");
+        string terrainGeometry = Read(root, "Assets/Shaders/Terrain/Geometry/TerrainGeometry.hlsl");
+        string terrainDepth = Read(root, "Assets/Shaders/Terrain/Geometry/TerrainDepth.hlsl");
+        string depthScenario = Read(root, "tools/Kern.TerrainRasterTests/Native/Terrain/depth.cpp");
+        string roundCoverage = SliceBetween(terrainContour, "float EvaluateRoundableBlockAlpha(", "// The rim switch is bound");
+        string terrainShader = Read(root, "Assets/Shaders/Terrain/Rendering/Terrain.shader");
+        string passCommon = Read(root, "Assets/Shaders/Terrain/Rendering/Passes/TerrainPassCommon.hlsl");
+        string volumeInput = Regex.Match(terrainShader, @"struct TerrainVolumeVertexInput\s*\{[^}]+\}").Value;
+        if (volumeInput.Contains("TEXCOORD", StringComparison.Ordinal))
+        {
+            return Fail("Screen input must remain POSITION-only for every mesh and recorded vertex declaration");
+        }
+        if (passCommon.Contains("TEXCOORD", StringComparison.Ordinal) ||
+            !terrainShader.Contains("Varyings vert (TerrainVolumeVertexInput input)", StringComparison.Ordinal))
+        {
+            return Fail("Physical vertex inputs must remain POSITION-only; edge attributes belong to the screen pass");
+        }
+
+        string scenario = Read(root, "tools/Kern.TerrainRasterTests/Native/Terrain/scenario.cpp");
+        string aoShim = Read(root, "tools/Kern.TerrainRasterTests/Native/AmbientOcclusion/ao-field.cpp");
+        string ao = Read(root, "Assets/Shaders/Terrain/Occlusion/TerrainAmbientOcclusion.hlsl");
+        string terrainSampling = Read(root, "Assets/Shaders/Terrain/Textures/TerrainSampling.hlsl");
+        string tileAddressing = Read(root, "Assets/Shaders/Terrain/Autotiling/TerrainTileAddressing.hlsl");
+        string tileUvResult = SliceBetween(terrainSampling, "struct TerrainTileUvResult", "float TerrainUvCross(");
+        string tileSampling = SliceBetween(terrainSampling, "void TerrainSetResolvedTileIdentity(", "// Ширина экранного пикселя");
+        string lighting = Read(root, "Assets/Shaders/Terrain/Lighting/TerrainLightingData.hlsl");
         string terrainGeometryUv = SliceBetween(
                 terrainSampling,
                 "float TerrainUvCross(",
@@ -42,6 +68,16 @@ internal static class Program
         if (!terrainGeometryUv.Contains("TerrainResolveGeometryTileUV(", StringComparison.Ordinal))
         {
             return Fail("Production terrain geometry UV remap was not found");
+        }
+
+        if (!terrainShader.Contains("float2 projectedPoint = TerrainVolumeProjectPoint(", StringComparison.Ordinal) ||
+            !terrainShader.Contains("volumeEdge.xy, volumeEdge.zw", StringComparison.Ordinal) ||
+            !terrainShader.Contains("heightFraction = TerrainCornerBase(input.positionOS.w).y;", StringComparison.Ordinal) ||
+            !terrainShader.Contains("input.positionOS.z = isDepth ? 2.0", StringComparison.Ordinal) ||
+            !terrainShader.Contains("TerrainVolumeMaterialPoint(edgePoint, normal,", StringComparison.Ordinal) ||
+            terrainShader.Contains("TerrainDepthSource(", StringComparison.Ordinal))
+        {
+            return Fail("Terrain volume must project actual side/face vertices, not reproject fragment copies");
         }
 
         if (terrainShader.Contains("TerrainRimRaw(", StringComparison.Ordinal) ||
@@ -55,7 +91,9 @@ internal static class Program
             return Fail("Expected exactly one surface parse in each terrain pass");
         }
 
-        if (Regex.Matches(terrainShader + Read(root, "Assets/Shaders/Terrain/TerrainLightingFieldCommon.hlsl"), "PixelArtSampleUV\\(").Count != 2)
+        if (Regex.Matches(terrainSampling, "PixelArtSampleUV\\(").Count != 1 ||
+            !terrainShader.Contains("SampleTerrainSurfaceTexel(", StringComparison.Ordinal) ||
+            !Read(root, "Assets/Shaders/Terrain/Lighting/TerrainLightingFieldCommon.hlsl").Contains("SampleTerrainSurfaceTexel(", StringComparison.Ordinal))
         {
             return Fail("Visible and field albedo paths must share the pixel-grid UV correction");
         }
@@ -68,6 +106,16 @@ internal static class Program
         }
 
         string materialFieldPass = terrainShader[materialFieldPassAt..ambientOcclusionPassAt];
+        if (terrainShader[materialFieldPassAt..].Contains("input.isDepth", StringComparison.Ordinal) ||
+            terrainShader[materialFieldPassAt..].Contains("input.materialCellSample", StringComparison.Ordinal))
+        {
+            return Fail("Lighting field passes cannot reference screen-volume varyings");
+        }
+        if (Regex.IsMatch(terrainDepth, @"\b(?:float[234]?|half[234]?|int[234]?)\s+(?:point|line|triangle|sample)\b"))
+        {
+            return Fail("Volume shader uses a reserved HLSL keyword as an identifier");
+        }
+
         string ambientOcclusionPass = terrainShader[ambientOcclusionPassAt..];
         int ambientOcclusionFunctionAt = ambientOcclusionPass.IndexOf("half4 AmbientOcclusionFieldFrag", StringComparison.Ordinal);
         if (ambientOcclusionFunctionAt < 0)
@@ -109,7 +157,7 @@ internal static class Program
             return Fail("The raw AO debug output must use the displaced foreground silhouette");
         }
 
-        string rim = SliceBetween(terrainContour, "// Выключатель каймы.", "// The visible terrain");
+        string rim = SliceBetween(terrainContour, "// The rim switch is bound", "// The visible terrain");
         string contour = terrainContour[..terrainContour.IndexOf("float2 QuantizeTerrainFaceUV(", StringComparison.Ordinal)];
         const string quantizeUv = """
             float2 QuantizeTerrainFaceUV(float2 uv)
@@ -122,10 +170,16 @@ internal static class Program
             float distance(float2 a, float2 b) { return length(a - b); }
             float lerp(float a, float b, float t) { return a + (b-a)*t; }
             float2 lerp(float2 a, float2 b, float2 t) { return a + (b-a)*t; }
-            float4 round(float4 a) { return {std::round(a.x),std::round(a.y),std::round(a.z),std::round(a.w)}; }
+            float4 round(float4 a) { return {std::nearbyint(a.x),std::nearbyint(a.y),std::nearbyint(a.z),std::nearbyint(a.w)}; }
+            float4 make_float4(float2 a, float b, float c) { return {a.x,a.y,b,c}; }
             float4 make_float4(float a, float2 b, float c) { return {a,b.x,b.y,c}; }
             float _TestFwidth = 0.0f;
             float fwidth(float) { return _TestFwidth; }
+            float sign(float value) { return (value > 0) - (value < 0); }
+            using bool4 = int4;
+            float4 frac(float4 a) { return {frac(a.x), frac(a.y), frac(a.z), frac(a.w)}; }
+            float2 clamp(float2 a, float lo, float hi) { return {std::clamp(a.x,lo,hi),std::clamp(a.y,lo,hi)}; }
+            float2 clamp(float2 a, float2 lo, float2 hi) { return {std::clamp(a.x,lo.x,hi.x),std::clamp(a.y,lo.y,hi.y)}; }
             using uint4 = unsigned __attribute__((ext_vector_type(4)));
             uint asuint(int value) { return (uint)value; }
             uint asuint(float value) { uint result; std::memcpy(&result, &value, 4); return result; }
@@ -147,13 +201,13 @@ internal static class Program
             };
             """;
         const string terrainUniforms = """
-            float _OrganicBendStrength = 1.0;
-            float _OrganicBendPivot = 0.35;
+            float _TerrainDepthPixels = 16.0;
             float _RoundableCornerRadius = 0.51;
             float _RimQuantizationEnabled = 0.0;
             float _TerrainAmbientOcclusionDistance = 0.25;
             float _RimDistanceScale = 2.0;
             float _RimFalloff = 0.5;
+            float _TerrainRimEnabled = 1.0;
             float4 _ShimAtlasTexelSize[8] = {};
             float4 TerrainMaterialAtlasTexelSize(int slot) { return _ShimAtlasTexelSize[slot]; }
             """;
@@ -181,43 +235,60 @@ internal static class Program
             foreach (string? mutation in new string?[] { null }.Concat(Mutations))
             {
                 string candidateLoader = loader;
+                string candidateDepth = terrainDepth;
+                string candidateTileSampling = tileSampling;
+                if (mutation == "world-anchor-skips-autotiles")
+                {
+                    candidateTileSampling = candidateTileSampling.Replace(
+                        "if (worldTextureAnchor && !isTiling)",
+                        "if (worldTextureAnchor)",
+                        StringComparison.Ordinal);
+                    if (candidateTileSampling == tileSampling) return Fail("world-anchor-skips-autotiles mutation is stale");
+                }
+                if (mutation == "depth-face-without-bounds")
+                {
+                    candidateDepth = candidateDepth.Replace("surface.anchored = 1.0;", "surface.anchored = 0.0;", StringComparison.Ordinal);
+                }
+                if (mutation == "depth-reversed")
+                {
+                    candidateDepth = candidateDepth.Replace("return geometryPosition + TerrainDepthOffset", "return geometryPosition - TerrainDepthOffset", StringComparison.Ordinal);
+                }
+                if (mutation == "depth-without-quantization")
+                {
+                    candidateDepth = candidateDepth.Replace(
+                        "round(fromCameraCells * pixels / KERN_TERRAIN_PRESENTATION_EYE_HEIGHT)",
+                        "(fromCameraCells * pixels / KERN_TERRAIN_PRESENTATION_EYE_HEIGHT)", StringComparison.Ordinal);
+                }
+                if (mutation == "volume-normal-reversed")
+                {
+                    candidateDepth = candidateDepth.Replace("float2(edge.y, -edge.x)", "float2(-edge.y, edge.x)", StringComparison.Ordinal);
+                }
+                if (mutation is "depth-face-without-bounds" or "depth-reversed" or "depth-without-quantization" or "volume-normal-reversed" && candidateDepth == terrainDepth)
+                {
+                    return Fail($"{mutation} mutation is stale");
+                }
                 string candidateGeometry = terrainGeometry;
                 string candidateAo = ao;
                 string candidateRim = rim;
 
                 if (mutation == "double-quantize-fragments")
                 {
-                    string before = """
-                            return TerrainPolygonContains(
-                                samplePosition,
-                                cornersX,
-                                cornersY,
-                                packedEdges,
-                                true) ? 1.0 : 0.0;
-                        """;
-                    string after = """
-                            float2 fragmentGridSample = (floor(samplePosition * 32.0) + 0.5) / 32.0;
-                            return TerrainPolygonContains(
-                                fragmentGridSample,
-                                cornersX,
-                                cornersY,
-                                packedEdges,
-                                true) ? 1.0 : 0.0;
-                        """;
+                    string before = "float2 samplePosition,\n    float4 cornersX,\n    float4 cornersY,\n    float anchored)\n{";
+                    string after = before + "\n    samplePosition = (floor(samplePosition * 32.0) + 0.5) / 32.0;";
                     candidateGeometry = candidateGeometry.Replace(before, after, StringComparison.Ordinal);
                     if (candidateGeometry == terrainGeometry) return Fail("double-quantize-fragments mutation is stale");
                 }
 
                 if (mutation is "rim-merges-any-masses" or "background-ignores-occlusion" or "wall-variant-ignores-bottom"
-                    or "node-edge-jitter-sign" or "organic-noise-truncates")
+                    or "node-edge-jitter-sign")
                 {
                     (string before, string after) = mutation switch
                     {
                         "rim-merges-any-masses" => (
-                            "return otherMass != 0u && TerrainTypeRimMass(own) == otherMass;",
+                            "return otherMass != 0u && TerrainTypeReliefGroup(own) == otherMass;",
                             "return otherMass != 0u;"),
                         "background-ignores-occlusion" => (
-                            "        if (occluded)\n        {\n            return v;\n        }",
+                            "        if (occluded && (!retainBackground || !exposedPresentationGround))\n        {\n            return v;\n        }",
                             "        if (false)\n        {\n            return v;\n        }"),
                         "wall-variant-ignores-bottom" => (
                             "bool hasBottom = (cornerSideMask & 8u) != 0u;",
@@ -225,9 +296,7 @@ internal static class Program
                         "node-edge-jitter-sign" => (
                             "if (ctl && ctr) return int2(0, -ry);",
                             "if (ctl && ctr) return int2(0, ry);"),
-                        _ => (
-                            "return ((value << 1) + (d * d) / 2u) / (d * d);",
-                            "return (value << 1) / (d * d);"),
+                        _ => throw new InvalidOperationException(mutation),
                     };
                     candidateLoader = candidateLoader.Replace(before, after, StringComparison.Ordinal);
                     if (candidateLoader == loader) return Fail($"{mutation} mutation is stale");
@@ -236,8 +305,8 @@ internal static class Program
                 if (mutation == "round-rim-follows-cell-sides")
                 {
                     candidateRim = candidateRim.Replace(
-                        "    if (KernTerrainIsRoundable(surface.packedContour))\n    {\n        // У круглого блока",
-                        "    if (false)\n    {\n        // У круглого блока",
+                        "    if (KernTerrainIsRoundable(surface.packedContour))",
+                        "    if (false)",
                         StringComparison.Ordinal);
                     if (candidateRim == rim) return Fail("round-rim-follows-cell-sides mutation is stale");
                 }
@@ -263,7 +332,8 @@ internal static class Program
                     .Replace("SamplerState", "int", StringComparison.Ordinal);
                 string source = shim + extra + aoShim + terrainUniforms + Translate(
                     terrainGeometryContract + candidateGeometry + format + candidateLoader + lighting +
-                    contour + quantizeUv + candidateRim + terrainGeometryUv + candidateAo) + scenario;
+                    contour + quantizeUv + roundCoverage + candidateRim + terrainGeometryUv +
+                    tileAddressing + tileUvResult + candidateTileSampling + candidateAo + screenCoverage + candidateDepth) + depthScenario + scenario;
                 File.WriteAllText(cppPath, source);
 
                 ProcessResult compile = Run("clang++", ["-std=c++20", "-O2", "-ffp-contract=off", cppPath, "-o", executablePath], temporaryDirectory);
@@ -302,11 +372,15 @@ internal static class Program
             .Replace("[branch]", string.Empty, StringComparison.Ordinal)
             .Replace("[loop]", string.Empty, StringComparison.Ordinal)
             .Replace("inout TerrainTileUvResult tile", "TerrainTileUvResult& tile", StringComparison.Ordinal)
+            .Replace("out float4 edgeEndpoints", "float4& edgeEndpoints", StringComparison.Ordinal)
+            .Replace("out float2 sourceSample", "float2& sourceSample", StringComparison.Ordinal)
             .Replace("out float2 nearestPosition", "float2& nearestPosition", StringComparison.Ordinal)
             .Replace("Texture2D<float4>", "Texture", StringComparison.Ordinal)
             .Replace("StructuredBuffer<", "ShimBuffer<", StringComparison.Ordinal)
             .Replace("(TerrainCellVertex)0", "TerrainCellVertex{}", StringComparison.Ordinal);
         source = Regex.Replace(source, @"\(int2\)round\(([^)]+)\)", "make_int2(round($1))", RegexOptions.CultureInvariant);
+        // HLSL vector casts convert components; a C++ vector cast reinterprets bits.
+        source = Regex.Replace(source, @"\(float2\)(clamp\([^;\n]+\))", "make_float2($1)", RegexOptions.CultureInvariant);
         return Regex.Replace(source, @"\b(float[234]|int[23]|uint[23])\(", "make_$1(", RegexOptions.CultureInvariant);
     }
 
@@ -323,7 +397,7 @@ internal static class Program
         DirectoryInfo? directory = new(Directory.GetCurrentDirectory());
         while (directory is not null)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "Assets/Shaders/Terrain/Terrain.shader"))) return directory.FullName;
+            if (File.Exists(Path.Combine(directory.FullName, "Assets/Shaders/Terrain/Rendering/Terrain.shader"))) return directory.FullName;
             directory = directory.Parent;
         }
         throw new DirectoryNotFoundException("Could not locate the repository root.");

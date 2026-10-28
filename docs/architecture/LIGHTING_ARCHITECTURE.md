@@ -39,6 +39,16 @@ WorldLightTexture
 
 Окно terrain и окно lighting связаны координатами world region, но имеют разные кэши и разные invalidation rules. Новый origin нельзя публиковать в presentation, пока все используемые terrain и lighting resources не готовы.
 
+## Источник эмиссии террейна
+
+Свечение клетки берётся из её исходной текстуры одним способом: peak-channel
+яркость в linear пространстве проходит через `smoothstep(0.25…0.60)`,
+коэффициент умножается на альфу источника и на авторский glow клетки. Выбора
+по имени блока или SurfaceEffect нет. Material/glow field интегрирует исходные
+тексели (до 16×16 на field-тексель при 2 пикселях на клетку), поверхность
+получает отдельную добавку силы 1; транспортный GlowScale 12 к ней не
+применяется. Переключателя методов и кэшированных масок в отладке нет.
+
 ## Статус миграции границы
 
 Gate A: DTO, `ILightingGeometryContributor`, purpose-specific field contexts и
@@ -132,7 +142,11 @@ DummyMapStreamer
 terrain and lighting-field albedo. Displaced carriers recover per-cell atlas
 UVs from the decoded cell geometry. Continuous sheet materials instead use the
 fragment's actual cell-space position, so the texture follows distortion and
-stays continuous across displaced cell boundaries. If a displaced fragment
+stays continuous across displaced cell boundaries. Tile-group selection takes
+priority over the `World` anchor: pack columns are neighbour-selected variants,
+so their column, UV reflections/rotation and per-tile sampling bounds are retained.
+Wall, Corner and Door outlines hold grid nodes, keeping these pack UVs on the
+undistorted 32×32 lattice. If a displaced fragment
 crosses a cell edge, the resolver applies the periodic address available from
 the current material layout. A grouped autotile retains its per-cell variant
 because the neighbor's distinct descriptor and UV transform are not part of
@@ -141,14 +155,17 @@ the selected variant edge instead of wrapping to the opposite side and making
 a seam. The visible pass, material/glow field, AO field, and tile-identity
 diagnostic use this same resolver.
 
-Animation masks and terrain decals use the geometry-recovered per-cell UV.
-Decals and faceted masks remain attached to the cell; continuous-sheet albedo
-uses the actual displaced cell-space position. Neither path uses the carrier's
-interpolated UV: carrier bounds expand for displaced cells, so that coordinate
-stretches independently of the rendered terrain surface. The material/glow
-field reconstructs the per-cell UV once and reuses it for animation and decals,
-while the shared albedo resolver also receives the displaced cell-space
-position.
+Animation masks use the geometry-recovered per-cell UV. Decals instead use the
+actual cell-space position, so distortion changes their coverage without
+stretching their artwork. Both the visible and material-field passes compose
+decals into sampled albedo before presentation animation and illumination;
+the material field keeps that albedo time-independent. Continuous-sheet albedo
+also uses the actual displaced cell-space position.
+The cell's decal family and placement occupy separate surface-data components;
+the placement code remains exactly representable in half precision. The texture
+service announces decal-atlas completion as a dedicated event. Terrain rebinds
+the material and publishes a lighting-visible texture reset after the refreshed
+terrain view is committed.
 The screen and field passes also choose the same point/linear atlas sampler from
 `_PixelArtFiltering`; otherwise alpha cutouts and edge texels can disagree even
 when their UVs match.
@@ -236,12 +253,12 @@ a replaced material resource invalidates the solve even at unchanged dimensions.
 - `_AmbientOcclusionField` (quality-independent contact falloff field for terrain AO);
 - bounce geometry caches.
 
-The Standard graphics preset records only `_AmbientOcclusionField` when terrain
+The Classic graphics preset records only `_AmbientOcclusionField` when terrain
 or contributor geometry or the stable world region changes. It allocates no
 radiance atlas, material field, or lightmap and publishes a neutral white light
-texture with the AO field. Overdrive records the same AO field in the full
+texture with the AO field. Standard records the same AO field in the full
 lighting frame. Both presets therefore use the same terrain AO pass and shader
-sample, while only Overdrive solves radiance transport.
+sample, while only Standard solves radiance transport.
 
 Terrain mesh lighting metadata has one encoder,
 `TerrainLightingData.cs`, and one shader decoder,
@@ -365,26 +382,26 @@ changed region is expanded by three cells (neighbour-dependent geometry
 plus displacement and contact support), clipped and mapped independently to
 render-target pixels using the target's own row origin from
 `LightingFieldOrientation`. Rectangles merge when their bounding union does not
-increase the summed raster area. Up to eight partial rectangles are retained;
-more than eight collapse to one bounding rectangle to cap repeated draw setup.
+increase the summed raster area. Rectangle count does not force a larger
+bounding draw across separated supports.
 Contributors receive the borrowed
 `LightingAmbientOcclusionContext.RasterRect` and must preserve existing contents.
 A dirty field before region activation, an unjournaled revision, contributor
 change, entering the mode, resource recreation or region movement requires a full
 rebuild. Activation's own `FieldDirty` does not disable regional updates.
-The Standard AO-only updater and full lighting coordinator use the same policy.
+The Classic AO-only updater and full lighting coordinator use the same policy.
 `GeometryLightingSolver` owns the field; a stable frame reuses the published field. `LightingPresentation`
 publishes the field and world mapping. The
 visible terrain fragment in `Terrain.shader` samples mip zero at
 `TransformObjectToWorld(cell.positionOS)` and applies receiver floor/strength.
 Cost is one full field raster on rebuild. A regional update issues one clear
-triangle and one scissored terrain/contributor draw set per rectangle, with no
-more than eight sets before the bounding fallback. Pixel work is the sum of
-rectangle areas except when the fallback covers the bounding region. The R8
+triangle and one scissored terrain/contributor draw set per rectangle, with
+no count-based cap. Pixel work is the sum of rectangle areas and cannot increase
+when rectangles merge. The R8
 target stores one byte per AO texel; the field uses signed-distance contact
 falloff for physical fragments, and one bilinear sample per
 receiving screen fragment; stable frames do not
-rasterize the field. Standard-preset rebuilds also write their dimensions and
+rasterize the field. Classic-preset rebuilds also write their dimensions and
 reason into `FrameEventLog`; `FrameStallMonitor` samples the
 `Kern.Lighting.AmbientOcclusionField` marker beside render-thread stalls.
 The half-cell carrier expansion grows a regular cell's field footprint from
@@ -493,9 +510,7 @@ the coordinator acknowledges the source state without recording a lighting frame
 Movement, color/intensity changes, entry and removal that change GPU inputs still
 invalidate dynamic radiance. An explicit `CompositeDirty` refresh always covers
 the full field, even when dynamic movement/removal occurs in the same frame;
-the dynamic union is retained for subsequent partial updates. Managed decision
-tests and remaining production gates are recorded in
-[the invalidation evidence](LIGHTING_DYNAMIC_INVALIDATION_EVIDENCE.html).
+the dynamic union is retained for subsequent partial updates.
 
 The moving one-cell emitter is sampled by a fixed `N×N` grid in the continuous
 complete source-square bounds, including its part outside the lighting field.
@@ -524,8 +539,9 @@ the two neighbouring rays by transmission, not by optical depth
 penumbra instead of blackening the whole angular gap between them.
 Equal RGB extinction uses RFloat (one exact float32 optical depth); unequal RGB extinction uses ARGBFloat. The lookup replicates the scalar depth before applying RGB source radiance. No half-depth conversion or HDR clamp is used. `DynamicLightTileCache` owns and releases this scratch resource. A quarter-capacity slot shrink also releases the obsolete polar layers. Radius samples
 are never shortened to fit stacked emitters; an unsupported requested length
-fails explicitly. `VisualTuning.MaximumDynamicPolarRayWorkUnits` controls the
-existing shared angular work budget. `SolveDynamicLighting` reads those outputs plus
+fails explicitly. Every source uses the requested `DynamicPolarDirectionCount`;
+source count, ray length and frame cost do not reduce angular quality.
+`SolveDynamicLighting` reads those outputs plus
 `_StaticGlowField` and writes a per-source Tex2DArray layer, or
 `_DirectTexture` for one light. It dispatches `ceil(rect.width/8) ×
 ceil(rect.height/8) × 1` over the source reach rect. Receivers come from that CPU rect:
@@ -562,8 +578,9 @@ clearance, advances through air, then resumes the existing material DDA for the
 remaining ray. Because JFA can miss the mathematically nearest seed, this mode
 is not assumed equivalent from source inspection: keep exact DDA as the default
 until the production image tolerance and GPU timing gates pass. Selection
-preflights random-write RFloat support and a hard neighbor-check budget; it
-reports rejection without changing the selected mode. Dynamic-only invalidation
+preflights random-write RFloat support and positive field dimensions; it
+reports rejection without changing the selected mode. Estimated build work does
+not reject a requested resolution. Dynamic-only invalidation
 forces the newly selected transport path to run. SDF construction is recorded as
 `Kern.Lighting.DynamicSdf.JumpFloodBuild`; it is a geometry-rebuild cost, not a
 per-light cost.
@@ -641,15 +658,26 @@ remain exact. The eight-ray sample count and DDA visitation policy are unchanged
 
 Current policy is conservative:
 
-- initial state, resource resize, quality/config changes and geometry changes use full static solve;
-- region invalidation can use dependency mask when the region did not move and the cost estimate is favourable;
-- with the mask, each cascade dispatches a tight probe rect (`CascadeProbeRects`: dirty bounds expanded by interval reach + margin, 50% fallback to full) instead of the full grid; the per-entry early-out stays as a second net. Telemetry splits `cascadeFullEntries` vs `cascadePartialEntries`;
+- initial state, resource resize, quality/config changes and unjournaled geometry changes use full static solve;
+- regional invalidation uses the dependency mask when the retained atlas is valid. An invalidation rectangle covering the entire field uses a dense solve; no dirty-area fraction is treated as a ray-work estimate;
+- with the mask, `StaticLightingDirty.FillProbeRects` plans the entire far-to-near chain. Each rectangle includes both local ray reach and the clamped bilinear support of the far tier's dispatch rectangle. Rectangles expand to the full grid only when required by their geometric bounds and dependencies; the per-entry early-out still rejects unchanged rays. Telemetry splits `cascadeFullEntries` vs `cascadePartialEntries`;
 - region movement with an overlapping integer-scale field and valid static inputs uses `CascadeScrollRecorder.RecordWorldReanchor`. It copies probes on matching world lattice phases, marks newly addressed entries, and runs dependency-masked solves far-to-near. Each local DDA segment is tested against the common old/new field domain, dirty regions, and an exact GPU comparison of the old/new material and glow inputs. Two integral-image scans provide constant-cost conservative ray-box queries. Terrain window movement publishes arriving and departing contributor coverage through the existing exchange. Static DDA uses integer probe anchors plus relative offsets so translation does not round endpoints before subtraction. Changed far intervals and a changed clamped bilinear lookup invalidate near intervals. A phase mismatch clears/recomputes that cascade instead of changing its lattice;
 - all pending overlapping edits move into the active solve when the material field is rebuilt on reanchor. They cannot be deferred after publishing geometry against reused transport. Full-reset records invalidate static and dynamic radiance validity as well as the field. Resource resize and global/contributor input changes require a dense solve;
-- the old `RecordScroll`/`RecordCascadeMoveTier` band implementation remains dormant. Production does not enable it by changing a flag. `DiagnosticForceDenseReanchor` is an explicit production differential-test reference;
+- `DiagnosticForceDenseReanchor` is an explicit production differential-test reference;
 - dynamic light movement does not invalidate static cascades.
 
-The stationary-edit dependency-mask path dispatches a tight per-cascade probe rect and early-outs unchanged entries inside it. It reduces DDA work when the mask rejects candidates and dispatch threads when the dirty area is small (far cascades with huge intervals fall back to full grid, where they are cheapest).
+The stationary-edit dependency-mask path cannot bound a near tier by its own
+interval alone. A newly placed emitter changes far-tier radiance outside that
+local rectangle; skipping the dependent near probes retains stale atlas values
+and clips the resolved light into a square. Far dependencies are now propagated
+before clipping or skipping any dispatch. For a field-covering last interval,
+this can require candidate checks across the whole chain; the GPU changed-entry
+mask still avoids unnecessary DDA. It is not a dense retrace of every candidate.
+The placed/removed-emitter regression compares the exact packed atlas against a
+full solve with bilinear correction both enabled and disabled. Reinstating the
+old local-only rectangles must fail. Source/numerical evidence and the pending
+production-path gates are recorded in
+<a href="evidence/placed-emitter-square-halo-2026-10-28.html">the square-halo evidence bundle</a>.
 
 Reanchor stage ownership, lifecycle, invalidation proof and validation results are tracked in
 [`WORLD_RENDER_GRID_EVIDENCE.html`](WORLD_RENDER_GRID_EVIDENCE.html). Reanchors dispatch every
@@ -680,7 +708,7 @@ Terrain requests its actual target plus halo through the optional `IWorldRegionR
 - DDA ownership stays in transport stages only.
 - Static lighting must not be limited by frequency or cell transitions.
 - Dynamic light tracing follows exact smooth dynamic light position.
-- Server Y-down and Unity Y-up conversion goes through `CoordinateUtils`.
+- Server Y-down and Unity Y-up conversion goes through `WorldCoordinateConverter`.
 - A new terrain/lighting window is published only after its required resources are resident and coherent.
 - Dirty regions retain their identity until the consuming stage has used them.
 - Telemetry distinguishes frame-local deltas from cumulative counters.
@@ -834,7 +862,7 @@ without recomputing unchanged fields. Their sequence/revision/region is logged
 before acknowledgement. Reanchors compare old/new geometry and intersect every
 retained ray dependency against their common field, so discarded outer coverage
 cannot silently enter reused intervals. Unknown contributor revisions continue
-to invalidate the full field. Standard AO follows the same spatial rule.
+to invalidate the full field. Classic AO follows the same spatial rule.
 
 Production Metal tests now verify authored cascade density/directions, scalar vs
 vector depth over 200704 receiver pixels, continuous/standing sources, per-texel
@@ -877,3 +905,86 @@ otherwise re-enables its authored temporal input periodically. The subscription
 and original camera setting are restored before timed frames and in finally.
 Reference-to-reference drift is asserted separately from reference-to-optimized
 error; failing either prevents any performance acceptance.
+
+
+### Original surface albedo (2026-10-08)
+
+The original Transit/Perspective meshes and authored BaseMap projection remain active.
+`KernOriginalSurfaceAlbedo` applies linear albedo tint `(1, 0.38, 0.30)` in both
+Universal2D and LightingMaterialField; occupancy, AO and HDR glow are unchanged.
+Synthetic horizon relief/clouds/depth writes are removed. World reload updates the
+existing horizon material altitude alongside the three ground materials.
+Production captures, independent numeric field oracle and limits:
+[original surface evidence](../design/surface-original-improvement.html).
+
+The original surface color now samples a world-anchored 32×32 raster per cell.
+Horizontal source density is 32 texels/cell; each original two-cell band is
+resampled onto 64 presentation rows. Existing alpha UVs, occupancy/AO and glow
+remain independent. Visible and material-field albedo share the same raster;
+URP owns the linear-repeat sampler and texel size lives in UnityPerMaterial.
+
+## Raised terrain geometry (2026-10-27)
+
+`TerrainWindowPublishedView` derives and publishes `TerrainVolumeTopology` from
+accepted cell/type facts at commit. Exact shape-input comparison excludes
+material-only bits. For a fixed window and type-shape table, changed cells and
+their one-cell neighbourhood rebuild their contour entries; shared distorted
+nodes are recomputed for that neighbourhood. Window moves, resize, distortion
+changes and type-shape changes rebuild the full window. The topology version
+changes only when the edge list or window changes, avoiding mesh uploads for
+edits that leave the contour unchanged.
+Square/wavy sides and cached, merged pixel contours for round blocks contribute
+exposed edges. Internal physical faces do not contribute side geometry.
+
+`TerrainVolumeMesh` presents stationary ground, actual side quads and foreground
+in three ordered submeshes. When the viewport layout and wall count are unchanged,
+only wall vertices are uploaded; the fixed ground/foreground vertices and indices
+are retained. A wall-count or viewport-layout change rebuilds the complete mesh.
+Ground/base vertices remain at height zero; wall tops
+and face vertices share camera-relative forward perspective in `TerrainDepth.hlsl`.
+Eye height is 32 cells, maximum physical height .5 cell, and projected vertex
+movement snaps to 1/32 cell with a .5-cell displacement cap. Homogeneous clip W
+preserves perspective side UV interpolation. Robot position is not an input.
+
+Every shader vertex entry requires POSITION only. Physical fields retain their
+8-byte half4 address format. Screen vertices are 16-byte float4 addresses; side
+vertices pack exact integer cell addresses and biased 7-bit pixel endpoints into
+POSITION. The GPU decodes this before view rejection and the normal window-relative
+cell lookup. No TEXCOORD vertex stream is required, including for doors and older
+recorded warmup vertex declarations. CPU/GPU known-value tests cover the encoding.
+
+Visible-offset changes update globals without rebuilding the mesh. Out-of-view
+side vertices exit before cell-buffer reads. Exposed ground is retained near
+openings; interior solid masses retain background culling. Material/glow and AO
+field geometry, clearing, color space, formats, revisions and solver order remain
+unchanged. No new light resource or source is introduced.
+
+`GraphicsSettingsController.UpdateTerrainDepthSettings` applies presentation
+uniforms without a lighting reset. `SubmittedDepthCarrierQuads` retains its API
+name and now counts actual submitted side quads. Topology/mesh logs report reason,
+version, edge/vertex counts, CPU construction time and payload bytes. Verification
+and outstanding production-image/GPU evidence are in
+[the volume evidence bundle](evidence/terrain-depth-2026-10-27.html).
+
+### Bloom extraction and reconstruction (2026-10-27)
+
+World bloom applies its threshold to each original HDR scene pixel before the
+world-anchored quarter-resolution 4×4 reduction. Emission eligibility is sampled
+with point filtering. Pyramid reduction uses a normalized 3×3 tent at fixed
+source-texel radius 1; reconstruction uses the authored radius with the same
+center/axis/diagonal weights. Additive RGB composition, HDR formats and the
+existing energy normalization remain unchanged. This increases shader work
+without changing texture allocations or pass count; see the
+[bloom evidence record](evidence/bloom-prefilter-reconstruction-2026-10-27.html).
+
+### Transient mining, heal and hurt sources (2026-10-27)
+
+Mining sparks and native Heal/Hurt clips publish dynamic point sources from
+per-frame linear RGB/coverage integrals and luminous centroids. Bz metadata is
+computed by the animation decoder before releasing CPU pixels; native quad
+clips reuse their source pixels at import. TransientEffectLight owns source
+lifetime and shares negative IDs with cell-destruction sources. Active effects
+resubmit every Update; unchanged values are deduplicated by the existing light
+manager, and generation resets are repaired without advancing the animation.
+No static glow or geometry revision is added. See the
+[effect emission evidence](evidence/effect-world-emission-2026-10-27.html).

@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>lang: running</title>
+<!-- Смена языка туда и обратно: русский → английский → китайский → русский возвращает каждый текст
+     и подсказку как были; после перевода кнопки HUD работают (код узнаёт их не по подписи). Итог — в <title>. -->
+<pre id="log"></pre>
+<script>
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const f = document.createElement('iframe');
+f.style.cssText = 'width:1920px;height:1080px;border:0';
+f.src = '../index.html?state=busy';
+document.body.appendChild(f);
+f.onload = async () => {
+  await wait(2500);
+  const w = f.contentWindow, d = f.contentDocument, bad = [];
+  // Снимок неподвижного текста: панели, кнопки, окна (без таймеров и мира)
+  const SEL = '.sysbuttons, .player, .cargo, .col-bottom, .settings, #menuDialog, #respawnDialog, #mapDialog, #progDialog .prog-bar, .chat-head';
+  const snap = () => [...d.querySelectorAll(SEL)].map(el => el.textContent.replace(/\s+/g, ' ') + '|' + [...el.querySelectorAll('[title],[placeholder]')].map(x => x.title + x.placeholder).join(','));
+  const dev = async v => { d.getElementById('standDevice').value = v; d.getElementById('standDevice').dispatchEvent(new Event('change')); await wait(300); };
+  await dev('promax'); await dev('desktop');                  // смена устройства сама меняет подписи — снимок после неё
+  const ru = snap();
+  w.kernLang.set('en'); await wait(300);
+  const en = snap();
+  if (!en.join().includes('Cargo')) bad.push('английский не применился');
+  if (!d.querySelector('[data-sys="Почта"]').title.includes('Mail')) bad.push('подсказка «Почта» не переведена');
+  w.kernLang.set('zh'); await wait(300);
+  if (!snap().join().includes('货物')) bad.push('китайский не применился');
+  // Код по-прежнему находит кнопки после перевода: телефон перекладывает игровые кнопки в блок у миникарты
+  await dev('promax');
+  if (!d.querySelector('.touch-sys [data-sys="Почта"]')) bad.push('после перевода «Почта» не переехала к миникарте');
+  await dev('desktop');
+  w.kernLang.set('ru'); await wait(300);
+  const back = snap();
+  ru.forEach((t, i) => { if (t !== back[i]) { let k = 0; while (t[k] === back[i][k]) k++; bad.push('не вернулся русский: …' + t.slice(k - 20, k + 40) + ' ≠ …' + back[i].slice(k - 20, k + 40)); }; });
+  document.getElementById('log').textContent = bad.join('\n');
+  document.title = bad.length ? `lang: FAIL ${bad.length}` : 'lang: ok';
+};
+</script>

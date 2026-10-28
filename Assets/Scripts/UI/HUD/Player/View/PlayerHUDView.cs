@@ -8,9 +8,8 @@ using Kern.Core.Interfaces;
 using Kern.Core.Localization;
 using Kern.Core.Models;
 using Kern.Networking;
-using Kern.Networking.Processors;
-using Kern.Player.Logic;
-using Kern.UI.HUD.Player.Model;
+using Kern.Player.Interfaces;
+using Kern.Game.Player.Stats;
 using Kern.UI.Programmator;
 using MinesServer.Data;
 using MinesServer.Networking.Client.Packets.Actions;
@@ -21,8 +20,17 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using VContainer;
 
-namespace Kern.UI.HUD.Player.View
+using Kern.Game.Player.Input;
+using Kern.Networking.Processing;
+using Kern.UI.Chat;
+using Kern.UI.Input;
+using Kern.UI.Localization;
+using Kern.UI.Map;
+using Kern.UI.Tooltips;
+
+namespace Kern.UI.HUD
 {
+    [UnityEngine.Scripting.APIUpdating.MovedFrom(true, sourceNamespace: "Kern.UI.HUD.Player.View", sourceAssembly: null, sourceClassName: "PlayerHUDView")]
     public class PlayerHUDView : MonoBehaviour, ILocalizableUI
     {
         private Color _hpBarFillColor = new Color(0.2f, 0.8f, 0.2f, 1f);
@@ -102,6 +110,14 @@ namespace Kern.UI.HUD.Player.View
         private IProgrammatorTextureCatalog _programmatorTextures = null!;
         [Inject]
         private IClientConfigManager _clientConfig = null!;
+        [Inject]
+        private PlayerInputHandler _playerInput = null!;
+
+        [Inject]
+        private TouchCommands _touchCommands = null!;
+        [Inject]
+        private MapModeState _mapModeState = null!;
+        private PlayerHUDTouchControls? _touchControls;
 
         protected void Start()
         {
@@ -116,6 +132,11 @@ namespace Kern.UI.HUD.Player.View
         public void SetVisible(bool visible)
         {
             _isVisible = visible;
+            if (!visible)
+            {
+                CancelMobileInput();
+            }
+
             if (_hudContent != null)
             {
                 SetDisplayed(_hudContent, visible);
@@ -130,7 +151,13 @@ namespace Kern.UI.HUD.Player.View
         {
             if (_doc != null && !_doc.enabled)
             {
+                CancelMobileInput();
                 return;
+            }
+
+            if (_inputBlocker != null && _inputBlocker.IsInputBlockedExcludingMapMode)
+            {
+                CancelMobileInput();
             }
 
             _programmatorGrid?.Tick();
@@ -228,6 +255,8 @@ namespace Kern.UI.HUD.Player.View
 
             _modeController?.Dispose();
             _modeController = null;
+            _touchControls?.Dispose();
+            _touchControls = null;
 
             if (_programmatorGrid?.Programs is { } closingPrograms)
             {
@@ -267,7 +296,7 @@ namespace Kern.UI.HUD.Player.View
         private void InitializeHUD()
         {
             _programmatorData ??= new ProgrammatorData();
-            _programmatorTextures ??= new ProgrammatorTextureRegistry(_assetLoader);
+            _programmatorTextures ??= new ProgrammatorTextureRegistry(_assetLoader, _operations);
             _programmatorGrid ??= new ProgrammatorGrid(
                 _doc,
                 _loc,
@@ -323,15 +352,16 @@ namespace Kern.UI.HUD.Player.View
         private void LoadTemplate(VisualElement root)
         {
             VisualTreeAsset template = Resources.Load<VisualTreeAsset>(
-                ProjectRuntimeContracts.ResourcePaths.PlayerHudUxml) ??
+                ResourcePaths.PlayerHudUxml) ??
                 throw new InvalidOperationException(
-                    "[PlayerHUD] Resources/UI/Gameplay/PlayerHUD.uxml is required.");
+                    "[PlayerHUD] Resources/UI/HUD/Player/Templates/PlayerHUD.uxml is required.");
             TemplateContainer tree = template.Instantiate();
             tree.AddToClassList("ui-fullscreen");
             tree.pickingMode = PickingMode.Ignore;
-            UILayoutTier.Attach(tree);
             _hudRoot = tree;
             root.Add(tree);
+
+            InitializeTouchControls(tree);
 
             _hudContent = tree.Q<VisualElement>("HUDContent") ?? _hudRoot;
             SetDisplayed(_hudContent, _isVisible);
@@ -411,6 +441,7 @@ namespace Kern.UI.HUD.Player.View
             _popups = new PlayerHUDPopups(
                 packet => _networkService?.SendAction(packet),
                 packet => _networkService?.Send(packet),
+                packet => _networkService?.Send(packet),
                 packet => _networkService?.Send(packet));
             _popups.Initialize(tree);
 
@@ -446,6 +477,17 @@ namespace Kern.UI.HUD.Player.View
             }
 
             UpdateProgrammatorButtonLabel();
+        }
+
+        private void InitializeTouchControls(VisualElement tree)
+        {
+            _touchControls = new PlayerHUDTouchControls(_playerInput, _inputBlocker, _localPlayer, _touchCommands, _mapModeState);
+            _touchControls.Bind(tree);
+        }
+
+        private void CancelMobileInput()
+        {
+            _touchControls?.Cancel();
         }
 
         // Подпись кнопки программатора: имя активной программы вместо "Программатор".

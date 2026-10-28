@@ -68,10 +68,14 @@ AmbientOcclusionField ──[8 radial taps + mean + sqrt]──► AO ─┤
 ## Экран
 
 ```
-кадр ──[CompositeFinal: блум + запечённый грейд]──[тонмапп URP]──[DisplayFinal: LUT/кривые, виньетка, зерно]──► экран
+кадр мира ──[WorldBloom]──► добавление bloom ──[URP: exposure + tonemapping]──►
+DisplayFinal (LUT, виньетка, Eigengrau, зерно, искажение) ──► финальный вывод URP ──► экран
 ```
 
-Тонмаппинг — за URP (Neutral SDR / Neutral BT2390 HDR через `HDROutputReconciler`); своей сигмоиды и хроматической аберрации в коде нет.
+`DisplayFinal` — единственный kernel в `PostProcess.compute`; bloom выполняется
+отдельным мировым проходом. URP владеет exposure и tonemapping, а display pass
+обрабатывает уже display-linear изображение. Конкретный HDR output transform
+зависит от конфигурации URP и дисплея.
 
 ## Таблица стадий
 
@@ -107,5 +111,5 @@ AmbientOcclusionField ──[8 radial taps + mean + sqrt]──► AO ─┤
 | Что                                | Статус                                     |
 |------------------------------------|--------------------------------------------|
 | Нормали поверхности                | Снесены полностью: объём даёт AO вокруг блоков |
-| Свечение в стадии 9                 | Читается только отладочными видами         |
-| Детали мельче клетки в освещении   | Невозможны: F ≤ 4 текселя на клетку, тайл 32 px |
+| Свечение из атласа террейна         | Поступает в поле `StaticGlow`; видимый фрагмент также добавляет эмиссию по текстуре и флагам свечения |
+| Композитный kernel `CompositeFinal` | В текущем `PostProcess.compute` отсутствует; kernel называется `DisplayFinal` |

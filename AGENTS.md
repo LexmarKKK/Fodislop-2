@@ -1,6 +1,9 @@
 # Kern agent guidance
 
-Kern — 2D MMORPG sandbox on Unity 6 (`6000.6.0f1`), URP 2D 17.6, C# 12, UI Toolkit, UniTask, and `darkar25.fodina.*` packages.
+Kern — 2D MMORPG sandbox on Unity 6 (`6000.7.0b4`, see `ProjectSettings/ProjectVersion.txt`), URP 2D 17.7, C# 12, UI Toolkit, UniTask, and `darkar25.kern.*` packages from the `Packages/MinesServerNetworking` submodule.
+
+The user has the final word: an explicit instruction in the current message
+overrides conflicting project guidance, including Git and rollback restrictions.
 
 ## Specialized guides
 
@@ -9,7 +12,7 @@ Specializations are implemented as skills and auto-load based on task triggers. 
 | Domain | Skill | Triggers |
 |--------|-------|---------|
 | C#, namespaces, DI, assembly layers | `csharp-conventions` | MonoBehaviour, VContainer, asmdef, nullable, SA1513 |
-| Coordinates, UI positioning, camera, RenderTexture, fallbacks, profiler | `critical-invariants` | CoordinateUtils, RuntimePanelUtils, LifetimeScope, VSync, EditorLoop |
+| Coordinates, UI positioning, camera, RenderTexture, fallbacks, profiler | `critical-invariants` | WorldCoordinateConverter, RuntimePanelUtils, LifetimeScope, VSync, EditorLoop |
 | Lighting shaders, bloom, tonemapping, HDR, post-processing, calibration | `hdr-color-contract` | saturate, ARGBHalf, HDROutputReconciler, paper white, CompositeFinal |
 | Lighting compute, DDA, cascades, bounce | `lighting-guide` | CascadeTrace, DDA.hlsl, TraceLightSegment, IFrameTelemetry |
 | Scenes, DI, startup pipeline | sections 2–3 of [`project-context.md`](.agents/project-context.md) | |
@@ -20,18 +23,50 @@ Specializations are implemented as skills and auto-load based on task triggers. 
 
 Terrain and lighting changes MUST follow the review gates in
 [`TERRAIN_LIGHTING_STANDARD.md`](docs/architecture/TERRAIN_LIGHTING_STANDARD.md).
-Treat it as the normative target; attach its required evidence bundle and pass
-its merge gates. Do not extend its documented conformance debt or waive a failed
-invariant in a PR comment.
+Treat it as the normative target; record the required evidence within the
+documentation scope below and pass its merge gates. Do not extend its documented
+conformance debt or waive a failed invariant in a PR comment.
 The first Terrain-to-Lighting orchestration migration MUST follow gates A–D in
 that standard in order; do not replace the direct reference with a forwarding
 facade.
 
 Code is the source of truth if reference context is stale. Don't read everything — only what the task requires.
 
+## Documentation scope
+
+For ordinary fixes, summarize the cause, change, checks and any unverified results
+briefly in the final response or the requested PR description.
+Do not create standalone reports, evidence bundles, audits, checklists, dated
+documents or explanatory pages unless the user explicitly requests them.
+Update existing documentation only when the change affects its documented
+contract, architecture or usage; make the smallest relevant edit.
+
+This scope overrides requirements to create separate documentation artifacts in
+project guides and skills, including `TERRAIN_LIGHTING_STANDARD.md`. Put required
+evidence concisely in the response or PR; all applicable implementation and
+verification gates remain mandatory. A missing report file is not a failed gate.
+
+## Repository taxonomy
+
+Use module → feature → responsibility folders. Put every project source file in
+its owning responsibility folder, including a single file. Do not mix source
+files with child categories or collect unowned code in Utils, Helpers, Common,
+Misc, Support, or Managers. Split unrelated operations and name their owners.
+Keep neutral contracts beside their domain with the correct asmref; folder
+hierarchy does not replace assembly boundaries. Move Unity files with their
+metadata and migrate resource keys, namespace strings and tool paths together.
+See `.agents/repository-map.md` and `tools/Kern.RepositoryTaxonomy/Inventory/`.
+
 ## Authority boundaries
 
-- Unity CLI is available as `unity`. The agent runs it on its own, without asking, whenever a task needs proof that only Unity can give: compiling scripts and shaders, EditMode/PlayMode tests, production-path render captures written as tests. Run it headless in batch mode (`-batchmode`, `-runTests`/`-executeMethod`, `-logFile`), one run at a time. A visual or GPU fix is not done until such a run has checked it; "verify it in the game yourself" is not an acceptable hand-off. If an open editor locks the project, report that blocker instead of closing the editor.
+- Never launch, invoke, or control Unity Editor, Unity Hub, or Unity CLI unless the user explicitly requests that specific operation in the current task. Code changes, shader changes, visual fixes, test requirements, skills, and verification standards do not by themselves authorize a Unity operation. Use source inspection, existing logs, and relevant local checks that do not invoke Unity; continue all independently available work without asking to run Unity.
+- Never mention Unity project locks, lockfiles, or an open Editor as a blocker in commentary or final responses. Do not inspect Editor processes or lockfiles just to check whether Unity could run, ask the user to close the Editor, or stop implementation on that basis. State the checks actually performed without claiming unrun runtime or GPU verification passed.
+- Clones and copies of the project are forbidden: never copy, clone, or duplicate the project or its `Assets`/`Library`/`Temp` to another path (scratchpad, `/tmp`, APFS clone), and never run tests or builds against such a copy. Stay inside the working tree.
+- Android verification builds must use Development mode by default so device logs and debugging are available. For `Kern.Editor.BuildScript.BuildAndroid`, pass `-kernDev` through Unity's command-line arguments (for example, `unity build --target Android --execute-method Kern.Editor.BuildScript.BuildAndroid --args "-kernDev"`). Build Release only when the user explicitly requests a Release/store build.
+- For Android launch or world-entry investigations, trace the complete startup path in project code and inspect existing logs first; do not start ADB/device sessions or build an APK unless the user explicitly requests that action in the current task. A request to investigate or fix the failure alone does not authorize repeated builds. When a build is explicitly requested, use Development mode as specified above.
+- During code-only Android launch investigations, preserve existing timeout values. Never increase a timeout just to defer a failure or make startup appear successful; first identify its owner, start point, covered phase, and failure behavior, then fix the underlying cause. Do not run a build as an indirect way to validate a code-only investigation.
+- Before opening an Android APK in Finder or handing it to the user, verify it was produced by the latest successful requested build (check build result, modification time, and expected Development/debug configuration). Never present an older APK as the new build; if the requested build failed or produced no APK, say so plainly and do not open the stale artifact.
+- Keep the in-game diagnostic/status line enabled in Android Development builds. Do not remove or hide runtime diagnostics to make a build look cleaner; verify the line is present in the APK configuration before sharing it.
 - Do not launch, open, close, or control Unity Editor/Hub in GUI mode, and do not execute builds or destructive operations unless requested by the user.
 - ABSOLUTE BAN, NO EXCEPTIONS — not even when the user asks to "roll back", "undo" or "revert": never run any command that overwrites working-tree or index content from Git. This includes `git restore` (any flags), `git checkout -- <path>`, `git checkout <commit> -- <path>`, `git switch` with discard, `git reset` (any mode), `git stash` (push, pop, apply, drop), `git clean`, `git revert`, `git apply -R`, `git read-tree`, `git checkout-index`, `git rm --cached`, amend, rebase, force-push, and any script, alias or tool that does the same. Do not restore files from `HEAD`, the index, stash or reflog in any form. A single path can contain the user's uncommitted work that Git cannot bring back.
 - NEVER ROLL BACK ANYTHING. This rule is broader than Git: it is forbidden to undo your own edit by any means — neither a `git` command, nor manually reverting file text, nor deleting added code and tests. Rollback is permitted ONLY when the user explicitly requests it in the current message, and even then ONLY by editing file text by hand (Edit/Write), removing exactly your own changes — never through Git or any command that copies content from history.
@@ -59,6 +94,8 @@ and required proof before editing; apply the mandatory checklist in
 required evidence or a failed applicable gate blocks completion.
 
 When the user reports a current performance regression, treat it as present in the current working tree. A previously fixed bug or measurements from before that fix do not resolve the report; continue investigating the current cause and do not shift verification of the reported regression onto the user.
+
+When investigating a launch or world-entry failure, do not increase or otherwise alter timeouts to mask the failure. Trace where each timer starts, which phases it covers, and what its timeout path does; change timeout policy only when the cause and intended phase contract are established by code or runtime evidence. Prefer surfacing the first startup exception at the failing composition or lifecycle boundary.
 
 Trust the user's reported symptoms and measurements as facts: if the user reports a 60 ms freeze when digging a block, investigate that freeze without asking them to prove it, reproduce it again, or provide a profile. Distinguish the accepted symptom from the cause that still needs investigation. When instructed to read code or use existing logs only, trace the complete production code path autonomously; do not substitute requests to control Unity, collect new measurements, or obtain confirmation for that work. Missing profiling evidence does not invalidate the user's report or justify stopping code analysis. State uncertainty about the cause honestly without casting doubt on the reported problem.
 

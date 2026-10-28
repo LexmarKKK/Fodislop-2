@@ -12,11 +12,15 @@
   <PropertyGroup>
     <DefineConstants>UNITY_6000_5_OR_NEWER;UNITY_6000_0_OR_NEWER;UNITY_2022_3_OR_NEWER;NET_STANDARD_2_1;NETSTANDARD2_1;ENABLE_PROFILER;DEBUG;TRACE;UNITY_ASSERTIONS;UNITY_EDITOR;ENABLE_INPUT_SYSTEM;UNITY_INCLUDE_TESTS</DefineConstants>
   </PropertyGroup>
+  <Target Name="RequireUnityManagedDir" BeforeTargets="ResolveReferences">
+    <Error Condition="'$(UnityManagedDir)' == '' Or !Exists('$(UnityManagedDir)/UnityEngine/UnityEngine.CoreModule.dll')"
+           Text="Pass -p:UnityManagedDir=&lt;Unity editor Managed directory&gt; from the editor version in ProjectSettings/ProjectVersion.txt." />
+  </Target>
   <ItemGroup>
-    <Compile Include="Assets/Scripts/Tests/Editor/UI/PacketInventoryCardTests.cs" />
+    <Compile Include="Assets/Scripts/Tests/Editor/UI/ServerWindows/Inventory/PacketInventoryCardTests.cs" />
     <!-- Зеркало ссылки Kern.Tests.Editor → Kern.Networking: пакеты с init-полями
          строит внутренняя фабрика оттуда (в тестовой сборке плагина нет). -->
-    <Compile Include="Assets/Scripts/Networking/Processors/UI/PacketTestFactory.cs" />
+    <Compile Include="Assets/Scripts/Networking/Processing/UserInterface/PacketTestFactory/PacketTestFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Kern.UI"><HintPath>Library/ScriptAssemblies/Kern.UI.dll</HintPath></Reference>
@@ -29,9 +33,9 @@
     <Reference Include="UniTask"><HintPath>Library/ScriptAssemblies/UniTask.dll</HintPath></Reference>
     <Reference Include="nunit.framework"><HintPath>Library/PackageCache/com.unity.ext.nunit@0198eae3b53e/net472/unity-custom/nunit.framework.dll</HintPath></Reference>
     <Reference Include="IsExternalInit.System.Runtime.CompilerServices"><HintPath>Assets/Plugins/IsExternalInit.System.Runtime.CompilerServices.dll</HintPath></Reference>
-    <Reference Include="UnityEngine.CoreModule"><HintPath>C:/Program Files/Unity/Hub/Editor/6000.6.0f1/Editor/Data/Managed/UnityEngine/UnityEngine.CoreModule.dll</HintPath></Reference>
-    <Reference Include="UnityEngine.UIElementsModule"><HintPath>C:/Program Files/Unity/Hub/Editor/6000.6.0f1/Editor/Data/Managed/UnityEngine/UnityEngine.UIElementsModule.dll</HintPath></Reference>
-    <Reference Include="UnityEngine.TextRenderingModule"><HintPath>C:/Program Files/Unity/Hub/Editor/6000.6.0f1/Editor/Data/Managed/UnityEngine/UnityEngine.TextRenderingModule.dll</HintPath></Reference>
-    <Reference Include="UnityEngine.ImageConversionModule"><HintPath>C:/Program Files/Unity/Hub/Editor/6000.6.0f1/Editor/Data/Managed/UnityEngine/UnityEngine.ImageConversionModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(UnityManagedDir)/UnityEngine/UnityEngine.CoreModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.UIElementsModule"><HintPath>$(UnityManagedDir)/UnityEngine/UnityEngine.UIElementsModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.TextRenderingModule"><HintPath>$(UnityManagedDir)/UnityEngine/UnityEngine.TextRenderingModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.ImageConversionModule"><HintPath>$(UnityManagedDir)/UnityEngine/UnityEngine.ImageConversionModule.dll</HintPath></Reference>
   </ItemGroup>
 </Project>

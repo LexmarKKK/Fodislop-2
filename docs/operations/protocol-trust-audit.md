@@ -88,7 +88,7 @@ ClientHelloPacket(int ClientVersion, string OS, int OSVersion,
 
 Актуальное состояние клиента (`ConnectionManager.CompleteConnectionAsync`):
 
-- `ClientVersion` — константа `ProjectRuntimeContracts.Networking.ClientVersion`
+- `ClientVersion` — константа `ClientProtocolVersion.ClientVersion`
   (сейчас `1`); сервер гейтит по ней актуальность релиза
   (`OutdatedClientPacket (0)`). Это гейт версии, а не защита: самописный клиент
   назовётся любой версией.

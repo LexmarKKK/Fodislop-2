@@ -183,7 +183,7 @@ observations. Анализатор обнаруживает несогласов
 
 ## Подключение к настоящему игровому бенчмарку
 
-[FrameBenchmarkPlayModeTests.cs](../../Assets/Scripts/Tests/PlayMode/FrameBenchmarkPlayModeTests.cs)
+[FrameBenchmarkPlayModeTests.cs](../../Assets/Scripts/Tests/PlayMode/Diagnostics/Frames/FrameBenchmarkPlayModeTests.cs)
 поддерживает опциональный экспорт при `KERN_FRAME_CAPTURE=1` в окружении процесса,
 в котором **отдельно, явно** запускается existing explicit test
 `MainGame_FrameCostByScenario`. Этот README не даёт разрешения запускать Unity.

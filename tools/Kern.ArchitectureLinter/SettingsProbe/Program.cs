@@ -265,7 +265,7 @@ public static class Program
     private static void CheckDeclaredLabelsExistInLocalization(string root)
     {
         Section("ключи подписей существуют в локализации");
-        string ruPath = Path.Combine(root, "Assets/Resources/Localization/ru.json");
+        string ruPath = Path.Combine(root, "Assets/Resources/Localization/Locales/ru.json");
         if (!File.Exists(ruPath))
         {
             Failures.Add($"не найден файл локализации {ruPath}");
@@ -510,7 +510,7 @@ public static class Program
 
         // Проверяем, что смена AntiAliasing изменяет равенство и хэш GraphicsQualitySettings
         _checks++;
-        var baseSettings = new GraphicsQualitySettings(2, 512, 128, 1024, 1f, 0);
+        var baseSettings = new GraphicsQualitySettings(512, 128, 1024, 1f, 0);
         var changedSettings = baseSettings;
         changedSettings.AntiAliasing = 4;
         if (baseSettings == changedSettings || baseSettings.GetHashCode() == changedSettings.GetHashCode())
@@ -706,7 +706,7 @@ public static class Program
     {
         public ClientConfig Config { get; set; } = new();
         public string ConfigFilePath => "test_config.json";
-        public GraphicsPreset SelectedGraphicsPreset => GraphicsPreset.Standard;
+        public GraphicsPreset SelectedGraphicsPreset => GraphicsPreset.Classic;
         public void EnsureInitialized() { }
         public void Load() { }
         public void Save() { }
@@ -868,26 +868,6 @@ public static class Program
             if (!Enum.IsDefined(typeof(PixelSamplingMode), mode))
             {
                 Failures.Add($"режим выборки {mode} не определён в перечислении");
-            }
-        }
-
-        // Масштаб рендера обязан приводиться к обратной величине целого:
-        // при дробном апскейл до окна размазывает кадр, и никакое
-        // сглаживание при выборке этого уже не спасёт.
-        foreach (float authored in new[] { 0.5f, 0.65f, 0.8f, 0.9f, 1f, 0.33f, 0.7f })
-        {
-            _checks++;
-            float quantized = PixelGrid.QuantizeRenderScale(authored, 0.5f, 1f);
-            float divisor = 1f / quantized;
-            if (Math.Abs(divisor - MathF.Round(divisor)) > 0.0001f)
-            {
-                Failures.Add(
-                    $"масштаб рендера {authored:F2} приведён к {quantized:F4} — это не обратная величина целого");
-            }
-
-            if (quantized < 0.5f - 0.0001f || quantized > 1f + 0.0001f)
-            {
-                Failures.Add($"масштаб рендера {authored:F2} вышел за пределы — {quantized:F4}");
             }
         }
 

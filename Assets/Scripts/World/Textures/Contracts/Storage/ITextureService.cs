@@ -1,0 +1,33 @@
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+using Kern.World;
+using MinesServer.Data;
+using UnityEngine;
+
+namespace Kern.Core.Interfaces;
+public interface ITextureService
+{
+    event Action<string, Texture2D>? OnTextureLoaded;
+    event Action? OnTerrainDecalAtlasLoaded;
+    int PendingCellTextureRequests { get; }
+    void RequestTexture(CellType cellType);
+    AtlasCoordinate GetCellTextureCoordinate(CellType cellType);
+    Vector4 GetCellFrameRect(CellType cellType);
+    int GetAnimationFrameCount(CellType cellType);
+    UniTask<AtlasCoordinate> GetCellTextureCoordinate(
+        CellType cellType,
+        int globalX,
+        int globalY);
+    Texture2D? PrismaticFlowMapTexture { get; }
+    Texture2D? FlowMapTexture { get; }
+    Texture2D? TerrainDecalAtlasTexture { get; }
+    Texture2D? TerrainDecalRockAtlasTexture { get; }
+    Texture2D? TerrainDecalSandAtlasTexture { get; }
+    IReadOnlyList<IAtlasDescriptor> GetAllAtlases();
+    string GetCacheStats();
+    void FlushDirtyAtlases();
+    void Clear();
+}

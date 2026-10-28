@@ -29,16 +29,16 @@ public sealed class OneRoadInitRule : IRule
         CancellationToken cancellationToken = default)
     {
         var violations = new List<RuleViolation>();
-        var uiSrc = Path.Combine(context.ProjectRoot, "Assets", "Scripts", "UI");
+        var uiSrc = Path.Combine(context.ProjectRoot, "Assets/Scripts/UI");
 
         if (!Directory.Exists(uiSrc))
             return Task.FromResult<IReadOnlyList<RuleViolation>>(violations);
 
-        foreach (var file in SourceScanner.EnumerateCsFiles(uiSrc, "Tests"))
+        foreach (var file in CSharpSourceFiles.EnumerateCsFiles(uiSrc, "Tests"))
         {
             var content = File.ReadAllText(file);
             var lines = content.Split('\n');
-            var relative = SourceScanner.GetProjectRelativePath(context.ProjectRoot, file);
+            var relative = ProjectSourcePaths.GetProjectRelativePath(context.ProjectRoot, file);
 
             for (var i = 0; i < lines.Length; i++)
             {

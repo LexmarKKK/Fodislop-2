@@ -15,7 +15,8 @@
         "MinesServer.Data",
         "MinesServer.Networking",
         "Unity.InputSystem",
-        "VContainer"
+        "VContainer",
+        "Kern.Diagnostics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

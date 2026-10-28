@@ -46,7 +46,7 @@ public sealed class EditorSceneAuthoringContractRule : IRule
         }
 
         // ProductionSceneContractValidator must exist
-        var validatorPath = Path.Combine(projectRoot, "Assets/Scripts/Editor/Validation/ProductionSceneContractValidator.cs");
+        var validatorPath = Path.Combine(projectRoot, "Assets/Scripts/Editor/Validation/Scenes/ProductionSceneContractValidator.cs");
         if (!File.Exists(validatorPath))
         {
             violations.Add(new RuleViolation
@@ -54,7 +54,7 @@ public sealed class EditorSceneAuthoringContractRule : IRule
                 RuleId = Id,
                 Message = "Read-only ProductionSceneContractValidator должен существовать и guardить scene contracts.",
                 Severity = Severity,
-                TypeName = "Assets/Scripts/Editor/Validation/ProductionSceneContractValidator.cs"
+                TypeName = "Assets/Scripts/Editor/Validation/Scenes/ProductionSceneContractValidator.cs"
             });
         }
         else
@@ -69,13 +69,13 @@ public sealed class EditorSceneAuthoringContractRule : IRule
                     RuleId = Id,
                     Message = "Production validator должен отклонять empty, duplicate, stale и wrongly-grouped ManagerBindings.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Editor/Validation/ProductionSceneContractValidator.cs"
+                    TypeName = "Assets/Scripts/Editor/Validation/Scenes/ProductionSceneContractValidator.cs"
                 });
             }
         }
 
         // GameLifetimeScope
-        var scopePath = Path.Combine(projectRoot, "Assets/Scripts/Core/Bootstrap/Scopes/GameLifetimeScope.cs");
+        var scopePath = Path.Combine(projectRoot, "Assets/Scripts/Bootstrap/Scenes/Scopes/GameLifetimeScope.cs");
         if (File.Exists(scopePath))
         {
             var scope = File.ReadAllText(scopePath);
@@ -87,7 +87,7 @@ public sealed class EditorSceneAuthoringContractRule : IRule
                     RuleId = Id,
                     Message = "MainGame World manager contract должен включать WorldTextureManager.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Core/Bootstrap/Scopes/GameLifetimeScope.cs"
+                    TypeName = "Assets/Scripts/Bootstrap/Scenes/Scopes/GameLifetimeScope.cs"
                 });
             }
 
@@ -99,7 +99,7 @@ public sealed class EditorSceneAuthoringContractRule : IRule
                     RuleId = Id,
                     Message = "RegisterManager должен требовать typed ManagerBindings без hierarchy-search fallback.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Core/Bootstrap/Scopes/GameLifetimeScope.cs"
+                    TypeName = "Assets/Scripts/Bootstrap/Scenes/Scopes/GameLifetimeScope.cs"
                 });
             }
         }

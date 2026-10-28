@@ -36,25 +36,25 @@ public sealed class SettingConsumerTargetRule : IRule
     {
         var violations = new List<RuleViolation>();
         var projectRoot = context.ProjectRoot;
-        var settingsDir = Path.Combine(projectRoot, "Assets", "Scripts", "Core", "Interfaces", "Contracts", "Settings");
+        var settingsDir = Path.Combine(projectRoot, "Assets/Scripts/Core/Configuration/Contracts/Settings");
 
         if (!Directory.Exists(settingsDir))
             return Task.FromResult<IReadOnlyList<RuleViolation>>(violations);
 
         // Build map of class names to files
         var classFiles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var scriptsRoot = Path.Combine(projectRoot, "Assets", "Scripts");
-        foreach (var file in SourceScanner.EnumerateAllCsFiles(scriptsRoot))
+        var scriptsRoot = Path.Combine(projectRoot, "Assets/Scripts");
+        foreach (var file in CSharpSourceFiles.EnumerateAllCsFiles(scriptsRoot))
         {
             var name = Path.GetFileNameWithoutExtension(file);
             if (!classFiles.ContainsKey(name))
                 classFiles[name] = file;
         }
 
-        foreach (var file in Directory.EnumerateFiles(settingsDir, "*.cs"))
+        foreach (var file in Directory.EnumerateFiles(settingsDir, "*.cs", SearchOption.AllDirectories))
         {
             var lines = File.ReadAllLines(file);
-            var relative = SourceScanner.GetProjectRelativePath(projectRoot, file);
+            var relative = ProjectSourcePaths.GetProjectRelativePath(projectRoot, file);
 
             for (var i = 0; i < lines.Length; i++)
             {

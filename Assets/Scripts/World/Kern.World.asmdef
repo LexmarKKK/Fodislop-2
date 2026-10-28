@@ -14,7 +14,8 @@
         "Unity.RenderPipelines.Universal.2D.Runtime",
         "Unity.Collections",
         "Unity.Burst",
-        "VContainer"
+        "VContainer",
+        "Kern.Diagnostics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,0 +1,187 @@
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using MinesServer.Data;
+using UnityEngine;
+
+namespace Kern.UI.Programmator;
+public sealed class ProgrammatorData
+{
+    public const int COLS = 16;
+    public const int ROWS = 12;
+    public const int CELLS_PER_PAGE = COLS * ROWS;
+
+    // Шаг сетки: 32px старого клиента (ProgrammatorView: слоты каждые 32px,
+    // иконка родного размера по центру слота), увеличен до 40px — окно
+    // программатора по умолчанию в 1.25 раза крупнее при прежних пропорциях.
+    public const int CELL_SIZE = 40;
+
+    // Иконки масштабируются вместе с шагом сетки (32 → 40), сохраняя
+    // относительные размеры операторов старого клиента.
+    public const float IconScale = 1.25f;
+
+    // Верхний предел страниц программы: один источник для AddPage, клика
+    // «+» и валидации файла программ.
+    public const int MaxPages = 25;
+
+    public List<int> Codes = new(new int[CELLS_PER_PAGE]);
+    public List<string?> Values = new(new string?[CELLS_PER_PAGE]);
+    public List<string?> Labels = new(new string?[CELLS_PER_PAGE]);
+    public int PageCount => Codes.Count / CELLS_PER_PAGE;
+
+    public int CurrentPage;
+    public int HoveredCell = -1;
+
+    internal void LoadInstructions(IReadOnlyList<(ProgAction Operator, string Label, string Value)> instructions)
+    {
+        if (instructions.Count > MaxPages * CELLS_PER_PAGE)
+        {
+            throw new ArgumentOutOfRangeException(nameof(instructions));
+        }
+
+        int count = Mathf.Max(CELLS_PER_PAGE,
+            ((instructions.Count + CELLS_PER_PAGE - 1) / CELLS_PER_PAGE) * CELLS_PER_PAGE);
+        Codes = new List<int>(new int[count]);
+        Labels = new List<string?>(new string?[count]);
+        Values = new List<string?>(new string?[count]);
+        for (int index = 0; index < instructions.Count; index++)
+        {
+            (ProgAction op, string label, string value) = instructions[index];
+            Codes[index] = (int)op;
+            Labels[index] = label;
+            Values[index] = value;
+        }
+
+        CurrentPage = 0;
+        HoveredCell = -1;
+        _undoStack.Clear();
+        _redoStack.Clear();
+    }
+
+    public void AddPage()
+    {
+        if (PageCount >= MaxPages)
+        {
+            return;
+        }
+
+        Codes.AddRange(new int[CELLS_PER_PAGE]);
+        Values.AddRange(new string?[CELLS_PER_PAGE]);
+        Labels.AddRange(new string?[CELLS_PER_PAGE]);
+    }
+
+    public bool RemoveLastPage()
+    {
+        if (PageCount <= 1)
+        {
+            return false;
+        }
+
+        PushUndo();
+        int start = (PageCount - 1) * CELLS_PER_PAGE;
+        Codes.RemoveRange(start, CELLS_PER_PAGE);
+        Values.RemoveRange(start, CELLS_PER_PAGE);
+        Labels.RemoveRange(start, CELLS_PER_PAGE);
+        if (CurrentPage >= PageCount)
+        {
+            CurrentPage = PageCount - 1;
+        }
+
+        return true;
+    }
+
+    private struct UndoSnapshot
+    {
+        public int[] Codes;
+        public string?[] Labels;
+        public string?[] Values;
+    }
+
+    private readonly Stack<UndoSnapshot> _undoStack = new();
+    private readonly Stack<UndoSnapshot> _redoStack = new();
+    private const int MAX_UNDO_STEPS = 50;
+
+    public void PushUndo()
+    {
+        _undoStack.Push(new UndoSnapshot
+        {
+            Codes = Codes.ToArray(),
+            Labels = Labels.ToArray(),
+            Values = Values.ToArray(),
+        });
+        _redoStack.Clear();
+
+        if (_undoStack.Count > MAX_UNDO_STEPS)
+        {
+            var temp = _undoStack.ToArray();
+            _undoStack.Clear();
+            for (int i = temp.Length - MAX_UNDO_STEPS + 1; i < temp.Length; i++)
+            {
+                _undoStack.Push(temp[i]);
+            }
+        }
+    }
+    public bool Undo()
+    {
+        if (_undoStack.Count == 0)
+        {
+            return false;
+        }
+
+        _redoStack.Push(new UndoSnapshot
+        {
+            Codes = Codes.ToArray(),
+            Labels = Labels.ToArray(),
+            Values = Values.ToArray(),
+        });
+        var snap = _undoStack.Pop();
+        Codes = new List<int>(snap.Codes);
+        Labels = new List<string?>(snap.Labels);
+        Values = new List<string?>(snap.Values);
+        return true;
+    }
+
+    public bool Redo()
+    {
+        if (_redoStack.Count == 0)
+        {
+            return false;
+        }
+
+        _undoStack.Push(new UndoSnapshot
+        {
+            Codes = Codes.ToArray(),
+            Labels = Labels.ToArray(),
+            Values = Values.ToArray(),
+        });
+        var snap = _redoStack.Pop();
+        Codes = new List<int>(snap.Codes);
+        Labels = new List<string?>(snap.Labels);
+        Values = new List<string?>(snap.Values);
+        return true;
+    }
+
+    public static readonly ProgAction[] WOPERATORS = ProgrammatorOperators.WOPERATORS;
+    public static readonly ProgAction[] SHIFTWOPERATORS = ProgrammatorOperators.SHIFTWOPERATORS;
+
+    // ─── Operator Categories ──────────────────────────────────────
+    public const int CAT_CONTROL_FLOW = ProgrammatorOperators.CAT_CONTROL_FLOW;
+    public const int CAT_ACTIONS = ProgrammatorOperators.CAT_ACTIONS;
+    public const int CAT_OBSERVER = ProgrammatorOperators.CAT_OBSERVER;
+    public const int CAT_CONDITIONS = ProgrammatorOperators.CAT_CONDITIONS;
+    public const int CAT_MEMORY = ProgrammatorOperators.CAT_MEMORY;
+
+    public static readonly int[] CATEGORIES = ProgrammatorOperators.CATEGORIES;
+
+    public static readonly IReadOnlyDictionary<int, string> CATEGORY_NAMES = ProgrammatorOperators.CATEGORY_NAMES;
+
+    public static readonly IReadOnlyDictionary<int, Color> CATEGORY_COLORS = ProgrammatorOperators.CATEGORY_COLORS;
+
+    public static readonly IReadOnlyDictionary<int, ProgAction[]> CATEGORY_OPERATORS = ProgrammatorOperators.CATEGORY_OPERATORS;
+
+    public static readonly IReadOnlyDictionary<ProgAction, string> OPERATOR_DESCRIPTIONS = ProgrammatorLocalization.OPERATOR_DESCRIPTIONS;
+
+    public static readonly IReadOnlyDictionary<ProgAction, string> OPERATOR_NAMES = ProgrammatorLocalization.OPERATOR_NAMES;
+}

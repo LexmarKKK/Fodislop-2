@@ -37,7 +37,7 @@ public sealed class ForbiddenApiRule : IRule
             "new InputAction() запрещён — настраивайте в InputSystem_Actions.inputactions", null),
         (new Regex(@"\bStartCoroutine\s*\(", RegexOptions.Compiled),
             "StartCoroutine запрещён — используйте UniTask / CancellationToken",
-            "Assets/Scripts/Core/Lifecycle/AsyncOperationSupervisor.cs"),
+            "Assets/Scripts/Core/Lifecycle/Operations/AsyncOperationSupervisor.cs"),
         (new Regex(@"\bInput\.Get", RegexOptions.Compiled),
             "Legacy Input (Input.Get*) запрещён — используйте UnityEngine.InputSystem", null),
         (new Regex(@"\bAudioSource\b", RegexOptions.Compiled),
@@ -78,29 +78,29 @@ public sealed class ForbiddenApiRule : IRule
     private static readonly Dictionary<string, string[]> LegitimateOwners = new(StringComparer.Ordinal)
     {
         // DisplayManager owns display settings
-        ["Assets/Scripts/Rendering/Settings/DisplayManager.cs"] = new[] {
+        ["Assets/Scripts/Rendering/Display/Control/DisplayManager.cs"] = new[] {
             "Application.targetFrameRate", "Screen.SetResolution", "QualitySettings.vSyncCount"
         },
         // DisplaySettings defines the values (doesn't use them)
-        ["Assets/Scripts/Core/Interfaces/Contracts/Settings/DisplaySettings.cs"] = new[] {
+        ["Assets/Scripts/Core/Configuration/Contracts/Settings/Display/DisplaySettings.cs"] = new[] {
             "Application.targetFrameRate", "Screen.SetResolution", "QualitySettings.vSyncCount"
         },
         // SceneObjectFactory creates GameObjects
-        ["Assets/Scripts/Core/Lifecycle/SceneObjectFactory.cs"] = new[] {
+        ["Assets/Scripts/Core/Lifecycle/Objects/Creation/SceneObjectFactory.cs"] = new[] {
             "new GameObject", "IObjectResolver"
         },
         // RuntimeTextureFactory creates textures
-        ["Assets/Scripts/AssetPipeline/Loading/RuntimeTextureFactory.cs"] = new[] { "new Texture2D" },
+        ["Assets/Scripts/AssetPipeline/Loading/Textures/Creation/RuntimeTextureFactory.cs"] = new[] { "new Texture2D" },
         // Токены auth/VK живут в PlayerPrefs: перенос в ClientConfig требует
         // PlayMode-проверки login/logout, без неё миграцию не делать.
-        ["Assets/Scripts/Networking/Auth/AuthTokenManager.cs"] = new[] { "PlayerPrefs" },
-        ["Assets/Scripts/Networking/Auth/VKAuthService.cs"] = new[] { "PlayerPrefs" },
+        ["Assets/Scripts/Networking/Authentication/Tokens/AuthTokenManager.cs"] = new[] { "PlayerPrefs" },
+        ["Assets/Scripts/Networking/Authentication/VK/VKAuthService.cs"] = new[] { "PlayerPrefs" },
         // Tests need to create objects
-        ["Assets/Scripts/Tests/Editor/Core/LocalPlayerStateTests.cs"] = new[] { "new GameObject" },
-        ["Assets/Scripts/Tests/Editor/Core/ProductionSceneContractValidatorTests.cs"] = new[] { "new GameObject" },
-        ["Assets/Scripts/Tests/Editor/Core/DisplayOutputProfileTests.cs"] = new[] { "new GameObject" },
-        ["Assets/Scripts/Tests/Editor/Core/LocalPlayerStateFuzzTests.cs"] = new[] { "new GameObject" },
-        ["Assets/Scripts/Tests/Editor/Player/CameraFollowTests.cs"] = new[] { "new GameObject" },
+        ["Assets/Scripts/Tests/Editor/Core/Lifecycle/Player/State/LocalPlayerStateTests.cs"] = new[] { "new GameObject" },
+        ["Assets/Scripts/Tests/Editor/Editor/Validation/Scenes/ProductionSceneContractValidatorTests.cs"] = new[] { "new GameObject" },
+        ["Assets/Scripts/Tests/Editor/Rendering/Display/Output/DisplayOutputProfileTests.cs"] = new[] { "new GameObject" },
+        ["Assets/Scripts/Tests/Editor/Core/Lifecycle/Player/State/LocalPlayerStateFuzzTests.cs"] = new[] { "new GameObject" },
+        ["Assets/Scripts/Tests/Editor/Game/Player/Camera/Following/CameraFollowTests.cs"] = new[] { "new GameObject" },
     };
 
     public string Id => "KERN-FORBIDDEN-API";
@@ -131,20 +131,26 @@ public sealed class ForbiddenApiRule : IRule
         }
 
         // Source-based checks (regex on .cs files)
-        var scriptsRoot = Path.Combine(context.ProjectRoot, "Assets", "Scripts");
-        var editorRoot = Path.Combine(context.ProjectRoot, "Assets", "Editor");
+        var scriptsRoot = Path.Combine(context.ProjectRoot, "Assets/Scripts");
+        var editorRoot = Path.Combine(context.ProjectRoot, "Assets/Editor");
 
-        foreach (var file in SourceScanner.EnumerateAllCsFiles(scriptsRoot, editorRoot))
+        foreach (var file in CSharpSourceFiles.EnumerateAllCsFiles(scriptsRoot, editorRoot))
         {
-            var relative = SourceScanner.GetProjectRelativePath(context.ProjectRoot, file);
+            var relative = ProjectSourcePaths.GetProjectRelativePath(context.ProjectRoot, file);
             if (IsSourceExcluded(relative)) continue;
 
             var source = File.ReadAllText(file);
-            var stripped = SourceScanner.StripComments(source);
+            var stripped = CSharpSourceText.StripComments(source);
             var ownerExemptions = LegitimateOwners.TryGetValue(relative, out var ex) ? ex : null;
+            bool isTestFixture = relative.StartsWith("Assets/Scripts/Tests/", StringComparison.Ordinal);
 
             foreach (var (pattern, message, exempt) in SourcePatterns)
             {
+                if (isTestFixture && IsLegitimateOwner(pattern, ["new GameObject", "new Texture2D"]))
+                {
+                    continue;
+                }
+
                 if (exempt != null && relative == exempt)
                     continue;
 
@@ -250,24 +256,20 @@ public sealed class ForbiddenApiRule : IRule
         TypeDefinition type,
         LinterContext context)
     {
-        if (type.FullName != "Kern.Core.GameplayCamera")
+        if (type.FullName != "Kern.Core.Rendering.GameplayCamera")
         {
             return false;
         }
 
         string path = Path.Combine(
             context.ProjectRoot,
-            "Assets",
-            "Scripts",
-            "Core",
-            "Rendering",
-            "GameplayCamera.cs");
+            "Assets/Scripts/Core/Rendering/Cameras/Services/GameplayCamera.cs");
         if (!File.Exists(path))
         {
             return false;
         }
 
-        string source = SourceScanner.StripComments(File.ReadAllText(path));
+        string source = CSharpSourceText.StripComments(File.ReadAllText(path));
         return !source.Contains("Camera.main", StringComparison.Ordinal);
     }
 
@@ -278,6 +280,6 @@ public sealed class ForbiddenApiRule : IRule
     {
         return forbiddenDeclaringType == "UnityEngine.Texture2D" &&
                forbiddenMethodName == ".ctor" &&
-               type.FullName == "Kern.RuntimeTextureFactory";
+               type.FullName == "Kern.AssetPipeline.Loading.RuntimeTextureFactory";
     }
 }

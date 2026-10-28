@@ -1,0 +1,86 @@
+/* Геймпад: значки кнопок, подсказки и рамка фокуса. Режим — класс .gamepad на кадре, семейство пада — data-pad */
+
+/* ── Значок кнопки ── */
+.pg { display: inline-grid; place-items: center; flex: none; min-width: 22px; height: 22px; padding: 0 var(--sp-3); border-radius: var(--r-l);
+  background: var(--plate-hover); border: 1px solid var(--seam-strong); color: var(--bone); font: var(--fw-bold) var(--t-3)/1 var(--font); letter-spacing: 0; white-space: nowrap; }
+.pg:where([data-btn="a"], [data-btn="b"], [data-btn="x"], [data-btn="y"]) { width: 22px; padding: 0; border-radius: var(--r-round); font-size: var(--t-4); }
+.pg:where([data-btn="up"], [data-btn="down"], [data-btn="left"], [data-btn="right"]) { width: 22px; padding: 0; border-radius: var(--radius); font-size: var(--t-5); }
+.pg:where([data-btn="start"], [data-btn="select"]) { height: 18px; border-radius: var(--r-pill); font-size: var(--t-2); }
+.frame[data-pad="xbox"] .pg[data-btn="a"] { color: var(--pad-xbox-a); }
+.frame[data-pad="xbox"] .pg[data-btn="b"] { color: var(--pad-xbox-b); }
+.frame[data-pad="xbox"] .pg[data-btn="x"] { color: var(--pad-xbox-x); }
+.frame[data-pad="xbox"] .pg[data-btn="y"] { color: var(--pad-xbox-y); }
+.frame[data-pad="ps"] .pg[data-btn="a"] { color: var(--pad-ps-a); }
+.frame[data-pad="ps"] .pg[data-btn="b"] { color: var(--pad-ps-b); }
+.frame[data-pad="ps"] .pg[data-btn="x"] { color: var(--pad-ps-x); }
+.frame[data-pad="ps"] .pg[data-btn="y"] { color: var(--pad-ps-y); }
+
+/* ── Значки в HUD вместо клавиш ── */
+.frame:not(.in-pad) .hud .pg { display: none; }
+.frame.in-pad .hud kbd { display: none; }
+.toggle .pg { margin-left: auto; }
+
+/* ── Фокус: виден всегда, наведения у пада нет ── */
+.frame.in-pad :focus { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+/* ── Пад на сенсорном устройстве: стик, «Копать» и дуга действий не нужны ── */
+.frame.compact.in-pad #pad, .frame.compact.in-pad .act-arc, .frame.compact.in-pad #fastMove { display: none; }
+
+/* ── Ромб кнопок пада: на ПК — левее навыков, на пальце — на месте «Копать» и дуги ── */
+.pad-cluster { display: none; }
+.frame.in-pad[data-screen="game"] .pad-cluster { display: grid; justify-items: center; gap: var(--sp-5); position: absolute; z-index: var(--z-pad); pointer-events: none;
+  right: calc(var(--margin) + 4 * 32px + 3 * 14px + 28px); bottom: calc(var(--margin) + 14px); }
+.frame.compact.in-pad[data-screen="game"] .pad-cluster { right: calc(var(--edge) + 4px); bottom: calc(var(--edge) + 2px); gap: var(--sp-2); }
+/* На пальце навыки — левее ромба */
+.frame.compact.in-pad .mini-skills { right: calc(var(--edge) + 196px); }
+.frame.compact.in-pad .pd-shoulders { gap: var(--sp-3); }
+.frame.compact.in-pad .pd-diamond { grid-template: ". y ." 58px "x . b" 58px ". a ." 58px / 62px 30px 62px; }
+.frame.compact.in-pad .pd { width: 46px; height: 46px; }
+.frame.compact.in-pad .pd-shoulders .pd { width: auto; height: var(--ctl-s); padding: 0 var(--sp-5) 0 36px; }
+.frame.compact.in-pad .pad-cluster { justify-items: end; }
+.frame.compact.in-pad .pd-lt > small { display: none; }   /* на телефоне у лечения — значок вместо подписи, как на сенсорной кнопке */
+.pd-shoulders { display: flex; gap: 40px; }
+.pd-diamond { display: grid; grid-template: ". y ." 66px "x . b" 66px ". a ." 66px / 70px 40px 70px; place-items: start center; }
+.pd { position: relative; width: 52px; height: 52px; border-radius: var(--r-round); display: grid; place-items: center;
+  background: var(--float); border: 1px solid var(--seam-strong); color: var(--bone); }
+.pd svg { width: 22px; height: 22px; }
+.pd img { width: 30px; height: 30px; image-rendering: pixelated; }
+.pd > .pg { position: absolute; right: -6px; bottom: -4px; }
+.pd > small { position: absolute; top: calc(100% + 1px); display: flex; align-items: center; gap: 3px; font-size: var(--t-3); color: var(--ash); white-space: nowrap; }
+.pd > small .pg { min-width: 16px; width: 16px; height: 16px; font-size: var(--t-2); border-radius: var(--r-s); }
+.pd-y { grid-area: y; } .pd-x { grid-area: x; } .pd-b { grid-area: b; } .pd-a { grid-area: a; }
+.pd-rt { background: var(--signal); border-color: var(--signal); }
+.pd-rt > small { color: var(--on-signal) !important; font-weight: var(--fw-bold); }
+.pd.is-on { border-color: var(--signal); color: var(--signal); }
+.pd.is-idle { opacity: .45; }
+.pd-shoulders .pd { width: auto; height: 34px; border-radius: var(--r-pill); padding: 0 var(--sp-6) 0 38px; grid-auto-flow: column; gap: var(--sp-3); }
+.pd-shoulders .pd > .pg { left: 4px; right: auto; top: 50%; bottom: auto; transform: translateY(-50%); }
+.pd-shoulders .pd > small { position: static; color: var(--bone); font-size: var(--t-4); }
+.pd-shoulders .pd svg { width: 18px; height: 18px; }
+/* Метки над ромбом не перекрывают ромб: подпись Y — между X и B */
+
+/* ── Значок кнопки в углу элемента ── */
+.pg-badge { position: absolute; z-index: 2; top: -6px; right: -6px; pointer-events: none; }
+/* Значку нужен позиционированный хозяин; уже позиционированные (миникарта, блок у миникарты) не трогаем */
+.frame.in-pad .sysbar, .frame.in-pad .inv-slots li { position: relative; }
+.frame.in-pad .sysbar > .pg-badge { top: 50%; right: auto; left: -30px; transform: translateY(-50%); }
+.frame.compact.in-pad .touch-sys > .pg-badge { position: absolute; top: -8px; right: auto; left: -10px; width: auto; min-width: 22px; height: 22px; padding: 0 var(--sp-3); display: inline-grid; }
+.pause-sys .pg-badge { display: none; }   /* «Меню» ПК на пальце — плитка «Настройки», кнопки пада у неё нет */
+
+/* ── Строка подсказок в меню и окнах ── */
+.pad-bar { position: absolute; z-index: var(--z-top); left: 50%; bottom: calc(var(--sb, 0px) + 10px); transform: translateX(-50%); display: flex; gap: 18px;
+  padding: var(--sp-3) var(--sp-7); border-radius: var(--radius); background: var(--float); border: 1px solid var(--seam); color: var(--ash); font-size: var(--t-small); pointer-events: none; }
+.pad-bar[hidden] { display: none; }
+.pad-bar span { display: flex; align-items: center; gap: var(--sp-3); white-space: nowrap; }
+.pad-bar .pg + .pg { margin-left: -2px; }
+
+/* ── Веер блоков с падом: по центру над подсказками, и на ПК тоже ── */
+.frame.in-pad #buildFan:not([hidden]) { position: absolute; z-index: var(--z-float); left: 50%; bottom: 120px; transform: translateX(-50%); display: flex; gap: var(--sp-3); padding: var(--sp-3); }
+
+/* ── Настройки: кнопки пада ── */
+.padcap { min-width: var(--ctl-xxl); display: inline-grid; place-items: center; }
+.padcap.is-listening .pg { display: none; }
+.padcap.is-listening::after { content: "Нажмите кнопку…"; }
+.ctl-view[hidden] { display: none; }
+/* ПК: в правом нижнем углу инвентарь — ромб пада левее его столбца ячеек */
+.frame.hud-pc.in-pad[data-screen="game"] .pad-cluster { right: calc(var(--margin) + 64px + 22px + 28px); }

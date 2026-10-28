@@ -5,7 +5,7 @@ description: >-
   LifetimeScope/scene structure, VolumeProfile editor API, camera pixel-grid alignment, performance
   analysis rules, profiler interpretation, and the no-fallback policy. Use when touching coordinates,
   WorldToScreen, UI element anchoring, RenderTexture, LifetimeScope, VolumeProfile, camera, FPS
-  analysis, Profiler markers, or any code near an "invariant" comment. Triggers on: CoordinateUtils,
+  analysis, Profiler markers, or any code near an "invariant" comment. Triggers on: WorldCoordinateConverter,
   MapManager.WorldHeight, RuntimePanelUtils, CameraTransformWorldToPanel, WorldToLocal, PositionWriteEpsilon,
   CameraPixelGridAligner, LifetimeScope, RegisterComponent, VolumeProfile, AssetDatabase.AddObjectToAsset,
   EditorLoop, VSync, fallback, paper white, FPS, frame time.
@@ -16,7 +16,7 @@ description: >-
 ## Coordinates
 
 - Server coordinates have their origin at the top-left with Y pointing down.
-- Perform all transformations exclusively via `CoordinateUtils` with `MapManager.WorldHeight`.
+- Perform all transformations exclusively via `WorldCoordinateConverter` with `MapManager.WorldHeight`.
 
 ## UI Toolkit
 

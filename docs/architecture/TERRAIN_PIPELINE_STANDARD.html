@@ -75,7 +75,7 @@
 
   <h2>4. Типы данных и единицы (TP-DATA)</h2>
   <ul>
-    <li>Мировая клетка: целочисленные координаты Unity мира. Server coordinates не протекают дальше координатной границы; преобразование выполняется один раз через <code>CoordinateUtils</code> и <code>MapManager.WorldHeight</code>.</li>
+    <li>Мировая клетка: целочисленные координаты Unity мира. Server coordinates не протекают дальше координатной границы; преобразование выполняется один раз через <code>WorldCoordinateConverter</code> и <code>MapManager.WorldHeight</code>.</li>
     <li>Локальная клетка: нормализованное cell-local пространство. Геометрический grid — целое число делений на клетку; кодирование узла имеет один владелец.</li>
     <li>Окно/область: полуоткрытый integer rectangle <code>[min, max)</code> с именованным пространством координат. <code>RectInt</code> разрешён только при локальном и явном контракте пространства.</li>
     <li>Screen pixel, atlas texel и lighting texel никогда не передаются как безымянный <code>Vector2</code>. Для каждой конверсии есть named функция и владелец.</li>

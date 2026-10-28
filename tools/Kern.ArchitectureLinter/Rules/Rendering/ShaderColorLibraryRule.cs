@@ -34,11 +34,11 @@ public sealed class ShaderColorLibraryRule : IRule
         if (!Directory.Exists(assetsRoot))
             return Task.FromResult<IReadOnlyList<RuleViolation>>(violations);
 
-        foreach (var file in SourceScanner.EnumerateShaderFiles(assetsRoot))
+        foreach (var file in UnitySourceFiles.EnumerateShaderFiles(assetsRoot))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var source = File.ReadAllText(file);
-            var relative = SourceScanner.GetProjectRelativePath(projectRoot, file);
+            var relative = ProjectSourcePaths.GetProjectRelativePath(projectRoot, file);
             var includesColor = source.Contains("ShaderLibrary/Color.hlsl");
 
             foreach (var fn in ColorFunctions)

@@ -1,0 +1,8 @@
+{
+    "name": "Kern.Diagnostics",
+    "rootNamespace": "Kern.Diagnostics",
+    "references": [
+        "Kern.Contracts"
+    ],
+    "autoReferenced": true
+}

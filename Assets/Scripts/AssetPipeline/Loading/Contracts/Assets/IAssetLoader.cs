@@ -1,0 +1,39 @@
+#nullable enable
+
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
+
+namespace Kern.Core.Interfaces;
+
+public interface IAssetLoader
+{
+    int PendingAssetCount { get; }
+
+    int QueuedAssetCount { get; }
+
+    bool IsKnownMissing(string filename);
+
+    UniTask<byte[]?> GetAssetBytesAsync(
+        string filename,
+        CancellationToken cancellationToken = default,
+        int timeoutSeconds = AssetStreamingLimits.AssetRequestTimeoutSeconds);
+
+    UniTask<string> GetAssetPathAsync(
+        string filename,
+        CancellationToken cancellationToken = default,
+        int timeoutSeconds = AssetStreamingLimits.AssetRequestTimeoutSeconds);
+
+    UniTask<Texture2D?> GetTextureAsync(string filename, CancellationToken cancellationToken = default);
+
+    UniTask<AnimatedSpriteData> GetAnimatedSpritesAsync(
+        string filename,
+        CancellationToken cancellationToken = default);
+}
+
+public interface IAssetSubscription
+{
+    bool IsAssetSubscriptionEstablished { get; }
+
+    void EnsureAssetSubscription();
+}

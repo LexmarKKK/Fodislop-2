@@ -1,0 +1,134 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>touch: running</title>
+<!-- Инварианты Touch.uss на каждом устройстве стенда: цель не меньше 44 dp, всё
+     интерактивное внутри безопасной области, цели не перекрываются, робот в центре
+     открыт, текст не вылезает из коробки. Итог — в <title>, подробности — в <pre>. -->
+<pre id="log"></pre>
+<script>
+const DEVICES = ['promax', 'pixel8', 'ipadmini', 'ipadpro', 'foldin', 'd768', 'd800', 'd1440', 'd219', 'd4k150'];
+const MOUSE = dev => dev.startsWith('d');
+const CASES = [['calm', ''], ['busy', '&state=busy'], ['chat', '&chat=1'], ['busy+chat', '&state=busy&chat=1']];
+const out = [];
+let fails = 0;
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function load(src) {
+  return new Promise(res => {
+    const f = document.createElement('iframe');
+    f.style.cssText = 'width:1800px;height:1400px;border:0;position:absolute;left:-9999px';
+    f.onload = () => res(f);
+    f.src = src;
+    document.body.appendChild(f);
+  });
+}
+// Ключи видимых элементов HUD: id, подпись или класс с номером среди одноимённых
+function visibleKeys(d, w) {
+  const keys = new Set(), seen = {};
+  for (const el of d.querySelectorAll('#hud *, #pauseSys *')) {
+    if ((el.closest('.touch-only, .chat-column, .say, .sys-sep') && !el.closest('[data-relocated]')) || el.matches('.tbtn:not([data-relocated]), svg, svg *, use, .ico-only, .cap, .pg, .pg *, .pad-cluster, .pad-cluster *')) continue;   // значки и ромб пада — только в режиме геймпада
+    const base = el.id ? '#' + el.id : el.title ? `[${el.title}]` : el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : el.tagName.toLowerCase();
+    const n = seen[base] = (seen[base] || 0) + 1;
+    const shown = el.getClientRects().length && w.getComputedStyle(el).visibility !== 'hidden';
+    const contents = w.getComputedStyle(el).display === 'contents';
+    // доступно иначе: в меню ☰, подписью-подсказкой видимой кнопки, подписью-подсказкой соседнего значения, строкой открываемого чата
+    const viaMenu = !!el.closest('#pauseSys');
+    const owner = el.closest('button[title], [title]');
+    const viaTip = owner && owner !== el && owner.getClientRects().length && owner.getAttribute('title');
+    const viaSibling = el.tagName === 'DT' && el.nextElementSibling?.getAttribute('title') === el.textContent && el.nextElementSibling.getClientRects().length;
+    const viaChat = !!el.closest('.chat-peek') && d.querySelector('.chat-peek').getClientRects().length;
+    const emptied = el.matches('.sysbar, .sysbuttons') && !el.querySelector('button');
+    if (shown || contents || emptied || viaMenu || viaTip || viaSibling || viaChat) keys.add(base + ':' + n);
+  }
+  return keys;
+}
+let desktopVisible = new Set();
+function check(f, name, mouse) {
+  const w = f.contentWindow, d = w.document, frame = d.getElementById('frame');
+  const k = frame.getBoundingClientRect().width / frame.offsetWidth;
+  const fr = frame.getBoundingClientRect();
+  const cs = w.getComputedStyle(frame), px = v => parseFloat(cs.getPropertyValue(v)) || 0;
+  const safe = { l: px('--sl'), t: px('--st'), r: frame.offsetWidth - px('--sr'), b: frame.offsetHeight - px('--sb') };
+  const rect = el => { const r = el.getBoundingClientRect(); return { l: (r.left - fr.left) / k, t: (r.top - fr.top) / k, r: (r.right - fr.left) / k, b: (r.bottom - fr.top) / k, el }; };
+  const label = el => el.id || el.title || el.textContent.trim().slice(0, 16) || el.className;
+  const visible = el => el.getClientRects().length && w.getComputedStyle(el).visibility !== 'hidden';
+  const targets = [...d.querySelectorAll('#hud button, #hud input, #hud .pad, #hud .inv-slots li, #hud .mini-skill')]
+    .filter(visible).filter(el => !el.closest('.chat-column') || el.matches('.chat-tab, .chat-input'))
+    .map(rect);
+  const bad = [];
+  for (const t of targets) {
+    const wdt = t.r - t.l, h = t.b - t.t;
+    if (!mouse && Math.min(wdt, h) < 43.5) bad.push(`мала ${label(t.el)} ${wdt.toFixed(0)}×${h.toFixed(0)}`);
+    if (t.l < safe.l - .5 || t.t < safe.t - .5 || t.r > safe.r + .5 || t.b > safe.b + .5) bad.push(`вне безопасной области: ${label(t.el)}`);
+  }
+  for (let i = 0; i < targets.length; i++) for (let j = i + 1; j < targets.length; j++) {
+    const a = targets[i], b = targets[j];
+    if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
+    const round = t => w.getComputedStyle(t.el).borderRadius === '50%';
+    if (round(a) && round(b)) {                                    // круглые кнопки дуги — по окружностям, а не по коробкам
+      if (Math.hypot((a.l + a.r - b.l - b.r) / 2, (a.t + a.b - b.t - b.b) / 2) < (a.r - a.l + b.r - b.l) / 2 - .5) bad.push(`перекрытие: ${label(a.el)} × ${label(b.el)}`);
+    } else if (a.l < b.r - .5 && b.l < a.r - .5 && a.t < b.b - .5 && b.t < a.b - .5) bad.push(`перекрытие: ${label(a.el)} × ${label(b.el)}`);
+  }
+  // панель данных не лежит под целью касания (окно чата — слой поверх, оно исключено)
+  const plates = [...d.querySelectorAll('#hud .panel:not(.prog), #hud .status-bar, #hud .states, #hud .item-hint')].filter(visible).map(rect);
+  const chatOpen = d.getElementById('hud').dataset.chat === '1';
+  const chatBox = chatOpen ? rect(d.querySelector('.chat-column')) : null;
+  for (const p of plates) for (const t of targets) {
+    if (p.el.contains(t.el)) continue;
+    if (chatBox && t.el.closest('.chat-column')) continue;
+    if (p.l < t.r - .5 && t.l < p.r - .5 && p.t < t.b - .5 && t.t < p.b - .5) bad.push(`панель под целью: ${label(p.el)} × ${label(t.el)}`);
+  }
+  if (chatBox) for (const t of targets) if (!t.el.closest('.chat-column') && chatBox.l < t.r - .5 && t.l < chatBox.r - .5 && chatBox.t < t.b - .5 && t.t < chatBox.b - .5) bad.push(`чат закрывает цель: ${label(t.el)}`);
+  if (!mouse && frame.classList.contains('compact') && chatBox && w.getComputedStyle(d.querySelector('.chat-column')).zIndex !== '5') bad.push('окно чата не поверх полосы');
+  // робот — клетка 32 dp в центре кадра
+  const cx = frame.offsetWidth / 2, cy = frame.offsetHeight / 2;
+  const panels = [...d.querySelectorAll('#hud .panel, #hud button, #hud .pad, #hud .status-bar, #hud .states li, #hud .inventory, #hud .mini-skill')].filter(visible).map(rect);
+  for (const p of panels) if (p.l < cx + 16 && cx - 16 < p.r && p.t < cy + 16 && cy - 16 < p.b) bad.push(`закрывает робота: ${label(p.el)}`);
+  // текст не шире своей коробки
+  for (const el of d.querySelectorAll('#hud button, #hud .toggle, #hud .crystals li, #hud .nick, #hud .prog-open span, #hud .states li, #hud .mission p')) {
+    if (visible(el) && el.scrollWidth > el.clientWidth + 1) bad.push(`текст не помещается: ${label(el)}`);
+  }
+  // панели данных не лежат друг на друге (окно чата и подсказка предмета — слои поверх)
+  const infos = [...d.querySelectorAll('#hud .panel:not(.chat-column), #hud .status-bar, #hud .states, #hud .chat-peek')].filter(visible).map(rect);
+  for (let i = 0; i < infos.length; i++) for (let j = i + 1; j < infos.length; j++) {
+    const a = infos[i], b = infos[j];
+    if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
+    if (a.l < b.r - .5 && b.l < a.r - .5 && a.t < b.b - .5 && b.t < a.b - .5) bad.push(`панели наложены: ${label(a.el)} × ${label(b.el)}`);
+  }
+  // ничего не пропадает: всё, что видно на мониторе в этом состоянии, видно и здесь
+  for (const key of desktopVisible) if (!visibleKeys(d, w).has(key)) bad.push(`пропало: ${key}`);
+  const uniq = [...new Set(bad)];
+  fails += uniq.length;
+  out.push(`${uniq.length ? 'FAIL' : 'ok  '} ${name} (${targets.length} целей)` + uniq.map(s => '\n     ' + s).join(''));
+}
+(async () => {
+  for (const [n, q] of CASES) for (const dev of DEVICES) {
+    if (dev === DEVICES[0]) {
+      const ref = await load(`../index.html?screen=game&device=d1080${q}`);
+      await wait(700);
+      desktopVisible = visibleKeys(ref.contentDocument, ref.contentWindow);
+      ref.remove();
+    }
+    const f = await load(`../index.html?screen=game&device=${dev}${q}`);
+    f.contentDocument.head.insertAdjacentHTML('beforeend', '<style>*, *::before, *::after { transition: none !important; }</style>');   // мерить конечную раскладку, а не середину перехода
+    await wait(1000);
+    check(f, `${dev} ${n}`, MOUSE(dev));
+    if (!MOUSE(dev) && n === 'calm') {
+      const d = f.contentDocument, w = f.contentWindow;
+      d.getElementById('invExpand').click();
+      const win = d.getElementById('invDialog');
+      const cells = [...d.querySelectorAll('#invGrid .inv-cell')];
+      const bad = [];
+      if (win.hidden) bad.push('окно инвентаря не открылось');
+      if (cells.length < 30) bad.push(`в окне ${cells.length} предметов`);
+      if (cells.some(c => Math.min(c.offsetWidth, c.offsetHeight) < 44)) bad.push('ячейка меньше 44 dp');
+      cells[5]?.click();
+      if (!d.getElementById('invUse')) bad.push('нет кнопки «Использовать»');
+      fails += bad.length;
+      out.push(`${bad.length ? 'FAIL' : 'ok  '} ${dev} инвентарь` + bad.map(s => '\n     ' + s).join(''));
+    }
+    f.remove();
+  }
+  document.getElementById('log').textContent = out.join('\n');
+  document.title = fails ? `touch: FAIL ${fails}` : `touch: ok ${out.length}`;
+})();
+</script>

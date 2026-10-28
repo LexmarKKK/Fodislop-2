@@ -37,7 +37,7 @@ public sealed class LocalizationRule : IRule
             return Task.FromResult<IReadOnlyList<RuleViolation>>(violations);
         }
 
-        var langFiles = Directory.EnumerateFiles(locDir, "*.json").OrderBy(f => f).ToList();
+        var langFiles = Directory.EnumerateFiles(locDir, "*.json", SearchOption.AllDirectories).OrderBy(f => f).ToList();
         if (langFiles.Count == 0)
         {
             violations.Add(new RuleViolation { RuleId = Id, Message = "No localization JSON files found.", Severity = Severity, AssemblyName = LocalizationDir });
@@ -185,7 +185,7 @@ public sealed class LocalizationRule : IRule
         var usedKeys = new HashSet<string>();
         var scriptsRoot = Path.Combine(projectRoot, "Assets/Scripts");
         var editorRoot = Path.Combine(projectRoot, "Assets/Editor");
-        foreach (string file in SourceScanner
+        foreach (string file in CSharpSourceFiles
                      .EnumerateAllCsFiles(scriptsRoot, editorRoot)
                      .Where(file => IsProductionSource(projectRoot, file)))
         {
@@ -203,7 +203,7 @@ public sealed class LocalizationRule : IRule
         var uiDir = Path.Combine(projectRoot, UIDir);
         if (Directory.Exists(uiDir))
         {
-            foreach (var file in SourceScanner.EnumerateUxmlFiles(uiDir))
+            foreach (var file in UnitySourceFiles.EnumerateUxmlFiles(uiDir))
             {
                 var content = File.ReadAllText(file);
                 foreach (Match m in Regex.Matches(content, @"(?:text|tooltip)=""([^""]*)"""))
@@ -247,7 +247,7 @@ public sealed class LocalizationRule : IRule
 
     private static bool IsProductionSource(string projectRoot, string path)
     {
-        string relativePath = SourceScanner.GetProjectRelativePath(projectRoot, path);
+        string relativePath = ProjectSourcePaths.GetProjectRelativePath(projectRoot, path);
         string[] segments = relativePath.Split('/');
         return !segments.Any(segment =>
             segment is "Tests" or "Plugins" or "VContainer");

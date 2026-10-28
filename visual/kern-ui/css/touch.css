@@ -1,0 +1,386 @@
+/* Иерархия: сначала размер вьюпорта, потом управление.
+   Размер (класс кадра): size-s — высота < 500 dp; size-m — высота < 760 dp или ширина < 1100 dp;
+   size-l — остальное; size-xl — ширина от 2400 dp. S и M — компактная раскладка (.compact).
+   Управление (класс кадра): in-mouse, in-touch, in-pad — добавляет и убирает свои элементы внутри раскладки.
+   Этот файл — компактная раскладка и сенсорный ввод. Данные и действия ПК доступны при любом сочетании.
+   Компактная раскладка по большим пальцам, как в мобильных играх:
+   левый низ — стик; правый низ — крупная «Копать» и компактная сетка действий;
+   между ними — хотбар и ряд «Бег · программатор · навыки»;
+   верх — сведения (игрок слева, миникарта и четыре кнопки справа, полоса чата посередине).
+   Редкое (карта, помощь, консоль, здания, респаун, настройки) — в меню ☰.
+   Цель касания не меньше 44 dp, всё в безопасной области, цели не перекрываются,
+   центр экрана с роботом открыт. */
+
+/* Элементы компактной раскладки и сенсорного ввода */
+.frame:not(.compact) .compact-only { display: none; }
+.frame.compact .compact-only { display: flex; }
+.frame:not(.in-touch) .touch-only { display: none; }
+.frame.in-touch .touch-only { display: flex; }
+.frame { --st: 0px; --sr: 0px; --sb: 0px; --sl: 0px; }
+.ico-only, .cap { display: none; }
+
+.frame.compact {
+  --edge: 6px; --tt: 44px; --pad: 120px; --mm: 96px; --col: 216px;
+  --dig: 76px; --act: 60px; --peek-h: 44px;
+  --margin: var(--sp-3); --gap: var(--sp-2); --row: var(--hit);
+  --t-small: var(--t-3); --t-body: var(--t-5); --t-strong: var(--t-6); --t-title: var(--t-10);
+  font-size: var(--t-body);
+}
+.frame.size-m {
+  --tt: 52px; --pad: 168px; --mm: 150px; --col: 240px;
+  --dig: 100px; --act: 64px; --peek-h: 52px;
+  --t-small: var(--t-4); --t-body: var(--t-6); --t-strong: var(--t-8); --t-title: var(--t-12);
+}
+/* Сенсорный ввод на большом экране (iPad Pro, сенсорный ноутбук): размеры пальцевых целей */
+.frame.in-touch:not(.compact) { --tt: 52px; --pad: 168px; --dig: 100px; --act: 64px; --edge: 12px; }
+/* Производные места */
+.frame.compact {
+  --band-l: calc(max(var(--col), var(--pcol, 0px)) + 2 * var(--edge));            /* правее колонки игрока; панель игрока шире колонки при длинном переводе — правее неё */
+  --grid-w: calc(2 * var(--tt) + 4px);                                               /* четыре кнопки 2×2 */
+  --side: calc(var(--edge) + var(--mm) + 10px + 6px + var(--grid-w) + 6px);          /* миникарта и кнопки */
+  --band-w: calc(100% - var(--band-l) - var(--side));
+  --band-t: calc(var(--edge) + 20px);                                                /* под строкой состояния */
+  --low-l: var(--edge);                                                              /* без стика — от края */
+}
+.frame.compact.in-touch { --low-l: calc(var(--edge) + 6px + var(--pad) + 12px); }    /* правее стика */
+
+/* HUD — в безопасной области; мир — во весь экран под вырезами */
+.frame.compact .hud { inset: var(--st) var(--sr) var(--sb) var(--sl); }
+.frame.compact .dialog-layer { padding: calc(var(--st) + var(--sp-3)) calc(var(--sr) + var(--sp-3)) calc(var(--sb) + var(--sp-3)) calc(var(--sl) + var(--sp-3)); }
+.frame.compact .hud-body { transform: none !important; translate: none; }
+.frame.compact .hud[data-chat] .col-top { max-width: none; }
+.frame.compact .col-top, .frame.compact .col-bottom, .frame.compact .top-right, .frame.compact .player-row { position: static; }
+.frame.compact .sysbar { display: none; }
+.frame.compact .icon-btn { width: var(--tt); height: var(--tt); }
+
+.tbtn { height: var(--tt); min-width: var(--tt); padding: 0 var(--sp-6); display: grid; place-items: center; border-radius: var(--radius); background: var(--graphite);
+  border: 1px solid var(--seam); color: var(--bone); font-weight: var(--fw-semi); font-size: var(--t-body); white-space: nowrap; }
+.tbtn svg { width: 18px; height: 18px; }
+.tbtn[aria-pressed="true"] { border-color: var(--signal); background: var(--signal-pressed); color: var(--signal); }
+
+/* ── Левый верх: игрок и груз — строками «название · значение» ── */
+.frame.compact .col-top { display: flex; width: calc(var(--col) + 2 * var(--edge)); max-width: none; padding: var(--edge); gap: var(--sp-2); }
+.frame.compact .player-row { display: contents; }
+.frame.compact .player { width: var(--pcol, 100%); padding: var(--sp-3) var(--sp-5); gap: var(--sp-2); }
+.frame.compact .player-head { height: 18px; }
+.frame.compact .nick { font-size: var(--t-small); flex: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.frame.compact .hp { gap: var(--sp-3); }
+.frame.compact .hp .meter { height: 10px; border-radius: var(--r-s); }
+.frame.compact .hp-value { line-height: 16px; font-size: var(--t-small); min-width: 0; }
+.frame.compact .wallet { gap: 0; }
+.frame.compact .wallet dt { font-size: var(--t-3); }
+.frame.compact .wallet dd { font-size: var(--t-small); line-height: 16px; }
+.frame.compact .geo { grid-column: 1 / 4; margin-top: var(--sp-1); padding-top: 3px; font-size: var(--t-small); line-height: 14px; }
+.frame.compact .geo svg { width: 14px; height: 14px; }
+.frame.compact .geo img { width: 14px; height: 14px; }
+
+/* Кнопка бокса — справа на две строки: шапка «Груз» не растягивается до 44 dp, кристаллы идут сразу под ней */
+.frame.compact .cargo { width: var(--pcol, 100%); display: grid; grid-template-columns: auto auto 1fr auto; grid-template-rows: auto 1fr; align-items: center; column-gap: var(--sp-3); row-gap: var(--sp-1); padding: var(--sp-3) 0 var(--sp-3) var(--sp-5); }
+.frame.compact .cargo-head { display: contents; }
+.frame.compact .cargo-head span, .frame.compact .cargo-head strong { font-size: var(--t-small); }
+.frame.compact .cargo-head .icon-btn { grid-column: 4; grid-row: 1 / span 2; align-self: start; margin: -6px 0 0; }
+.frame.compact .cargo .meter { grid-column: 3; grid-row: 1; margin: 0; }
+.frame.compact .crystals { grid-column: 1 / 4; grid-row: 2; align-self: start; margin: 0; gap: 0; }
+.frame.compact .crystals li { font-size: var(--t-small); line-height: 16px; white-space: nowrap; }
+.frame.compact .crystals img { width: 14px; height: 14px; }
+.frame.size-m .crystals li { line-height: 20px; }
+.frame.size-m .crystals img { width: 16px; height: 16px; }
+
+/* ── Правый верх: миникарта (касание — карта мира), левее — бонусы, «Сказать», чат, ☰ ── */
+.frame.compact .minimap { position: absolute; top: var(--edge); right: var(--edge); width: calc(var(--mm) + 10px); height: calc(var(--mm) + 10px); padding: var(--sp-2); }
+.frame.compact .coords { left: 8px; top: 8px; padding: 0 var(--sp-2); font-size: var(--t-small); }
+.frame.compact .touch-sys { position: absolute; top: var(--edge); right: calc(var(--edge) + var(--mm) + 10px + 6px); display: grid; grid-template-columns: repeat(2, var(--tt)); gap: var(--sp-2); }
+.frame.compact .touch-sys > * { width: var(--tt); height: var(--tt); padding: var(--sp-1) 0; display: flex; flex-direction: column; justify-content: center; gap: var(--sp-1); }
+.frame.compact .touch-sys span { font-size: var(--t-2); line-height: 12px; letter-spacing: -.1px; color: var(--mist); }
+.frame.compact .touch-sys svg { width: 17px; height: 17px; }
+/* Игровые функции с ПК-ряда — в этом же блоке и с той же подложкой */
+.frame.compact .touch-sys .icon-btn { background: var(--graphite); border: 1px solid var(--seam); border-radius: var(--radius); color: var(--bone); place-items: center; align-content: center; }
+.frame.compact .bonus { position: static; }
+
+/* ── Верхняя полоса между ними: состояние, строки чата, миссия и состояния ── */
+.frame.compact .status-bar { top: var(--edge); font-size: var(--t-3); padding: 0 var(--sp-4); line-height: 16px;
+  left: calc(var(--band-l) + var(--band-w) / 2); max-width: var(--band-w); overflow: hidden; }
+.frame.compact .chat-peek { position: absolute; left: var(--band-l); top: var(--band-t); bottom: auto; width: min(460px, var(--band-w)); max-width: none; height: var(--peek-h);
+  padding: 3px var(--sp-4); gap: var(--sp-4); align-items: flex-start; overflow: hidden; }
+.frame.compact .hud[data-chat="2"] .chat-peek { display: flex; }
+.frame.compact .chat-peek ol { min-width: 0; gap: 0; }
+.frame.compact .chat-peek li { font-size: var(--t-small); line-height: 18px; max-width: none; }
+.frame.compact .chat-peek-tag { font-size: var(--t-2); line-height: 14px; }
+.frame.size-s .chat-peek li:first-child:nth-last-child(3) { display: none; }
+.frame.size-m .chat-peek li { line-height: 15px; }
+.frame.compact .mission { position: absolute; top: calc(var(--band-t) + var(--peek-h) + 6px); left: var(--band-l); width: calc(min(460px, var(--band-w)) * .52); min-width: 0; padding: 0 var(--sp-5) var(--sp-2); }
+.frame.compact .mission .meter { margin: 0 -10px var(--sp-2); }
+.frame.compact .mission-title { font-size: var(--t-body); line-height: 16px; }
+.frame.compact .mission-title, .frame.compact .mission-text { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow-wrap: anywhere; }
+.frame.compact .mission-text { -webkit-line-clamp: 2; }
+.frame.compact .mission-text { line-height: 13px; font-size: var(--t-small); }
+.frame.compact .mission-progress { white-space: nowrap; font-size: var(--t-small); }
+/* На планшете места хватает: текст миссии от сервера целиком, обрезка — только на телефоне */
+.frame.size-m .mission-title, .frame.size-m .mission-text { display: block; overflow: visible; }
+.frame.size-m .mission-title { line-height: 18px; }
+.frame.compact .states { position: absolute; top: calc(var(--band-t) + var(--peek-h) + 6px); left: calc(var(--band-l) + min(460px, var(--band-w)) * .52 + 4px);
+  width: calc(min(460px, var(--band-w)) * .48 - 4px); gap: var(--sp-1); }
+.frame.compact .states li { padding: var(--sp-1) var(--sp-3); line-height: 16px; gap: var(--sp-3); white-space: nowrap; }
+
+/* ── Левый низ: стик (ввод «тач», при любом размере) ──────────── */
+.frame.in-touch .pad { position: absolute; left: calc(var(--edge) + 6px); bottom: calc(var(--edge) + 6px); width: var(--pad); height: var(--pad); border-radius: var(--r-round);
+  background: rgb(var(--rgb-well) / .45); border: 1px solid var(--seam); pointer-events: auto; touch-action: none; }
+/* Кольцо — граница зон: ручка внутри — поворот, ручка у кольца — ходьба */
+.pad-ring { position: absolute; left: 50%; top: 50%; width: 82%; height: 82%; transform: translate(-50%, -50%); border-radius: var(--r-round); border: 1px solid rgb(var(--rgb-bone) / .22); }
+.pad-knob { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: var(--r-round); background: var(--seam); border: 2px solid var(--ash); }
+.frame.in-touch:not(.size-s) .pad-knob { width: 68px; height: 68px; margin: -34px 0 0 -34px; }
+
+/* ── Середина низа: хотбар, над ним «Бег», программатор и рост навыков ── */
+.frame.compact .inventory { position: absolute; left: var(--low-l); bottom: var(--edge); gap: var(--sp-2); }
+.frame.compact .inv-slots { grid-template-rows: var(--tt); direction: ltr; }
+.frame.compact .inv-slots li { width: var(--tt); height: var(--tt); }
+.frame.compact .inv-slots img { width: 60%; height: 60%; }
+.frame.compact .inv-slots span { right: 3px; bottom: 1px; font-size: var(--t-small); }
+.frame.compact .inv-expand { order: 0; width: var(--tt); margin: 0; }
+.frame.compact .inv-expand svg { transform: scaleX(-1); }
+
+.frame.compact .low-row { position: absolute; left: var(--low-l); bottom: calc(var(--edge) + var(--tt) + 6px); gap: var(--sp-2); align-items: flex-end; pointer-events: none; }
+.frame.compact .low-row > * { pointer-events: auto; }
+.frame.compact .fast-move { flex-direction: column; gap: 1px; padding: 0 var(--sp-3); }
+.frame.compact .prog { position: static; width: auto; height: calc(var(--tt) + 2px); padding: 0; }
+.frame.compact .prog-open { flex: none; width: var(--tt); padding: 0; justify-content: center; }
+.frame.compact .prog-open span { display: none; }
+.frame.compact .prog-run { width: var(--tt); height: var(--tt); }
+.frame.size-m .prog-open { width: auto; padding: 0 var(--sp-6); gap: var(--sp-4); }
+.frame.size-m .prog-open span { display: block; font-size: var(--t-body); }
+.frame.compact .mini-skills {
+  position: absolute; right: var(--edge); bottom: var(--edge);
+  grid-template-columns: repeat(4, var(--tt)); gap: var(--sp-2);
+}
+.frame.compact.in-touch .mini-skills { right: calc(var(--edge) + var(--dig) + 2 * var(--tt) + 34px); }   /* левее «Копать» и дуги */
+.frame.size-m.in-touch .mini-skills {
+  right: calc(var(--edge) + 6px);
+  bottom: calc(var(--edge) + 2 * var(--tt) + 28px);
+}
+.frame.compact .mini-skill { width: var(--tt); height: var(--tt); }
+.frame.compact .mini-skill .ico { inset: 6px 10px 6px 2px; }
+.frame.compact .mini-skill .bar { right: 4px; bottom: 6px; }
+.frame.compact .mini-skill .up { left: 18px; top: -6px; }
+
+/* ── Правый низ: «Копать» и сетка — Строить, Авто, Лечение, Геология (ввод «тач», при любом размере) ── */
+.frame.in-touch .dock { position: absolute; right: calc(var(--edge) + 6px); bottom: calc(var(--edge) + 6px); }
+.act-arc { position: relative; width: calc(var(--dig) + 2 * var(--tt) + 20px); height: calc(2 * var(--tt) + 8px); }
+.act-arc .tbtn--dig { position: absolute; right: 0; bottom: 0; width: var(--dig); height: var(--dig); border-radius: var(--r-round); padding: 0; font-size: var(--t-strong);
+  background: var(--signal); border-color: var(--signal); color: var(--on-signal); box-shadow: var(--shadow-float); }
+.act-arc > :is(.act, #autodig) { position: absolute; left: 0; top: 0; width: var(--tt); height: var(--tt); min-width: 0;
+  margin: 0; padding: 0; border-radius: var(--radius);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-1);
+  background: var(--graphite); border: 1px solid var(--seam-strong); color: var(--bone); box-shadow: var(--shadow-float);
+}
+.act-arc #touchBuild { top: calc(var(--tt) + 8px); }
+.act-arc #autodig { left: calc(var(--tt) + 6px); font-size: inherit; }
+.act-arc #touchHeal { left: 0; }
+.act-arc #touchGeo { left: calc(var(--tt) + 6px); top: calc(var(--tt) + 8px); }
+.act-arc #autodig :is(.lbl, .dot, kbd) { display: none; }
+.act-arc :is(.ico-only, img) { display: block; width: 20px; height: 20px; flex: none; image-rendering: pixelated; border-radius: var(--r-xs); }
+.frame.in-touch:not(.size-s) .act-arc :is(.ico-only, img) { width: 26px; height: 26px; }
+.frame.in-touch .cap { display: block; font-size: var(--t-3); line-height: 12px; font-weight: var(--fw-semi); color: var(--mist); }
+.frame.in-touch #touchGeo .cap { font-size: var(--t-2); }
+.frame.in-touch:not(.size-s) .cap { font-size: var(--t-3); line-height: 12px; }
+.frame.in-touch :is(.act, #autodig, .build, .fast-move)[aria-pressed="true"] { border-color: var(--signal); background: var(--signal-pressed); }
+.frame.in-touch :is(.act, #autodig, .build, .fast-move)[aria-pressed="true"] .cap { color: var(--signal); }
+
+/* Веер типов блоков — над дугой, пока выбирается тип */
+.build-fan { position: absolute; right: 0; bottom: calc(2 * var(--tt) + 16px); display: flex; gap: var(--sp-2); padding: var(--sp-2); }
+.build-fan[hidden] { display: none; }
+.build-fan .build { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-1); width: var(--act); height: var(--act); padding: 0;
+  box-shadow: inset 0 -3px 0 var(--c); }
+.build-fan img { width: 22px; height: 22px; image-rendering: pixelated; border-radius: var(--r-xs); }
+.build-fan kbd { display: none; }
+
+/* HUD — в безопасной области при любом размере (у мониторов она нулевая) */
+.frame .hud { inset: var(--st) var(--sr) var(--sb) var(--sl); }
+
+/* Сенсорный ввод на большом экране: цели ПК-раскладки — не меньше 44 dp */
+.frame.in-touch:not(.compact) { --row: var(--hit); }
+.frame.in-touch:not(.compact) .prog { height: 46px; }
+.frame.in-touch:not(.compact) :is(.prog-open, .toggle) { min-height: var(--hit); }
+.frame.in-touch:not(.compact) .prog-run { width: var(--hit); height: var(--hit); }
+.frame.in-touch:not(.compact) .inv-expand { width: var(--hit); }
+.frame.in-touch:not(.compact) .cargo-head .icon-btn { width: var(--hit); height: var(--hit); margin: -10px -10px -10px auto; }
+.frame.in-touch:not(.compact) .mini-skills { grid-template-columns: repeat(4, 44px); gap: var(--sp-4) var(--sp-8); }
+.frame.in-touch:not(.compact) .mini-skill { width: var(--hit); height: var(--hit); }
+.frame.in-touch:not(.compact) .mini-skill .bar { height: var(--hit); }
+.frame.in-touch:not(.compact) .chat-tab { min-height: var(--hit); min-width: var(--hit); padding: 0 var(--sp-5); }
+.frame.in-touch:not(.compact) .chat-input { height: var(--hit); }
+
+/* Сенсорный ввод на большом экране: стик и «Копать» — в нижних углах, ПК-раскладка уступает им место */
+.frame.in-touch:not(.compact) .col-bottom { bottom: calc(var(--margin) + var(--pad) + 24px); }
+.frame.in-touch:not(.compact) .mini-skills { right: calc(var(--margin) + var(--dig) + 2 * var(--tt) + 40px); }
+.frame.in-touch:not(.compact) .chat-peek { left: calc(var(--pad) + 40px); }
+.frame.in-touch:not(.compact) .chat-column { bottom: calc(var(--pad) + 24px); }   /* открытый чат кончается над стиком */
+
+/* ── Чат: окно в верхней полосе (снизу закрыла бы клавиатура) ──
+   Вкладки и закрытие — шапкой, под ними поле ввода, ниже лента: новые сверху. */
+.frame.compact .hud[data-chat="1"] .chat-column { display: flex; }
+.frame.compact .chat-column { z-index: var(--z-chat); flex-direction: column; left: var(--band-l); right: auto; top: var(--band-t); bottom: auto; width: min(460px, var(--band-w));
+  height: min(300px, calc(100% - var(--band-t) - 128px)); border: 1px solid var(--seam); border-radius: var(--radius); }
+/* Телефон: сетка навыков стоит под полосой чата — чат заканчивается над её верхним рядом */
+.frame.size-s { --skill-rows: 1; }
+.frame.size-s:has(.mini-skill:nth-child(5)) { --skill-rows: 2; }
+.frame.size-s:has(.mini-skill:nth-child(9)) { --skill-rows: 3; }
+.frame.size-s:has(.mini-skill:nth-child(13)) { --skill-rows: 4; }
+.frame.size-s .chat-column { height: min(300px, calc(100% - var(--band-t) - 128px), calc(100% - var(--band-t) - var(--edge) - var(--skill-rows) * (var(--tt) + 4px) - 8px)); }
+.frame.compact .chat-head { flex: none; padding: 0 0 0 var(--sp-2); gap: 0; border-bottom: 1px solid var(--seam); }
+.frame.compact .chat-tabs { gap: var(--sp-2); align-items: center; }
+.frame.compact .chat-tab { height: var(--tt); min-width: var(--tt); padding: 0 var(--sp-5); margin: 0; border: 0; font-size: var(--t-body); }
+.frame.compact .chat-tab.is-on { color: var(--signal); }
+.frame.compact .chat-tab:focus-visible { outline-offset: -4px; }
+.frame.compact .chat-form { order: 2; flex: none; padding: 0; border-top: 0; border-bottom: 1px solid var(--seam); display: flex; align-items: center; }
+.frame.compact .chat-input { flex: 1; min-width: 0; height: var(--tt); margin: 0; border: 0; border-radius: 0; background: var(--well); text-overflow: ellipsis; }
+.frame.compact .chat-send { flex: none; color: var(--signal); }
+.frame.compact .chat-log { order: 3; flex: 1; min-height: 0; flex-direction: column-reverse; justify-content: flex-end; padding: var(--sp-3) var(--sp-5); gap: var(--sp-2); }
+.frame.compact .chat-log li { line-height: 1.35; }
+
+/* «Сказать» и подсказка предмета — на месте строк чата */
+.frame.compact .say:not([hidden]) { position: absolute; z-index: var(--z-chat); top: var(--band-t); left: var(--band-l); width: min(460px, var(--band-w)); display: flex; gap: var(--sp-2); padding: 0; pointer-events: auto; }
+.frame.compact .say .chat-input { height: var(--tt); margin: 0; border-width: 1px; border-radius: var(--r-s); }
+.frame.compact .say .icon-btn { flex: none; background: var(--graphite); border: 1px solid var(--seam); border-radius: var(--radius); }
+.frame.compact .item-hint { z-index: var(--z-float); top: var(--band-t); left: var(--band-l); transform: none; max-width: var(--band-w); font-size: var(--t-small); white-space: normal; }
+
+/* ── Окна: во всю безопасную область ───────────────────────── */
+.frame.compact .skills { width: min(960px, 100%); max-height: 100%; }
+.frame.compact .skills-head { padding: 0 0 0 var(--sp-7); }
+.frame.compact .skills-body { min-height: 0; flex: 1; }
+.frame.compact .slot { width: var(--hit); height: var(--hit); }
+.frame.compact .skill-info { padding: var(--sp-6); gap: var(--sp-5); overflow-y: auto; min-width: 0; }
+.frame.compact .skill-info .big { width: var(--ctl-xl); height: var(--ctl-xl); flex: none; }
+.frame.compact .skill-desc { overflow-wrap: anywhere; }
+.frame.compact .install { grid-template-columns: repeat(auto-fill, 44px); gap: var(--sp-3); }
+.frame.compact .skill-tools .btn { height: var(--tt); }
+/* Телефон: робот во всю высоту слева, шапка — над описанием справа */
+.frame.size-s .skills { width: 100%; height: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); min-width: 0; overflow: hidden; }
+.frame.size-s .skills-body { display: contents; }
+.frame.size-s .robot { --s: 1.15; --pad: 12px; grid-column: 1; grid-row: 1 / span 2; align-self: center; }
+.frame.size-s .skills-head { grid-column: 2; grid-row: 1; flex-wrap: wrap; gap: 0 var(--sp-4); padding: 0 0 var(--sp-2) var(--sp-6); border-left: 1px solid var(--seam); }
+.frame.size-s .skills-head .icon-btn { margin-left: auto; }
+.frame.size-s .skills-slots { order: 3; flex-basis: 100%; margin: 0; }
+.frame.size-s .skill-info { grid-column: 2; grid-row: 2; }
+.frame.size-s .skill-tools { flex-wrap: wrap; gap: var(--sp-2); }
+.frame.size-s .skill-tools .btn--primary { flex-basis: 100%; }
+.pause { width: 320px; }
+.pause-head { display: flex; align-items: center; justify-content: space-between; margin: -6px -8px var(--sp-2) 0; }
+.pause .btn, .frame.compact .dialog .btn { height: var(--hit); }
+
+/* ── Поток меню ────────────────────────────────────────────── */
+.frame.compact .screen--space { --cx: calc(50% + (var(--sl) - var(--sr)) / 2); --cy: calc(50% + (var(--st) - var(--sb)) / 2);
+  --free-w: calc(100% - var(--sl) - var(--sr) - 12px); --free-h: calc(100% - var(--st) - var(--sb) - 12px); }
+.frame.compact :is(.boot, .gate, .onb) { left: var(--cx); top: var(--cy); }
+.frame.compact .boot { width: min(420px, var(--free-w)); }
+.frame.compact .btn--big { height: var(--ctl-xl); font-size: var(--t-strong); }
+
+/* Вход: две колонки — бренд слева, действия справа */
+.frame.compact .gate { width: min(820px, var(--free-w)); max-height: var(--free-h); padding: var(--sp-10) 28px; display: grid; grid-template-columns: 34% 1fr; column-gap: var(--sp-12); row-gap: var(--sp-5); align-content: center; }
+.frame.compact .gate > :not(.brand) { grid-column: 2; }
+.frame.compact .gate .brand { grid-column: 1; grid-row: 1 / span 4; margin: 0; padding-right: var(--sp-12); border-right: 1px solid var(--seam); align-self: stretch; justify-content: center; }
+.frame.compact .auth-form { gap: var(--sp-4); }
+/* На телефоне под полем места нет: ошибка — справа в строке поля */
+.frame.compact .fld-err { top: 50%; left: auto; right: 14px; transform: translateY(-50%); pointer-events: none; }
+.frame.compact .fld .check + .fld-err { right: 0; }
+.frame.compact .brand--stacked .wordmark { font-size: var(--t-15); }
+
+/* Онбординг: карточка во весь экран, середина листается */
+.frame.compact .onb { width: min(820px, var(--free-w)); max-height: var(--free-h); }
+.frame.compact .onb-head { flex-wrap: wrap; align-items: center; gap: var(--sp-4) var(--sp-8); padding: var(--sp-6) var(--sp-10); }
+.frame.compact .onb-head h2 { font-size: var(--t-title); }
+.frame.compact .steps li { padding: var(--sp-2) var(--sp-4); }
+.frame.compact .onb-body { min-height: 0; flex: 1; overflow-y: auto; padding: 0 var(--sp-10); }
+.frame.compact .field { padding: var(--sp-5) 0; gap: var(--sp-8); }
+.frame.compact .field select { width: 45%; height: var(--tt); flex: none; }
+.frame.compact .range { width: 45%; flex: none; }
+.frame.compact .onb-foot { padding: var(--sp-5) var(--sp-10); }
+.frame.compact .onb-foot .btn { height: var(--tt); min-width: 96px; }
+
+/* Меню: шапка и подвал по 52, колонка слева (листается, если не влезла), иконки справа */
+.frame.compact .menu-top { height: 52px; padding: 0 calc(var(--sr) + var(--sp-12)) 0 calc(var(--sl) + var(--sp-12)); }
+.frame.compact .menu-top img { width: var(--ctl-xs); height: var(--ctl-xs); }
+.frame.compact .menu-top .wordmark { font-size: var(--t-12); }
+.frame.compact .menu-main { left: calc(var(--sl) + 32px); top: calc(52px + var(--st)); bottom: calc(52px + var(--sb)); transform: none; width: min(56%, 460px);
+  justify-content: safe center; gap: var(--sp-5); overflow-y: auto; padding: var(--sp-4) 0; }
+.frame.size-m .menu-main { width: min(52%, 580px); gap: var(--sp-8); }
+.frame.compact .menu-title { font-size: var(--t-13); }
+.frame.size-m .menu-title { font-size: var(--t-16); }
+.frame.compact .menu-lead { font-size: var(--t-5); }
+.frame.size-m .menu-lead { font-size: var(--t-body); }
+.frame.compact .menu-actions, .frame.compact .descent-progress, .frame.compact .phases { width: 100%; margin-top: 0; }
+.frame.compact .btn--hero { height: 52px; font-size: var(--t-strong); flex: none; }
+.frame.compact .btn--wide { height: var(--tt); flex: none; }
+.frame.compact .phases { gap: var(--sp-1); font-size: var(--t-small); }
+.frame.size-m .phases { gap: var(--sp-4); font-size: var(--t-body); }
+.frame.compact .descent-progress { gap: var(--sp-2); }
+.frame.compact .descent .menu-title { font-size: var(--t-14); }
+.frame.compact .descent-explain { font-size: var(--t-5); min-height: 0; }
+.frame.compact .descent { gap: var(--sp-4); }
+.frame.compact .phases { font-size: var(--t-4); }
+.frame.compact .descent .btn--wide { width: 200px; margin-top: 0; }
+.frame.compact .menu-rail { right: calc(var(--sr) + 24px); top: calc(56px + var(--st)); bottom: calc(56px + var(--sb)); transform: none; justify-content: center; gap: var(--sp-3); }
+.frame.compact .rail-btn { width: 140px; height: var(--tt); flex: none; padding: 0 var(--sp-5); }
+.frame.compact .rail-btn img { width: 20px; height: 20px; }
+/* Планшет: кнопки по самой длинной подписи, колонка выравнивает их по ширине */
+.frame.size-m .rail-btn { width: auto; min-width: 140px; }
+.frame.compact .rail-sep { margin: 0 var(--sp-4); flex: none; }
+.frame.compact .menu-foot { left: var(--sl); right: var(--sr); bottom: var(--sb); height: 52px; padding: 0 var(--sp-12); gap: var(--sp-8); font-size: var(--t-2); }
+.frame.compact .menu-meta { gap: var(--sp-3); }
+/* Телефон: иконка навыка — в строку с названием, чтобы кнопки поместились без прокрутки */
+.frame.size-s .skill-info { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-content: start; column-gap: var(--sp-4); }
+.frame.size-s .skill-info > :not(.big, h3) { grid-column: 1 / -1; }
+.frame.size-s .skill-info .big { width: var(--ctl-xs); height: var(--ctl-xs); }
+.frame.size-s .skill-info h3 { align-self: center; }
+.frame.size-s .skill-tools { margin-top: 0; }
+.frame.size-s .skill-info h3 { font-size: var(--t-4); white-space: nowrap; }
+/* Окно обновления не выше экрана: список листается, кнопки всегда видны */
+.frame.compact .upd { max-height: 100%; overflow-y: auto; width: min(480px, 100%); padding-bottom: 0; }
+.frame.compact .upd .dialog-actions { position: sticky; bottom: 0; margin: 0 -20px; padding: var(--sp-5) var(--sp-10) var(--sp-6); background: var(--graphite); border-top: 1px solid var(--seam); }
+.frame.compact .upd-box { padding: var(--sp-4) var(--sp-6); }
+/* Телефон: шесть кнопок меню не входят в высоту — вторая колонка встаёт левее */
+.frame.size-s .menu-rail { flex-wrap: wrap-reverse; align-content: flex-start; justify-content: flex-start; column-gap: var(--sp-4); }
+.frame.size-s .menu-main { width: calc(100% - var(--sl) - var(--sr) - 306px); }
+.frame.size-s .menu-rail { display: grid; grid-template-columns: repeat(2, 110px); grid-template-rows: repeat(3, var(--tt)); gap: var(--sp-4); align-content: center; }
+.frame.size-s .menu-rail .rail-sep { display: none; }
+.frame.size-s .menu-rail .rail-btn { width: 110px; padding: 0 7px; gap: var(--sp-3); }
+.frame.size-s .menu-rail .control-label { font-size: var(--t-3); }
+.frame.size-s .menu-rail .rail-btn img { width: 18px; height: 18px; }
+.frame.size-s .menu-rail #railHealth { grid-column: 1; grid-row: 1; }
+.frame.size-s .menu-rail #railHealth .control-label { white-space: normal; }
+.frame.size-s .menu-rail [title="Выход из игры"] { grid-column: 1; grid-row: 2; }
+.frame.size-s .menu-rail [title="Discord"] { grid-column: 2; grid-row: 1; }
+.frame.size-s .menu-rail [title="Telegram"] { grid-column: 2; grid-row: 2; }
+.frame.size-s .menu-rail [title="ВКонтакте"] { grid-column: 2; grid-row: 3; }
+.frame.size-s .menu-main.descent { width: min(70%, 460px); }
+.frame.size-s[data-screen="descent"] .menu-rail { display: none; }
+/* Телефон: четыре строки шага «Доступность» помещаются без прокрутки */
+.frame.size-s .field { padding: var(--sp-2) 0; }
+.frame.size-s .onb-head { padding: var(--sp-4) var(--sp-10); }
+.frame.size-s .onb-foot { padding: var(--sp-3) var(--sp-10); }
+
+
+/* Меню ☰: редкие кнопки сеткой с подписями */
+.pause-sys { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+.pause-sys:empty { display: none; }
+.pause-sys button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-2); width: auto; height: var(--ctl-xxl);
+  border: 1px solid var(--seam); border-radius: var(--radius); background: var(--plate); color: var(--bone); font-size: var(--t-small); font-weight: var(--fw-normal); }
+.pause-sys button::after { content: attr(title); }
+.pause-sys .control-label { display: none; }
+.pause-sys .tbtn { padding: 0; }
+
+/* Окно инвентаря на пальце: во всю безопасную область; на телефоне описание — колонкой справа поуже */
+.frame.compact .inv-window { width: 100%; height: 100%; }
+.frame.size-s .inv-window-body { grid-template-columns: minmax(0, 1fr) 190px; }
+.frame.size-s .inv-window-grid { grid-template-columns: repeat(auto-fill, 48px); gap: var(--sp-2); padding: var(--sp-4); }
+.frame.size-s .inv-cell { width: var(--ctl-xl); height: var(--ctl-xl); }
+.frame.size-s .inv-cell img { width: 30px; height: 30px; }
+.frame.size-s .inv-window-info { padding: var(--sp-5); gap: var(--sp-3); }
+.frame.size-s .inv-window-big { width: var(--ctl-s); height: var(--ctl-s); }
+
+
+/* Пауза на пальце: кнопки сетки одного размера; на телефоне — две колонки, чтобы окно вошло по высоте */
+.frame.compact .pause-sys button { width: auto; height: var(--ctl-xxl); min-width: 0; padding: var(--sp-2); text-align: center; line-height: 1.2; }
+.frame.size-s .pause { width: min(440px, 100%); }
+.pause #pauseExit { margin-top: var(--sp-2); }
+/* Окно предметов на весь экран — ячеек в ряд сколько влезет */
+.frame.compact .inv-window-grid { grid-template-columns: repeat(auto-fill, 56px); }

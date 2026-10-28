@@ -22,11 +22,14 @@
         "MinesServer.Networking.Connection",
         "MinesServer.Networking.Connection.Client",
         "Unity.InputSystem",
+        "Unity.TextMeshPro",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Universal.2D.Runtime",
         "FMODUnity",
         "UniTask",
-        "VContainer"
+        "VContainer",
+        "Kern.Diagnostics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

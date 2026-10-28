@@ -27,25 +27,25 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="$(UnityRoot)/Core/Interfaces/Contracts/WorldLighting/TerrainLightingContracts.cs" Link="Production/TerrainLightingContracts.cs" />
-    <Compile Include="$(UnityRoot)/Core/Bootstrap/WorldLighting/TerrainLightingExchange.cs" Link="Production/TerrainLightingExchange.cs" />
-    <Compile Include="$(UnityRoot)/World/Lighting/Core/TerrainLightingChangePump.cs" Link="Production/TerrainLightingChangePump.cs" />
-    <Compile Include="$(UnityRoot)/World/Lighting/Core/TerrainLightingFramePump.cs" Link="Production/TerrainLightingFramePump.cs" />
-    <Compile Include="$(UnityRoot)/World/Lighting/Core/TerrainLightingChangeApplier.cs" Link="Production/TerrainLightingChangeApplier.cs" />
-    <Compile Include="$(UnityRoot)/World/Lighting/Core/LightingRuntimeInvalidation.cs" Link="Production/LightingRuntimeInvalidation.cs" />
-    <Compile Include="$(UnityRoot)/World/Lighting/Core/LightingRuntimeState.cs" Link="Production/LightingRuntimeState.cs" />
-    <Compile Include="$(UnityRoot)/World/Lighting/Core/LightingAmbientOcclusionUpdatePolicy.cs" Link="Production/LightingAmbientOcclusionUpdatePolicy.cs" />
-    <Compile Include="$(UnityRoot)/Tests/Editor/World/Lighting/LightingAmbientOcclusionUpdatePolicyTests.cs" Link="Tests/LightingAmbientOcclusionUpdatePolicyTests.cs" />
-    <Compile Include="$(UnityRoot)/World/Lighting/Core/LightingRegionCalculator.cs" Link="Production/LightingRegionCalculator.cs" />
-    <Compile Include="$(UnityRoot)/World/Lighting/Core/LightingRegionInvalidationPolicy.cs" Link="Production/LightingRegionInvalidationPolicy.cs" />
-    <Compile Include="$(UnityRoot)/World/Lighting/Core/LightingQualityTransitionPolicy.cs" Link="Production/LightingQualityTransitionPolicy.cs" />
+    <Compile Include="$(UnityRoot)/World/Lighting/Exchange/Contracts/TerrainLightingContracts.cs" Link="Production/TerrainLightingContracts.cs" />
+    <Compile Include="$(UnityRoot)/Bootstrap/WorldLighting/Exchange/TerrainLightingExchange.cs" Link="Production/TerrainLightingExchange.cs" />
+    <Compile Include="$(UnityRoot)/World/Lighting/Exchange/Consumption/TerrainLightingChangePump.cs" Link="Production/TerrainLightingChangePump.cs" />
+    <Compile Include="$(UnityRoot)/World/Lighting/Exchange/Consumption/TerrainLightingFramePump.cs" Link="Production/TerrainLightingFramePump.cs" />
+    <Compile Include="$(UnityRoot)/World/Lighting/Exchange/Consumption/TerrainLightingChangeApplier.cs" Link="Production/TerrainLightingChangeApplier.cs" />
+    <Compile Include="$(UnityRoot)/World/Lighting/Runtime/Invalidation/LightingRuntimeInvalidation.cs" Link="Production/LightingRuntimeInvalidation.cs" />
+    <Compile Include="$(UnityRoot)/World/Lighting/Runtime/State/LightingRuntimeState.cs" Link="Production/LightingRuntimeState.cs" />
+    <Compile Include="$(UnityRoot)/World/Lighting/Fields/AmbientOcclusion/LightingAmbientOcclusionUpdatePolicy.cs" Link="Production/LightingAmbientOcclusionUpdatePolicy.cs" />
+    <Compile Include="$(UnityRoot)/Tests/Editor/World/Lighting/Fields/AmbientOcclusion/LightingAmbientOcclusionUpdatePolicyTests.cs" Link="Tests/LightingAmbientOcclusionUpdatePolicyTests.cs" />
+    <Compile Include="$(UnityRoot)/World/Lighting/Fields/Regions/LightingRegionCalculator.cs" Link="Production/LightingRegionCalculator.cs" />
+    <Compile Include="$(UnityRoot)/World/Lighting/Runtime/Invalidation/LightingRegionInvalidationPolicy.cs" Link="Production/LightingRegionInvalidationPolicy.cs" />
+    <Compile Include="$(UnityRoot)/World/Lighting/Quality/Control/LightingQualityTransitionPolicy.cs" Link="Production/LightingQualityTransitionPolicy.cs" />
     <Compile Include="$(UnityRoot)/World/Lighting/Quality/Contracts/LightingQualityMode.cs" Link="Production/LightingQualityMode.cs" />
-    <Compile Include="$(UnityRoot)/Core/Configuration/Contracts/SettingAttributes.cs" Link="Production/SettingAttributes.cs" />
-    <Compile Include="$(UnityRoot)/World/Streaming/StreamingPolicy.cs" Link="Production/StreamingPolicy.cs" />
-    <Compile Include="$(UnityRoot)/World/Terrain/Core/TerrainLightingViewportPolicy.cs" Link="Production/TerrainLightingViewportPolicy.cs" />
-    <Compile Include="$(UnityRoot)/World/Terrain/Core/TerrainContentRevisionJournal.cs" Link="Production/TerrainContentRevisionJournal.cs" />
-    <Compile Include="$(UnityRoot)/Tests/Editor/World/Lighting/TerrainLightingExchangeTests.cs" Link="Tests/TerrainLightingExchangeTests.cs" />
-    <Compile Include="$(UnityRoot)/Tests/Editor/World/Lighting/LightingQualityTransitionPolicyTests.cs" Link="Tests/LightingQualityTransitionPolicyTests.cs" />
-    <Compile Include="$(UnityRoot)/Tests/Editor/World/Terrain/TerrainContentRevisionJournalTests.cs" Link="Tests/TerrainContentRevisionJournalTests.cs" />
+    <Compile Include="$(UnityRoot)/Core/Configuration/Contracts/Schema/SettingAttributes.cs" Link="Production/SettingAttributes.cs" />
+    <Compile Include="$(UnityRoot)/World/Streaming/Planning/StreamingPolicy.cs" Link="Production/StreamingPolicy.cs" />
+    <Compile Include="$(UnityRoot)/World/Terrain/Exchange/Viewport/TerrainLightingViewportPolicy.cs" Link="Production/TerrainLightingViewportPolicy.cs" />
+    <Compile Include="$(UnityRoot)/World/Terrain/Exchange/Publication/TerrainContentRevisionJournal.cs" Link="Production/TerrainContentRevisionJournal.cs" />
+    <Compile Include="$(UnityRoot)/Tests/Editor/Bootstrap/WorldLighting/Exchange/TerrainLightingExchangeTests.cs" Link="Tests/TerrainLightingExchangeTests.cs" />
+    <Compile Include="$(UnityRoot)/Tests/Editor/World/Lighting/Quality/Control/LightingQualityTransitionPolicyTests.cs" Link="Tests/LightingQualityTransitionPolicyTests.cs" />
+    <Compile Include="$(UnityRoot)/Tests/Editor/World/Terrain/Exchange/Publication/TerrainContentRevisionJournalTests.cs" Link="Tests/TerrainContentRevisionJournalTests.cs" />
   </ItemGroup>
 </Project>

@@ -27,9 +27,9 @@ public sealed class DesignSystemDebtRule : IRule
         ["литерал в main game"] = 321,
     };
 
-    private static readonly HashSet<string> MainGameDirs = new() { "HUD", "Map", "Chat", "Programmator", "Settings", "Overlays", "Inventory" };
+    private static readonly HashSet<string> MainGameDirs = new() { "HUD", "Map", "Chat", "Programmator", "Settings", "Inventory", "Connection", "Diagnostics", "Loading", "Missions", "Player", "WorldLabels" };
     private static readonly HashSet<string> MainGameUss = new() { "HUD.uss", "Inventory.uss", "Chat.uss", "ChatInput.uss", "Programmator.uss", "PauseMenu.uss", "Modal.uss" };
-    private static readonly HashSet<string> GeneratedUss = new() { "ThemeTokens.uss", "TokenUtilities.uss" };
+    private static readonly HashSet<string> GeneratedUss = new() { "ThemeTokens.uss", "TokenClasses.uss" };
 
     private static readonly Regex HexColor = new(@"#[0-9a-fA-F]{3,8}\b", RegexOptions.Compiled);
     private static readonly Regex RGBA = new(@"\brgba?\(", RegexOptions.Compiled);
@@ -53,28 +53,27 @@ public sealed class DesignSystemDebtRule : IRule
         };
 
         // Count inline styles in C# UI files
-        var uiRoot = Path.Combine(projectRoot, "Assets", "Scripts", "UI");
+        var uiRoot = Path.Combine(projectRoot, "Assets/Scripts/UI");
         if (Directory.Exists(uiRoot))
         {
-            foreach (var file in SourceScanner.EnumerateCsFiles(uiRoot, "Tests"))
+            foreach (var file in CSharpSourceFiles.EnumerateCsFiles(uiRoot, "Tests"))
             {
                 var relative = Path.GetRelativePath(uiRoot, file).Replace('\\', '/');
                 var top = relative.Split('/')[0];
                 var key = MainGameDirs.Contains(top) ? "inline в main game" : "inline вне main game";
 
-                var code = SourceScanner.StripComments(File.ReadAllText(file));
+                var code = CSharpSourceText.StripComments(File.ReadAllText(file));
                 counts[key] += Regex.Matches(code, @"\.style\b").Count;
             }
         }
 
         // Count literals in USS files
-        var stylesDir = Path.Combine(projectRoot, "Assets", "Resources", "Styles");
-        var uxmlDir = Path.Combine(projectRoot, "Assets", "Resources", "UI");
+        var stylesDir = Path.Combine(projectRoot, "Assets/Resources/UI");
+        var ussFiles = Directory.Exists(stylesDir)
+            ? Directory.EnumerateFiles(stylesDir, "*.uss", SearchOption.AllDirectories)
+            : Enumerable.Empty<string>();
 
-        var ussFiles = Directory.Exists(stylesDir) ? Directory.EnumerateFiles(stylesDir, "*.uss") : Enumerable.Empty<string>();
-        var uxmlUssFiles = Directory.Exists(uxmlDir) ? Directory.EnumerateFiles(uxmlDir, "*.uss") : Enumerable.Empty<string>();
-
-        foreach (var file in ussFiles.Concat(uxmlUssFiles))
+        foreach (var file in ussFiles)
         {
             var name = Path.GetFileName(file);
             if (GeneratedUss.Contains(name)) continue;
@@ -99,7 +98,7 @@ public sealed class DesignSystemDebtRule : IRule
                     RuleId = Id,
                     Message = $"долг «{name}»: {actual} при потолке {budget} — долг вырос на {actual - budget}",
                     Severity = Severity,
-                    TypeName = "Assets/Resources/Styles"
+                    TypeName = "Assets/Resources/UI"
                 });
             }
         }

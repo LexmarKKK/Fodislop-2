@@ -13,11 +13,11 @@ namespace Kern.ArchitectureLinter.Rules.Settings;
 /// </summary>
 public sealed class EmptySettingsSectionRule : IRule
 {
-    private const string SettingsDir = "Assets/Scripts/Core/Interfaces/Contracts/Settings";
+    private const string SettingsDir = "Assets/Scripts/Core/Configuration/Contracts/Settings";
 
     private static readonly string[] ExtraFiles =
     [
-        "Assets/Scripts/Rendering/Settings/Contracts/GraphicsQualitySettings.cs",
+        "Assets/Scripts/Rendering/Display/Contracts/Quality/GraphicsQualitySettings.cs",
     ];
 
     // Instance field, not const and not static readonly (same shape as wiring rule).
@@ -43,7 +43,7 @@ public sealed class EmptySettingsSectionRule : IRule
         var files = new List<string>();
         string settingsRoot = Path.Combine(context.ProjectRoot, SettingsDir);
         if (Directory.Exists(settingsRoot))
-            files.AddRange(Directory.EnumerateFiles(settingsRoot, "*.cs"));
+            files.AddRange(Directory.EnumerateFiles(settingsRoot, "*.cs", SearchOption.AllDirectories));
         foreach (string extra in ExtraFiles)
         {
             string full = Path.Combine(context.ProjectRoot, extra);
@@ -55,14 +55,14 @@ public sealed class EmptySettingsSectionRule : IRule
         {
             cancellationToken.ThrowIfCancellationRequested();
             string content = File.ReadAllText(file);
-            string noComments = SourceScanner.StripComments(content);
+            string noComments = CSharpSourceText.StripComments(content);
             foreach (Match cls in ClassRegex.Matches(noComments))
             {
                 string className = cls.Groups[1].Value;
                 int fieldCount = FieldRegex.Matches(noComments).Count;
                 if (fieldCount == 0)
                 {
-                    string relative = SourceScanner.GetProjectRelativePath(context.ProjectRoot, file);
+                    string relative = ProjectSourcePaths.GetProjectRelativePath(context.ProjectRoot, file);
                     int line = noComments.Substring(0, cls.Index).Split('\n').Length;
                     violations.Add(new RuleViolation
                     {

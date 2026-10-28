@@ -31,7 +31,7 @@ public sealed class SceneReadinessContractRule : IRule
         var projectRoot = context.ProjectRoot;
 
         // GameLifetimeScope
-        var scopePath = Path.Combine(projectRoot, "Assets/Scripts/Core/Bootstrap/Scopes/GameLifetimeScope.cs");
+        var scopePath = Path.Combine(projectRoot, "Assets/Scripts/Bootstrap/Scenes/Scopes/GameLifetimeScope.cs");
         if (File.Exists(scopePath))
         {
             var scopeContent = File.ReadAllText(scopePath);
@@ -44,13 +44,13 @@ public sealed class SceneReadinessContractRule : IRule
                     RuleId = Id,
                     Message = "GameLifetimeScope должен предоставлять детерминированный ready/failed сигнал для Bootstrap scene transitions.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Core/Bootstrap/Scopes/GameLifetimeScope.cs"
+                    TypeName = "Assets/Scripts/Bootstrap/Scenes/Scopes/GameLifetimeScope.cs"
                 });
             }
         }
 
         // Bootstrap
-        var bootstrapPath = Path.Combine(projectRoot, "Assets/Scripts/Core/Bootstrap/Scopes/BootstrapLifetimeScope.cs");
+        var bootstrapPath = Path.Combine(projectRoot, "Assets/Scripts/Bootstrap/Scenes/Scopes/BootstrapLifetimeScope.cs");
         if (File.Exists(bootstrapPath))
         {
             var bootstrapContent = File.ReadAllText(bootstrapPath);
@@ -62,13 +62,13 @@ public sealed class SceneReadinessContractRule : IRule
                     RuleId = Id,
                     Message = "Bootstrap должен ожидать SceneTransitionTicket presentation readiness прежде чем выгружать предыдущую сцену.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Core/Bootstrap/Scopes/BootstrapLifetimeScope.cs"
+                    TypeName = "Assets/Scripts/Bootstrap/Scenes/Scopes/BootstrapLifetimeScope.cs"
                 });
             }
         }
 
         // GameBootstrap
-        var gameBootstrapPath = Path.Combine(projectRoot, "Assets/Scripts/Core/Bootstrap/Startup/GameBootstrap.cs");
+        var gameBootstrapPath = Path.Combine(projectRoot, "Assets/Scripts/Bootstrap/Scenes/Startup/Game/GameBootstrap.cs");
         if (File.Exists(gameBootstrapPath))
         {
             var gameBootstrapContent = File.ReadAllText(gameBootstrapPath);
@@ -80,13 +80,13 @@ public sealed class SceneReadinessContractRule : IRule
                     RuleId = Id,
                     Message = "GameBootstrap должен публиковать оба исхода старта: успешный и неудачный.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Core/Bootstrap/Startup/GameBootstrap.cs"
+                    TypeName = "Assets/Scripts/Bootstrap/Scenes/Startup/Game/GameBootstrap.cs"
                 });
             }
         }
 
         // GameManager
-        var gameManagerPath = Path.Combine(projectRoot, "Assets/Scripts/Game/Managers/GameManager.cs");
+        var gameManagerPath = Path.Combine(projectRoot, "Assets/Scripts/Game/Session/Orchestration/GameManager.cs");
         if (File.Exists(gameManagerPath))
         {
             var gameManagerContent = File.ReadAllText(gameManagerPath);
@@ -101,7 +101,7 @@ public sealed class SceneReadinessContractRule : IRule
                     RuleId = Id,
                     Message = "OnWorldLoaded должен ожидать player visuals, surface, lighting и pending asset/texture queues.",
                     Severity = Severity,
-                    TypeName = "Assets/Scripts/Game/Managers/GameManager.cs"
+                    TypeName = "Assets/Scripts/Game/Session/Orchestration/GameManager.cs"
                 });
             }
         }

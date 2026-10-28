@@ -1,0 +1,56 @@
+#nullable enable
+
+using System.Linq;
+using Kern.Core.Interfaces;
+using MinesServer.Networking.Server.Packets.Inventory;
+
+namespace Kern.Networking.Processing;
+
+/// <summary>
+/// Applies native inventory snapshots to <see cref="IInventoryState"/>.
+/// A packet whose <c>Changes</c> contains at least one entry per known item
+/// type is an authoritative full snapshot (server sends every type, zeros
+/// included); a smaller packet is a partial update and is merged instead.
+/// The server's metadata packet is keyed by <see cref="SelectItemPacket.Item"/>,
+/// not by a client slot, so it is applied directly to that type.
+/// </summary>
+public sealed class InventoryProcessor :
+    IPacketProcessor<InventoryPacket>,
+    IPacketProcessor<SelectItemPacket>,
+    IPacketProcessor<DeselectItemPacket>,
+    IBatchAwareProcessor
+{
+    private readonly IInventoryState _model;
+    private readonly IItemCatalog _catalog;
+    public InventoryProcessor(IInventoryState model, IItemCatalog catalog)
+    {
+        _model = model;
+        _catalog = catalog;
+        _knownTypeCount = _catalog.AllTypes.Count();
+        _batchModel = _model as IBatchAwareProcessor;
+    }
+
+    private readonly int _knownTypeCount;
+    private readonly IBatchAwareProcessor? _batchModel;
+
+    public void BeginBatch() => _batchModel?.BeginBatch();
+
+    public void EndBatch() => _batchModel?.EndBatch();
+
+    public void Process(InventoryPacket packet)
+    {
+        if (packet.Changes.Count >= _knownTypeCount)
+        {
+            _model.ApplyFullSnapshot(packet.Changes);
+            return;
+        }
+
+        _model.MergeChanges(packet.Changes);
+    }
+
+    public void Process(SelectItemPacket packet) =>
+        _model.ApplyItemMetadata(packet.Item, packet.Name, packet.Description);
+
+    public void Process(DeselectItemPacket packet) =>
+        _model.ClearSelection();
+}

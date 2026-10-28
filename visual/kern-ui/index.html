@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Kern — интерфейс игры</title>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/stand.css">
+<link rel="stylesheet" href="css/hud.css">
+<link rel="stylesheet" href="css/skill-sprites.css">
+<link rel="stylesheet" href="css/screens.css">
+<link rel="stylesheet" href="css/touch.css">
+<link rel="stylesheet" href="css/pad.css">
+<link rel="stylesheet" href="css/prog.css">
+<link rel="stylesheet" href="css/events.css">
+<link rel="stylesheet" href="css/micro.css">
+</head>
+<body>
+
+<!-- Стенд: управление вне кадра игры — ничего не перекрывает интерфейс -->
+<header class="stand-bar">
+  <!-- Ряд 1 — что смотреть: экран игры и его данные -->
+  <div class="stand-row">
+    <div class="stand-group" role="group" aria-label="Экран игры">
+      <span class="stand-label">Экран</span>
+      <div class="stand-seg">
+        <button type="button" data-screen="boot">Загрузка</button>
+        <button type="button" data-screen="auth">Вход</button>
+        <button type="button" data-screen="onboarding">Онбординг</button>
+        <button type="button" data-screen="menu">Меню</button>
+        <button type="button" data-screen="descent">Спуск</button>
+        <button type="button" data-screen="game" class="is-on">Игра</button>
+      </div>
+    </div>
+    <div class="stand-group" role="group" aria-label="Состояние" data-for="game">
+      <span class="stand-label">Данные</span>
+      <div class="stand-seg">
+        <button type="button" data-state="calm" class="is-on">Обычные</button>
+        <button type="button" data-state="busy">Все</button>
+      </div>
+      <button type="button" class="stand-act" id="openSkills">Окно навыков</button>
+    </div>
+    <div class="stand-group" role="group" aria-label="Роль в клане" data-for="game">
+      <span class="stand-label">В клане</span>
+      <div class="stand-seg" id="standClanRole">
+        <button type="button" data-role="member" class="is-on">Участник</button>
+        <button type="button" data-role="leader">Глава</button>
+      </div>
+    </div>
+    <div class="stand-group" role="group" aria-label="Обновление" data-for="menu">
+      <span class="stand-label">Клиент</span>
+      <div class="stand-seg">
+        <button type="button" data-update="0" class="is-on">Актуален</button>
+        <button type="button" data-update="1">Устарел</button>
+      </div>
+    </div>
+    <label class="stand-pick" data-for="game"><span class="stand-label">Событие</span>
+      <select id="standEvent">
+        <option value="">Нет</option>
+        <option value="reconnect">Переподключение</option>
+        <option value="lost">Связь потеряна</option>
+        <option value="kicked">Отключён сервером</option>
+        <option value="modal">Сообщение сервера</option>
+        <option value="link">Ссылка от сервера</option>
+      </select></label>
+    <label class="stand-pick"><span class="stand-label">Язык</span>
+      <select id="standLang" class="lang-pick">
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+        <option value="zh">中文</option>
+      </select></label>
+    <label class="stand-pick"><span class="stand-label">Проверка текста</span>
+      <select id="standText">
+        <option value="ru">Обычный</option>
+        <option value="p90">Перевод длиннее</option>
+        <option value="worst">Худший перевод</option>
+        <option value="slots">Места текста сервера</option>
+      </select></label>
+    <p class="stand-hint" data-for="game" id="keyHint"><span>Клик по породе — копать</span><span>Enter — чат</span><span>Tab — режим чата</span><span>E — автокопание</span></p>
+  </div>
+  <!-- Где смотреть, по иерархии: устройство › монитор (у десктопа) › ввод; вид решают размер и ввод.
+       Списками — цепочка всегда в одну строку при любой ширине окна -->
+  <div class="stand-row stand-chain">
+    <label class="stand-pick"><span class="stand-label">Устройство</span>
+      <select id="standDevice">
+        <option value="desktop">Десктоп</option>
+        <option value="promax">iPhone 15 Pro Max</option>
+        <option value="pixel8">Pixel 8</option>
+        <option value="ipadmini">iPad mini</option>
+        <option value="ipadpro">iPad Pro 13</option>
+        <option value="foldin">Z Fold6</option>
+      </select></label>
+    <label class="stand-pick" id="standMonitors"><span class="stand-step" aria-hidden="true">›</span><span class="stand-label">Монитор</span>
+      <select id="standMonitor">
+        <option value="d768">1366×768</option>
+        <option value="d800">1280×800</option>
+        <option value="d1080" selected>1920×1080</option>
+        <option value="d1440">2560×1440</option>
+        <option value="d219">2560×1080</option>
+        <option value="d4k150">4K · 150%</option>
+        <option value="d4k200">4K · 200%</option>
+        <option value="tv">ТВ 4K</option>
+      </select></label>
+    <label class="stand-pick"><span class="stand-step" aria-hidden="true">›</span><span class="stand-label">Ввод</span>
+      <select id="standInput">
+        <option value="mouse">Мышь</option>
+        <option value="touch">Тач</option>
+        <option value="xbox">Геймпад Xbox</option>
+        <option value="ps">Геймпад PlayStation</option>
+        <option value="switch">Геймпад Nintendo</option>
+      </select></label>
+    <p class="stand-res" id="standRes"></p>
+  </div>
+</header>
+
+<main class="stand-stage" id="stage">
+  <div class="frame" id="frame" data-screen="game">
+   <section class="screen screen--game" data-screen="game">
+    <canvas class="world" id="world" aria-hidden="true"></canvas>
+
+    <!-- Подписи над роботами (WorldLabels): ник с кланом и облако локального чата -->
+    <div class="world-labels" id="worldLabels" aria-hidden="true"></div>
+    <div class="hud" id="hud" data-chat="0">
+      <!-- Стрелки у края экрана: к цели миссии (MissionArrowPacket) и к своей метке с карты -->
+      <div class="edge-arrows" id="edgeArrows"></div>
+
+      <!-- Чат, развёрнутый (Legacy: колонка слева на всю высоту, HUD сдвигается) -->
+      <aside class="chat-column" aria-label="Чат">
+        <div class="chat-head">
+          <div class="chat-tabs" role="tablist">
+            <button type="button" role="tab" class="chat-tab is-on" data-tag="FED">Федеральный чат<b class="badge chat-badge" data-unread="FED"></b></button>
+            <button type="button" role="tab" class="chat-tab" data-tag="DNO">Дно<b class="badge chat-badge" data-unread="DNO"></b></button>
+            <button type="button" role="tab" class="chat-tab" data-tag="PM">Личные<b class="badge chat-badge" id="pmBadge"></b></button>
+          </div>
+          <button type="button" class="icon-btn" id="chatListBtn" title="Все каналы" aria-expanded="false"><svg><use href="#i-list"/></svg><b class="badge" id="chatListBadge"></b></button>
+          <button type="button" class="icon-btn" id="chatClose" title="Свернуть чат (Tab)"><svg><use href="#i-collapse"/></svg></button>
+        </div>
+        <ol class="chat-log" id="chatLog"></ol>
+        <!-- Все каналы (ChatListPacket: метка, название, последнее сообщение); непрочитанное считает клиент -->
+        <ul class="chat-list" id="chatList" hidden></ul>
+        <form class="chat-form" id="chatForm" autocomplete="off">
+          <input id="chatInput" class="chat-input" placeholder="Напишите сообщение…" maxlength="200">
+          <button type="submit" class="icon-btn chat-send compact-only" title="Отправить"><svg><use href="#i-send"/></svg></button>
+        </form>
+      </aside>
+
+      <div class="hud-body">
+
+        <!-- Левая колонка: игрок, груз, состояния -->
+        <section class="col-top">
+          <div class="player-row">
+            <article class="panel player">
+              <header class="player-head">
+                <button type="button" class="clan-btn" id="clanBtn" title="Клан"><img class="clan" src="img/clan.png" alt="Клан" width="13" height="13"></button>
+                <button type="button" class="pid" id="profileBtn" title="Профиль"><span>#10482</span></button>
+                <h1 class="nick">ШАХТЁР-774</h1>
+              </header>
+              <div class="hp" title="Прочность робота">
+                <div class="meter"><i id="hpFill"></i></div>
+                <span class="hp-value" id="hpValue">113HP</span>
+              </div>
+              <dl class="wallet">
+                <div><dt>Деньги</dt><dd class="money" id="money" title="Деньги">$14 850</dd></div>
+                <div><dt>Кредиты</dt><dd class="creds" title="Кредиты"><img src="img/legacy/credit.png" alt="" width="6" height="7"><span id="creds">340</span></dd></div>
+              </dl>
+            </article>
+            <button type="button" class="btn btn--signal bonus" id="bonus" title="Бонусы" aria-label="Бонусы"><svg><use href="#i-gift"/></svg></button>
+            <article class="panel mission" id="mission" hidden>
+              <div class="meter meter--thin"><i style="width:30%"></i></div>
+              <p class="mission-title" data-srv>Тестовая миссия</p>
+              <p class="mission-text" data-srv title="Проверка центрального информационного кольца">Проверка центрального информационного кольца</p>
+              <span class="mission-progress">3 / 10</span>
+            </article>
+          </div>
+
+          <article class="panel cargo" id="cargo">
+            <header class="cargo-head">
+              <span>Груз</span>
+              <strong id="cargoPercent">68%</strong>
+              <button type="button" class="icon-btn icon-btn--small" title="Бокс"><svg><use href="#i-box"/></svg></button>
+            </header>
+            <div class="meter meter--cargo"><i id="cargoFill"></i><b id="cargoOver"></b></div>
+            <ul class="crystals" id="crystals"></ul>
+            <!-- Геология (GeologyPacket: Current/Max, последний блок Cell и его название Text) -->
+            <div class="geo" id="geo" title="Геология: 3/10, последний блок — Камень" hidden>
+              <svg><use href="#i-geo"/></svg><img id="geoCell" src="img/cells/Rock.png" alt=""><i class="share" id="geoFill" style="--w:30%"></i><span id="geoCount">3/10</span>
+            </div>
+          </article>
+
+          <div class="left-stack">
+          <ul class="states" id="states" data-srv hidden>
+            <li style="--c:rgb(255,165,0)">Добыча x4<time>4:12</time></li>
+            <li style="--c:rgb(0,200,0)">Прокачка x3<time>11:40</time></li>
+          </ul>
+          </div>
+        </section>
+
+        <!-- Левый низ: режимы, программатор, миникарта -->
+        <section class="col-bottom">
+          <button type="button" class="toggle" id="autodig" aria-pressed="false" title="Автокопание"><span class="dot"></span><span class="lbl">Автокопание</span><svg class="ico-only"><use href="#i-autodig"/></svg><span class="cap">Авто</span><kbd>E</kbd><span class="pg" data-act="autodig"></span></button>
+          <div class="panel prog">
+            <button type="button" class="prog-open" title="Открыть программатор"><svg><use href="#i-prog"/></svg><span id="progLabel">Программатор</span><span class="prog-name" id="progName" hidden></span></button>
+            <button type="button" class="icon-btn prog-run" id="progRun" title="Запустить программу"><svg><use href="#i-play"/></svg></button>
+          </div>
+          <div class="panel minimap" title="Карта мира" role="button" tabindex="0">
+            <canvas id="minimap" width="264" height="264"></canvas>
+            <span class="coords" id="coords">1184:902</span>
+          </div>
+        </section>
+
+        <!-- Чат, свёрнутый: три последние строки (Legacy DownChat) -->
+        <button type="button" class="chat-peek" id="chatPeek" title="Открыть чат (Enter)">
+          <span class="chat-peek-tag" id="chatPeekTag">FED</span>
+          <ol id="chatPeek3"></ol>
+        </button>
+      </div>
+
+      <!-- Правый верх: онлайн, системные кнопки, диагностика, инвентарь -->
+      <section class="top-right">
+        <div class="sysbar">
+          <nav class="sysbuttons" aria-label="Система">
+            <!-- Игровое: после «Бонусов» — почта, здания, респаун; за разделителем системное — консоль, помощь, меню -->
+            <button type="button" class="icon-btn" title="Почта" id="mailBtn"><svg><use href="#i-mail"/></svg><b class="badge" id="mailBadge">2</b></button>
+            <button type="button" class="icon-btn" title="Мои здания"><svg><use href="#i-buildings"/></svg></button>
+            <button type="button" class="icon-btn" title="Вернуться на респаун" id="respawnBtn"><svg><use href="#i-respawn"/></svg></button>
+            <span class="sys-sep"></span>
+            <button type="button" class="icon-btn" title="Консоль"><svg><use href="#i-console"/></svg></button>
+            <button type="button" class="icon-btn" title="Помощь"><svg><use href="#i-help"/></svg></button>
+            <!-- Меню паузы: продолжить, настройки, выход. На пальце эта кнопка — плитка «Настройки» в ☰, выход — внизу настроек -->
+            <button type="button" class="icon-btn" title="Меню" id="sysMenu"><svg><use href="#i-menu"/></svg></button>
+          </nav>
+        </div>
+        <p class="diag">v0.8.14 · 60 FPS</p>
+        <!-- Догрузка ресурсов: видна, только пока идёт; исчезает, когда всё загружено -->
+        <span class="asset-load" id="assetLoad" title="Загрузка ресурсов" hidden><i class="asset-load-bar"><i id="assetLoadFill"></i></i><span id="assetLoadText"></span></span>
+        <div class="inventory" id="inventory">
+          <button type="button" class="inv-expand" id="invExpand" title="Все предметы" aria-expanded="false"><svg><use href="#i-chevron"/></svg></button>
+          <ul class="inv-slots" id="invSlots"></ul>
+        </div>
+      </section>
+
+      <!-- Сенсорный HUD (PlayerHUD.uxml MobileControls, раскладка Touch.uss) -->
+      <!-- Строка состояния: онлайн, версия, FPS, ассеты — вверху по центру, полупрозрачно -->
+      <div class="status-bar" id="statusBar"><span class="online" title="Онлайн: игроков в сети (запущено программ)"><svg><use href="#i-users"/></svg><b id="online">38</b><em>(6)</em></span></div>
+      <form class="say" id="sayForm" autocomplete="off" hidden>
+        <input class="chat-input" id="sayInput" maxlength="200" aria-label="Сказать">
+        <button type="submit" class="icon-btn" title="Отправить"><svg><use href="#i-send"/></svg></button>
+      </form>
+      <div class="low-row compact-only" id="lowRow">
+        <button type="button" class="tbtn fast-move" id="fastMove" aria-pressed="false" title="Бег"><svg><use href="#i-run"/></svg><span class="cap">Бег</span></button>
+      </div>
+      <div class="pad touch-only" id="pad" title="Движение"><i class="pad-ring"></i><i class="pad-knob" id="padKnob"></i></div>
+      <nav class="touch-sys compact-only" aria-label="Управление">
+        <button type="button" class="tbtn" id="touchChat" aria-pressed="false" title="Открыть чат"><svg><use href="#i-chat"/></svg><span>Чат</span></button>
+        <button type="button" class="tbtn" id="touchSay" aria-pressed="false" title="Сказать рядом"><svg><use href="#i-chat"/></svg><span>Рядом</span></button>
+        <button type="button" class="tbtn" id="touchMenu" title="Меню"><svg><use href="#i-menu"/></svg><span>Меню</span></button>
+      </nav>
+      <div class="dock touch-only">
+        <!-- Веер типов блоков: открывается кнопкой «Строить» -->
+        <div class="build-fan panel" id="buildFan" hidden>
+          <button type="button" class="tbtn build" style="--c:rgb(75,196,224)" title="Установка военных блоков" aria-pressed="false"><img src="img/cells/MilitaryBlock.png" alt=""><span class="cap">Военный</span><kbd>C</kbd></button>
+          <button type="button" class="tbtn build" style="--c:rgb(174,184,192)" title="Установка дорог" aria-pressed="false"><img src="img/cells/Road.png" alt=""><span class="cap">Дорога</span><kbd>G</kbd></button>
+          <button type="button" class="tbtn build" style="--c:rgb(91,204,122)" title="Установка зеленых/жёлтых/красных блоков" aria-pressed="false"><img src="img/cells/GreenBlock.png" alt=""><span class="cap">Блок</span><kbd>Z</kbd></button>
+          <button type="button" class="tbtn build" style="--c:rgb(235,239,242)" title="Установка опор/квадроблоков" aria-pressed="false"><img src="img/cells/Support.png" alt=""><span class="cap">Опора</span><kbd>W</kbd></button>
+        </div>
+        <!-- Под правым большим пальцем: «Копать» и дуга действий вокруг неё -->
+        <div class="act-arc" id="actArc">
+          <button type="button" class="tbtn act" id="touchBuild" title="Строить" aria-pressed="false"><img id="touchBuildImg" src="img/cells/GreenBlock.png" alt=""><span class="cap">Строить</span></button>
+          <button type="button" class="tbtn act" id="touchHeal" title="Лечение"><svg class="ico-only"><use href="#i-heal"/></svg><span class="cap">Лечение</span></button>
+          <button type="button" class="tbtn act" id="touchGeo" title="Геология"><svg class="ico-only"><use href="#i-geo"/></svg><span class="cap">Геология</span></button>
+          <button type="button" class="tbtn tbtn--dig" id="touchDig">Копать</button>
+        </div>
+      </div>
+
+      <p class="item-hint" id="itemHint" hidden>Геопак: Enter — применить, Esc — отмена</p>
+
+      <!-- Мини-навыки (Legacy MiniSkills): только растущие (5 с) и готовые к улучшению -->
+      <ul class="mini-skills" id="miniSkills" aria-label="Рост навыков"></ul>
+    </div>
+
+    <!-- Окно навыков: серверное окно UpPage здания UP (up_building/mod.rs);
+         слоты — PopupManager.slotPositions поверх upgrade.png Legacy -->
+    <div class="dialog-layer" id="skillsDialog" hidden>
+      <section class="panel skills" role="dialog" aria-labelledby="skillsTitle">
+        <header class="skills-head">
+          <h2 id="skillsTitle" data-srv>UP</h2>
+          <span class="skills-slots" id="skillsSlotsInfo">4 из 20 слотов занято</span>
+          <button type="button" class="icon-btn" data-close title="Выйти"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="skills-body">
+          <div class="robot" id="skillsRobot"><div class="robot-art"></div></div>
+          <aside class="skill-info" id="skillInfo"></aside>
+        </div>
+      </section>
+    </div>
+
+    <!-- Окно респауна (Legacy GUIManager.OnReturnButton) -->
+    <!-- Инвентарь на пальце — отдельное окно: предметов десятки, хотбар держит только четыре -->
+    <div class="dialog-layer" id="invDialog" hidden>
+      <section class="panel inv-window" role="dialog" aria-labelledby="invTitle">
+        <header class="inv-window-head"><h2 id="invTitle">Инвентарь</h2><span class="inv-window-count" id="invCount"></span>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button></header>
+        <div class="inv-window-body">
+          <ul class="inv-window-grid" id="invGrid"></ul>
+          <aside class="inv-window-info" id="invInfo"><p class="inv-window-empty">Выберите предмет</p></aside>
+        </div>
+      </section>
+    </div>
+
+    <div class="dialog-layer" id="respawnDialog" hidden>
+      <section class="panel dialog" role="dialog" aria-labelledby="respawnTitle">
+        <h2 id="respawnTitle">Возвращение на респаун</h2>
+        <p>Вы потеряете 10% груза, остальной груз упакуется в бокс.</p>
+        <div class="dialog-actions">
+          <button type="button" class="btn" data-close>Остаться</button>
+          <button type="button" class="btn btn--primary" id="respawnOk">Вернуться</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Мои здания: окно сервера; содержимое строит GUI-протокол, макет показывает только рамку -->
+    <!-- Карта мира: открывается миникартой (на ПК ещё клавишей M) -->
+    <div class="dialog-layer" id="mapDialog" hidden>
+      <section class="panel map-win" role="dialog" aria-labelledby="mapTitle">
+        <header class="srv-head map-head">
+          <h2 id="mapTitle">Карта мира</h2>
+          <span class="map-coords" id="mapCoords"></span>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="map-body">
+          <div class="map-view" id="mapView">
+            <canvas id="mapCanvas"></canvas>
+            <div class="map-pins" id="mapPins"></div>
+            <div class="map-tools">
+              <button type="button" class="icon-btn" id="mapZoomIn" title="Приблизить"><svg><use href="#i-plus"/></svg></button>
+              <button type="button" class="icon-btn" id="mapZoomOut" title="Отдалить"><svg><use href="#i-minus"/></svg></button>
+              <button type="button" class="icon-btn" id="mapHome" title="К себе"><svg><use href="#i-target"/></svg></button>
+              <button type="button" class="icon-btn" id="mapMark" aria-pressed="false" title="Поставить метку: нажмите на карту"><svg><use href="#i-flag"/></svg></button>
+            </div>
+            <span class="map-scale" id="mapScale"></span>
+          </div>
+          <aside class="map-side">
+            <h3>Показывать</h3>
+            <div class="map-filters" id="mapFilters">
+              <label class="check"><input type="checkbox" data-kind="me" checked><i class="pin-dot pin-dot--me"></i>Я</label>
+              <label class="check"><input type="checkbox" data-kind="clan" checked><i class="pin-dot pin-dot--clan"></i>Клан в сети</label>
+              <label class="check"><input type="checkbox" data-kind="build" checked><i class="pin-dot pin-dot--build"></i>Мои здания</label>
+              <label class="check"><input type="checkbox" data-kind="spawn" checked><i class="pin-dot pin-dot--spawn"></i>Респаун</label>
+              <label class="check"><input type="checkbox" data-kind="mark" checked><i class="pin-dot pin-dot--mark"></i>Моя метка</label>
+            </div>
+            <h3>Места</h3>
+            <ul class="map-places" id="mapPlaces"></ul>
+          </aside>
+        </div>
+      </section>
+    </div>
+
+    <!-- Программатор (Programmator.uxml): сетка 16×12, до 25 страниц, палитра по разделам, список программ, отладка.
+         Команды, названия, иконки и клавиши — из клиента (tools/prog-data.py) -->
+    <div class="dialog-layer" id="progDialog" hidden>
+      <section class="panel prog-win" id="progWin" role="dialog" aria-labelledby="progTitle">
+        <header class="srv-head prog-head">
+          <h2 id="progTitle">Программатор</h2>
+          <button type="button" class="prog-pick" id="progPick" aria-expanded="false" title="Программы"><svg><use href="#i-list"/></svg><span id="progPickName"></span></button>
+          <div class="prog-group prog-group--run" role="group" aria-label="Запуск">
+            <button type="button" class="icon-btn" id="progSave" title="Сохранить"><svg><use href="#i-save"/></svg></button>
+            <button type="button" class="icon-btn" id="progBreak" title="Точка остановки на выбранной клетке (F9)"><svg><use href="#i-break"/></svg></button>
+            <button type="button" class="icon-btn" id="progPause" title="Пауза" disabled><svg><use href="#i-pause"/></svg></button>
+            <button type="button" class="icon-btn" id="progStepIn" title="Шаг с заходом" disabled><svg><use href="#i-step-in"/></svg></button>
+            <button type="button" class="icon-btn" id="progStepOver" title="Шаг" disabled><svg><use href="#i-step-over"/></svg></button>
+            <button type="button" class="icon-btn" id="progStepOut" title="Шаг с выходом" disabled><svg><use href="#i-step-out"/></svg></button>
+            <button type="button" class="btn btn--primary prog-go" id="progGo"><svg><use href="#i-play"/></svg><span>Запустить</span></button>
+          </div>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="prog-bar">
+          <div class="prog-group" role="group" aria-label="Страницы">
+            <button type="button" class="icon-btn" id="progPrev" title="Предыдущая страница"><svg><use href="#i-prev"/></svg></button>
+            <span class="prog-page" id="progPage"></span>
+            <button type="button" class="icon-btn" id="progNext" title="Следующая страница"><svg><use href="#i-next"/></svg></button>
+            <button type="button" class="icon-btn" id="progAddPage" title="Добавить страницу"><svg><use href="#i-plus"/></svg></button>
+            <button type="button" class="icon-btn" id="progDelPage" title="Удалить страницу"><svg><use href="#i-minus"/></svg></button>
+          </div>
+          <div class="prog-group" role="group" aria-label="Сдвинуть страницу">
+            <button type="button" class="icon-btn" data-shift="0,-1" title="Сдвинуть всё вверх"><svg><use href="#i-up"/></svg></button>
+            <button type="button" class="icon-btn" data-shift="0,1" title="Сдвинуть всё вниз"><svg><use href="#i-down"/></svg></button>
+            <button type="button" class="icon-btn" data-shift="-1,0" title="Сдвинуть всё влево"><svg><use href="#i-left"/></svg></button>
+            <button type="button" class="icon-btn" data-shift="1,0" title="Сдвинуть всё вправо"><svg><use href="#i-right"/></svg></button>
+          </div>
+          <div class="prog-group" role="group" aria-label="Правка">
+            <button type="button" class="icon-btn" data-edit="undo" title="Отменить (Ctrl+Z)"><svg><use href="#i-undo"/></svg></button>
+            <button type="button" class="icon-btn" data-edit="redo" title="Повторить (Ctrl+Y)"><svg><use href="#i-redo"/></svg></button>
+            <button type="button" class="icon-btn" data-edit="copy" title="Копировать (Ctrl+C)"><svg><use href="#i-copy"/></svg></button>
+            <button type="button" class="icon-btn" data-edit="cut" title="Вырезать (Ctrl+X)"><svg><use href="#i-cut"/></svg></button>
+            <button type="button" class="icon-btn" data-edit="paste" title="Вставить (Ctrl+V)"><svg><use href="#i-paste"/></svg></button>
+            <button type="button" class="icon-btn" data-edit="delete" title="Удалить (Del)"><svg><use href="#i-trash"/></svg></button>
+            <button type="button" class="icon-btn" data-edit="multi" id="progMulti" aria-pressed="false" title="Выбирать несколько (Ctrl+клик)"><svg><use href="#i-multi"/></svg></button>
+          </div>
+        </div>
+        <p class="prog-error" id="progError" hidden></p>
+        <div class="prog-body">
+          <div class="prog-grid-wrap"><div class="prog-grid" id="progGrid" role="grid" aria-label="Команды программы"></div></div>
+          <aside class="prog-side">
+            <div class="seg prog-tabs" role="tablist" id="progTabs">
+              <button type="button" role="tab" aria-checked="true" data-tab="ops">Команды</button>
+              <button type="button" role="tab" aria-checked="false" data-tab="mem">Память</button>
+            </div>
+            <div class="prog-cats" id="progCats" data-page="ops"></div>
+            <div class="prog-ops" id="progOps" data-page="ops"></div>
+            <div class="prog-mem" id="progMem" data-page="mem" hidden></div>
+          </aside>
+        </div>
+        <!-- Подвал: слева — что под курсором, справа — состояние программы -->
+        <footer class="prog-foot"><span class="prog-foot-info" id="progFoot"></span><span class="prog-state" id="progState"></span></footer>
+        <!-- Список программ (ProgramListPanel) — поверх сетки -->
+        <div class="prog-list" id="progList" hidden>
+          <header><h3>Программы</h3><button type="button" class="icon-btn" id="progListClose" title="Закрыть"><svg><use href="#i-close"/></svg></button></header>
+          <ul id="progListItems"></ul>
+          <form class="prog-create" id="progCreate" autocomplete="off">
+            <input class="input" id="progCreateName" maxlength="24" placeholder="Новая программа">
+            <button type="submit" class="btn btn--primary">Создать</button>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <!-- Сообщение сервера (ModalWindowPacket: заголовок, текст, одна кнопка, картинка) -->
+    <div class="dialog-layer" id="srvModal" hidden>
+      <section class="panel dialog srv-modal" role="dialog" aria-labelledby="srvModalTitle">
+        <img class="srv-modal-icon" id="srvModalIcon" src="img/items/upgradeBooster.png" alt="">
+        <h2 id="srvModalTitle" data-srv>Неделя добычи</h2>
+        <p id="srvModalText" data-srv>До воскресенья добыча всех кристаллов увеличена вдвое. Удачи в шахте!</p>
+        <div class="dialog-actions"><button type="button" class="btn btn--primary" data-close id="srvModalOk" data-srv>Отлично</button></div>
+      </section>
+    </div>
+
+    <!-- Сервер просит открыть ссылку (OpenURLPacket) — только с согласия игрока -->
+    <div class="dialog-layer" id="linkDialog" hidden>
+      <section class="panel dialog link-dlg" role="dialog" aria-labelledby="linkTitle">
+        <h2 id="linkTitle">Открыть ссылку?</h2>
+        <p>Сервер предлагает открыть страницу в браузере.</p>
+        <p class="link-url"><svg><use href="#i-link"/></svg><span><b id="linkHost">discord.gg</b><span id="linkPath">/projectkern</span></span></p>
+        <div class="dialog-actions">
+          <button type="button" class="btn" data-close>Отмена</button>
+          <button type="button" class="btn btn--primary" id="linkOpen">Открыть</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Связь (Reconnect.uxml): автоповтор подключения и разрыв. Блокирует игру, выход в меню остаётся -->
+    <div class="dialog-layer link-layer" id="netDialog" hidden>
+      <section class="panel dialog net" role="alertdialog" aria-labelledby="netTitle" aria-describedby="netText">
+        <svg class="net-ico"><use href="#i-offline"/></svg>
+        <h2 id="netTitle"></h2>
+        <p id="netText"></p>
+        <p class="net-reason" id="netReason" data-srv hidden></p>
+        <div class="dialog-actions">
+          <button type="button" class="btn" id="netMenu">Выйти в меню</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Клан: открывается знаком клана -->
+    <div class="dialog-layer" id="clanDialog" hidden>
+      <section class="panel srv-window clan-win" role="dialog" aria-labelledby="clanTitle">
+        <header class="srv-head">
+          <h2 id="clanTitle">Клан</h2>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="srv-body clan-body">
+          <div class="clan-card">
+            <div class="clan-emblem"><img src="img/clan.png" alt=""></div>
+            <div class="clan-who">
+              <p class="clan-name">FED <span>Федерация</span></p>
+              <p class="profile-meta"><span>Участников <b>24 / 30</b></span><span>В сети <b>7</b></span><span>Глава <b>DVM_LEADER</b></span></p>
+            </div>
+            <div class="clan-bank"><small>Казна</small><b>$1 240 500</b><span>₢ 18 300</span></div>
+          </div>
+          <div class="clan-tabs seg" role="tablist" id="clanTabs">
+            <button type="button" role="tab" aria-checked="true" data-tab="members">Участники</button>
+            <button type="button" role="tab" aria-checked="false" data-tab="board">Объявления</button>
+            <button type="button" role="tab" aria-checked="false" data-tab="bank">Казна</button>
+            <button type="button" role="tab" aria-checked="false" data-tab="requests" class="lead-only">Заявки<b class="badge chat-badge" id="reqBadge"></b></button>
+          </div>
+          <ul class="clan-list" data-page="members" id="clanMembers"></ul>
+          <div class="clan-page" data-page="board" hidden>
+            <form class="clan-post lead-only" id="clanPostForm"><textarea class="input" id="clanPostText" rows="2" maxlength="300" placeholder="Объявление для клана…"></textarea><button type="submit" class="btn btn--primary">Опубликовать</button></form>
+            <ul class="clan-board" id="clanBoard"></ul>
+          </div>
+          <ul class="clan-list" data-page="bank" id="clanBank" hidden></ul>
+          <div class="clan-page" data-page="requests" hidden>
+            <form class="clan-invite" id="clanInviteForm"><input class="input" id="clanInviteId" placeholder="ID игрока, например 10482" inputmode="numeric"><button type="submit" class="btn btn--primary">Пригласить</button></form>
+            <p class="clan-note" id="clanInviteNote"></p>
+            <ul class="clan-list" id="clanRequests"></ul>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Почта: письма от сервера и игроков -->
+    <div class="dialog-layer" id="mailDialog" hidden>
+      <section class="panel srv-window mail-win" role="dialog" aria-labelledby="mailTitle">
+        <header class="srv-head">
+          <h2 id="mailTitle">Почта</h2>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="mail-body">
+          <ul class="mail-list" id="mailList"></ul>
+          <article class="mail-read" id="mailRead"></article>
+        </div>
+      </section>
+    </div>
+
+    <!-- Профиль: открывается ID игрока рядом со знаком клана -->
+    <div class="dialog-layer" id="profileDialog" hidden>
+      <section class="panel srv-window profile" role="dialog" aria-labelledby="profileTitle">
+        <header class="srv-head">
+          <h2 id="profileTitle">Профиль</h2>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="srv-body profile-body" id="profileBody"></div>
+      </section>
+    </div>
+
+    <div class="dialog-layer" id="buildingsDialog" hidden>
+      <section class="panel srv-window" role="dialog" aria-labelledby="buildingsTitle">
+        <header class="srv-head">
+          <h2 id="buildingsTitle">Мои здания</h2>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="srv-body"></div>
+      </section>
+    </div>
+
+    <!-- Меню ☰ на пальце: только системное — настройки, помощь, выход. Игровые функции — в блоке у миникарты -->
+    <div class="dialog-layer" id="pauseDialog" hidden>
+      <section class="panel dialog pause" role="dialog" aria-labelledby="pauseTitle">
+        <header class="pause-head">
+          <h2 id="pauseTitle">Меню</h2>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <div class="pause-sys" id="pauseSys"></div>
+        <button type="button" class="btn" id="pauseExit">Выход в меню</button>
+      </section>
+    </div>
+
+    <!-- Пауза на ПК: кнопка «Меню» и Esc -->
+    <div class="dialog-layer" id="menuDialog" hidden>
+      <section class="panel dialog pause" role="dialog" aria-labelledby="menuTitle">
+        <h2 id="menuTitle">Пауза</h2>
+        <button type="button" class="btn btn--primary" data-close>Продолжить</button>
+        <button type="button" class="btn" id="menuSettings">Настройки</button>
+        <button type="button" class="btn" id="menuExit">Выход в меню</button>
+      </section>
+    </div>
+   </section>
+   <!-- ════ Bootstrap (BootstrapLoadingScreen.uxml) ════ -->
+   <section class="screen screen--space" data-screen="boot">
+    <div class="boot">
+      <img class="boot-logo" src="img/brand/mark.svg" alt="" width="72" height="72">
+      <h1 class="boot-title">Подготовка клиента</h1>
+      <p class="boot-phase" id="bootPhase">Компиляция шейдеров…</p>
+      <div class="meter meter--wide"><i id="bootFill"></i></div>
+    </div>
+   </section>
+
+   <!-- ════ Вход: отдельная полноэкранная страница (Gateway.uxml, рабочие действия) ════ -->
+   <section class="screen screen--space" data-screen="auth">
+    <div class="panel gate">
+      <header class="brand brand--stacked">
+        <img src="img/brand/mark.svg" alt="" width="56" height="56">
+        <div><b class="wordmark">Project Kern</b><span class="brand-sub">Экспедиция в недра планеты</span></div>
+      </header>
+      <div class="seg seg--auth" id="authTabs" role="radiogroup" aria-label="Вход или регистрация">
+        <button type="button" role="radio" aria-checked="true" data-tab="login">Вход</button>
+        <button type="button" role="radio" aria-checked="false" data-tab="register">Регистрация</button>
+      </div>
+      <div class="auth-stack">
+      <form class="auth-form" id="authForm" autocomplete="on" novalidate>
+        <div class="fld"><input class="input" id="authLogin" name="login" placeholder="Логин" aria-label="Логин" autocomplete="username"><small class="fld-err"></small></div>
+        <div class="fld"><input class="input" id="authPassword" name="password" type="password" placeholder="Пароль" aria-label="Пароль" autocomplete="current-password"><small class="fld-err"></small></div>
+        <div class="auth-row">
+          <label class="check"><input type="checkbox" checked>Запомнить меня</label>
+          <button type="button" class="link" id="authForgot">Забыли пароль?</button>
+          <small class="auth-note" id="authForgotNote" aria-live="polite"></small>
+        </div>
+        <button type="submit" class="btn btn--primary btn--big" id="authSubmit">Войти</button>
+      </form>
+      <form class="auth-form is-off" id="regForm" autocomplete="on" novalidate inert>
+        <div class="fld"><input class="input" id="regLogin" name="new-login" placeholder="Логин" aria-label="Логин" autocomplete="username"><small class="fld-err"></small></div>
+        <div class="fld"><input class="input" id="regPassword" name="new-password" type="password" placeholder="Пароль" aria-label="Пароль" autocomplete="new-password"><small class="fld-err"></small></div>
+        <div class="fld"><input class="input" id="regRepeat" name="repeat-password" type="password" placeholder="Повторите пароль" aria-label="Повторите пароль" autocomplete="new-password"><small class="fld-err"></small></div>
+        <div class="fld"><label class="check"><input type="checkbox" id="regTerms">Принимаю <a class="link" href="#" onclick="return false">правила игры</a></label><small class="fld-err"></small></div>
+        <button type="submit" class="btn btn--primary btn--big" id="regSubmit">Создать аккаунт</button>
+      </form>
+      </div>
+      <div class="or"><span>или</span></div>
+      <button type="button" class="btn btn--big btn--vk" id="authVk"><img src="img/ui/mm_icon_vk.png" alt="" width="20" height="20">Войти через VK</button>
+    </div>
+   </section>
+
+   <!-- ════ Онбординг: три шага, один раз после первого входа (GatewayOnboarding) ════ -->
+   <section class="screen screen--space" data-screen="onboarding">
+    <div class="panel onb">
+      <header class="onb-head">
+        <div>
+          <p class="onb-kicker">Настройки</p>
+          <h2 id="onbTitle">Доступность</h2>
+        </div>
+        <ol class="steps" id="onbSteps">
+          <li class="is-on">Доступность</li><li>Графика</li><li>Звук</li>
+        </ol>
+      </header>
+      <div class="onb-body">
+        <fieldset class="onb-step is-on" data-step="0">
+          <label class="field"><span><b>Язык</b></span>
+            <select class="lang-pick"><option value="ru">Русский</option><option value="en">English</option><option value="zh">Китайский (упрощ.)</option><option value="zh-hant">Китайский (традиц.)</option></select></label>
+          <label class="field"><span><b>Масштаб интерфейса</b></span>
+            <select><option>100%</option><option>115%</option><option>130%</option><option>150%</option><option>175%</option></select></label>
+          <label class="field"><span><b>Размер текста</b></span>
+            <select><option>Мелкий</option><option selected>Обычный</option><option>Крупный</option><option>Очень крупный</option></select></label>
+          <label class="field"><span><b>Режим для дальтоников</b></span>
+            <select><option>Выкл.</option><option>Протанопия</option><option>Дейтеранопия</option><option>Тританопия</option></select></label>
+        </fieldset>
+        <fieldset class="onb-step" data-step="1">
+          <label class="field"><span><b>Качество графики</b></span>
+            <select><option>Классика</option><option selected>Стандарт</option></select></label>
+          <label class="field"><span><b>Ограничение FPS</b></span>
+            <select><option>Без ограничения</option><option>144</option><option selected>60</option><option>30</option></select></label>
+          <label class="field"><span><b>Вертикальная синхронизация</b></span>
+            <input type="checkbox" class="switch" checked></label>
+          <label class="field"><span><b>HDR</b></span>
+            <input type="checkbox" class="switch" id="onbHdr"></label>
+          <div class="field"><span><b>Калибровка дисплея</b></span><button type="button" class="btn set-btn" id="onbCalib">Настроить</button></div>
+        </fieldset>
+        <fieldset class="onb-step" data-step="2">
+          <label class="field"><span><b>Общая громкость</b></span>
+            <span class="range"><input type="range" min="0" max="100" value="85" id="onbVolume"><output id="onbVolumeOut">85%</output></span></label>
+          <label class="field"><span><b>Звук в фоне</b></span>
+            <input type="checkbox" class="switch" checked></label>
+        </fieldset>
+      </div>
+      <footer class="onb-foot">
+        <button type="button" class="btn" id="onbPrev">Назад</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn--ghost" id="onbSkip">Пропустить</button>
+        <button type="button" class="btn btn--primary" id="onbNext">Далее</button>
+      </footer>
+    </div>
+   </section>
+
+   <!-- ════ Главное меню и спуск (MainMenu.uxml) ════ -->
+   <section class="screen screen--space screen--menu" data-screen="menu">
+    <header class="menu-top">
+      <div class="brand"><img src="img/brand/mark.svg" alt="" width="36" height="36"><b class="wordmark">Project Kern</b><span class="brand-sub">Экспедиция в недра планеты</span></div>
+    </header>
+
+    <div class="menu-main" id="menuMain">
+      <h1 class="menu-title">Мир ждёт под поверхностью.</h1>
+      <p class="menu-lead">Спускайся на неизведанные глубины. Бури породу, автоматизируй дронов, создавай кластеры и выживай в бесконечной шахте.</p>
+      <div class="menu-actions">
+        <button type="button" class="btn btn--primary btn--hero" id="descendBtn">Играть</button>
+        <!-- Обязательное обновление стоит на месте кнопки спуска (OutdatedClientPacket) -->
+        <div class="update" id="updateBlock" hidden>
+          <button type="button" class="btn btn--hero btn--update" id="updateBtn">Обновить до 0.9.0</button>
+        </div>
+        <button type="button" class="btn btn--big menu-settings" title="Настройки">Настройки</button>
+      </div>
+    </div>
+
+    <div class="menu-main descent" id="descent" hidden>
+      <h1 class="menu-title">Входим в шахту</h1>
+      <p class="descent-explain" id="descentExplain" aria-live="polite">Устанавливаем соединение с сервером.</p>
+      <div class="descent-progress">
+        <div class="meter meter--wide"><i id="descentFill"></i></div>
+        <div class="descent-meta"><span id="descentPhase">Подключение к серверу</span><span id="descentCount">1 / 5</span></div>
+      </div>
+      <ol class="phases" id="descentPhases">
+        <li>Подключение к серверу</li><li>Загрузка ресурсов</li><li>Получение позиции</li><li>Построение мира</li><li>Загрузка текстур</li>
+      </ol>
+      <p class="descent-tip" id="descentTip" aria-live="polite" data-i18n-html></p>
+      <button type="button" class="btn btn--wide" id="descentCancel">Отмена</button>
+    </div>
+
+    <nav class="menu-rail" aria-label="Меню">
+      <button type="button" class="rail-btn" id="railHealth" title="Проверить ресурсы" aria-label="Проверить ресурсы">
+        <svg class="rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 20 7v5.2c0 4.4-3.2 7.5-8 9.3-4.8-1.8-8-4.9-8-9.3V7z"/><path d="m8.5 12.2 2.2 2.2 4.8-5"/></svg>
+      </button>
+      <span class="rail-sep"></span>
+      <button type="button" class="rail-btn" title="Discord"><img src="img/ui/mm_icon_discord.png" alt=""></button>
+      <button type="button" class="rail-btn" title="Telegram"><img src="img/ui/mm_icon_telegram.png" alt=""></button>
+      <button type="button" class="rail-btn" title="ВКонтакте"><img src="img/ui/mm_icon_vk.png" alt=""></button>
+      <span class="rail-sep"></span>
+      <button type="button" class="rail-btn" title="Выход из игры"><img src="img/ui/mm_icon_exit.png" alt=""></button>
+    </nav>
+    <footer class="menu-foot" aria-label="Информация о сборке">
+      <button type="button" class="menu-news" id="menuNews"><small>НОВОЕ</small><span>0.9.0 — поезда на рельсах, переработанные клановые войны</span></button>
+      <span class="menu-meta menu-online"><i></i><small>В СЕТИ</small><b>1 284</b></span>
+      <span class="menu-meta"><small>ВЕРСИЯ</small><b id="versionLabel">0.8.14</b></span>
+      <span class="menu-meta"><small>СБОРКА</small><code id="buildHash">fb8e0225</code></span>
+    </footer>
+
+    <!-- Окно обновления клиента (MainMenu.uxml UpdateModal) -->
+    <div class="dialog-layer" id="updateDialog" hidden>
+      <section class="panel dialog dialog--wide upd" role="dialog" aria-labelledby="updTitle">
+        <header class="upd-head"><h2 id="updTitle">Обновление клиента v0.9.0</h2><button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button></header>
+        <p>Вышло обязательное обновление:</p>
+        <div class="upd-box upd-hero"><b>v0.9.0 — Deep Subsurface Expansion</b><small>Без него подключиться к серверу нельзя</small></div>
+        <div class="upd-box">
+          <small>Список изменений</small>
+          <ul class="upd-list"><li>Новое освещение и тени в пещерах</li><li>Расширенный программатор для дронов</li><li>Новые слои пород</li><li>Игра загружается быстрее</li></ul>
+        </div>
+        <div class="upd-box" id="updProgress" hidden>
+          <div class="meter meter--wide"><i id="updFill"></i></div>
+          <div class="upd-meta"><small>Загрузка обновления…</small><b id="updPercent">0%</b></div>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="btn" id="updDefer">Позже</button>
+          <button type="button" class="btn btn--primary" id="updConfirm">Загрузить обновление</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="dialog-layer" id="healthDialog" hidden>
+      <section class="panel dialog health" role="dialog" aria-labelledby="healthTitle" aria-describedby="healthDescription">
+        <header class="upd-head">
+          <h2 id="healthTitle">Проверка ресурсов</h2>
+          <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+        </header>
+        <p id="healthDescription">Проверка доступности файлов клиента.</p>
+        <div class="upd-box" id="healthProgress" hidden>
+          <div class="meter meter--wide"><i id="healthFill"></i></div>
+          <div class="upd-meta"><small id="healthStatus" aria-live="polite">Проверка файлов…</small><b id="healthCount">0 / 0</b></div>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="btn" id="healthClose" data-close>Закрыть</button>
+          <button type="button" class="btn btn--primary" id="healthCheck">Проверить</button>
+        </div>
+      </section>
+    </div>
+   </section>
+
+   <!-- Настройки: одно окно для меню и игры (PauseMenu: вкладки и страницы). Всё применяется сразу -->
+   <div class="dialog-layer settings-layer" id="settingsDialog" hidden>
+    <section class="panel settings" role="dialog" aria-labelledby="setTitle">
+      <header class="settings-head">
+        <h2 id="setTitle">Настройки</h2>
+        <button type="button" class="icon-btn" data-close title="Закрыть"><svg><use href="#i-close"/></svg></button>
+      </header>
+      <nav class="settings-tabs" role="tablist">
+        <button type="button" role="tab" class="is-on" data-tab="graphics">Графика</button>
+        <button type="button" role="tab" data-tab="audio">Звук</button>
+        <button type="button" role="tab" data-tab="interface">Интерфейс</button>
+        <button type="button" role="tab" data-tab="controls">Управление</button>
+        <button type="button" class="settings-exit" id="setExit">Выход в меню</button>
+      </nav>
+      <div class="settings-body">
+        <div class="set-page is-on" data-tab="graphics">
+          <div class="field pc-only"><span><b>Режим экрана</b></span><div class="seg" role="radiogroup"><button type="button" role="radio" aria-checked="true">Полноэкранный</button><button type="button" role="radio" aria-checked="false">Оконный</button></div></div>
+          <label class="field pc-only"><span><b>Разрешение</b></span>
+            <select><option>1280×720</option><option>1366×768</option><option>1600×900</option><option selected>1920×1080</option><option>2560×1440</option><option>3840×2160</option></select></label>
+          <div class="field"><span><b>Качество графики</b></span><div class="seg" role="radiogroup"><button type="button" role="radio" aria-checked="false">Классика</button><button type="button" role="radio" aria-checked="true">Стандарт</button></div></div>
+          <label class="field"><span><b>Ограничение FPS</b></span>
+            <select><option>Без ограничения</option><option>144</option><option selected>60</option><option>30</option></select></label>
+          <label class="field"><span><b>Вертикальная синхронизация</b></span><input type="checkbox" class="switch" checked></label>
+          <label class="field"><span><b>HDR</b></span><input type="checkbox" class="switch" id="setHdr"></label>
+          <div class="field"><span><b>Калибровка дисплея</b></span><button type="button" class="btn set-btn" id="calibOpen">Настроить</button></div>
+          <h3 class="set-sec">Эффекты</h3>
+          <label class="field"><span><b>Свечение</b></span><input type="checkbox" class="switch" checked></label>
+          <label class="field"><span><b>Виньетка</b></span><input type="checkbox" class="switch" checked></label>
+        </div>
+        <div class="set-page" data-tab="audio">
+          <label class="field"><span><b>Общая громкость</b></span><span class="range"><input type="range" min="0" max="100" value="85"><output>85%</output></span></label>
+          <label class="field"><span><b>Эффекты</b></span><span class="range"><input type="range" min="0" max="100" value="100"><output>100%</output></span></label>
+          <label class="field"><span><b>Музыка</b></span><span class="range"><input type="range" min="0" max="100" value="60"><output>60%</output></span></label>
+          <label class="field"><span><b>Окружение</b></span><span class="range"><input type="range" min="0" max="100" value="80"><output>80%</output></span></label>
+          <label class="field"><span><b>Интерфейс</b></span><span class="range"><input type="range" min="0" max="100" value="70"><output>70%</output></span></label>
+          <label class="field"><span><b>Голос</b></span><span class="range"><input type="range" min="0" max="100" value="100"><output>100%</output></span></label>
+          <label class="field"><span><b>Звук в фоне</b></span><input type="checkbox" class="switch" checked></label>
+        </div>
+        <div class="set-page" data-tab="interface">
+          <label class="field"><span><b>Язык</b></span>
+            <select class="lang-pick"><option value="ru">Русский</option><option value="en">English</option><option value="zh">Китайский (упрощ.)</option><option value="zh-hant">Китайский (традиц.)</option></select></label>
+          <label class="field"><span><b>Масштаб интерфейса</b></span>
+            <select><option>100%</option><option>115%</option><option>130%</option><option>150%</option><option>175%</option></select></label>
+          <label class="field"><span><b>Размер текста</b></span>
+            <select><option>Мелкий</option><option selected>Обычный</option><option>Крупный</option><option>Очень крупный</option></select></label>
+          <label class="field"><span><b>Режим для дальтоников</b></span>
+            <select><option>Выкл.</option><option>Протанопия</option><option>Дейтеранопия</option><option>Тританопия</option></select></label>
+        </div>
+        <div class="set-page" data-tab="controls">
+          <div class="field"><span><b>Устройство</b></span><div class="seg" id="ctlSeg" role="radiogroup"><button type="button" role="radio" aria-checked="true" data-view="keys">Клавиатура</button><button type="button" role="radio" aria-checked="false" data-view="pad">Геймпад</button></div></div>
+          <div class="ctl-view" data-view="keys">
+            <div class="field"><span><b>Движение</b></span><span class="keycap is-fixed">W A S D / ← ↑ ↓ →</span></div>
+            <div class="field"><span><b>Копать</b></span><button type="button" class="keycap" data-key="Space">Space</button></div>
+            <div class="field"><span><b>Автокопание</b></span><button type="button" class="keycap" data-key="E">E</button></div>
+            <div class="field"><span><b>Геология</b></span><button type="button" class="keycap" data-key="G">G</button></div>
+            <div class="field"><span><b>Лечение</b></span><button type="button" class="keycap" data-key="V">V</button></div>
+            <div class="field"><span><b>Военный блок</b></span><button type="button" class="keycap" data-key="Y">Y</button></div>
+            <div class="field"><span><b>Дорога</b></span><button type="button" class="keycap" data-key="H">H</button></div>
+            <div class="field"><span><b>Блок</b></span><button type="button" class="keycap" data-key="F">F</button></div>
+            <div class="field"><span><b>Опора</b></span><button type="button" class="keycap" data-key="J">J</button></div>
+            <div class="field"><span><b>Движение мышью</b></span><span class="keycap is-fixed">ПКМ (удержание)</span></div>
+            <div class="field"><span><b>Маршрут</b></span><span class="keycap is-fixed">ЛКМ</span></div>
+            <div class="set-foot"><button type="button" class="btn set-btn" id="keysReset">Сбросить до стандартных</button></div>
+          </div>
+          <div class="ctl-view" data-view="pad" hidden>
+            <label class="field"><span><b>Значки кнопок</b></span>
+              <select id="padGlyphs"><option value="auto">Как у геймпада</option><option value="xbox">Xbox</option><option value="ps">PlayStation</option><option value="switch">Nintendo</option></select></label>
+            <label class="field"><span><b>Вибрация</b></span><input type="checkbox" class="switch" checked></label>
+            <label class="field"><span><b>Чувствительность стика</b></span><span class="range"><input type="range" min="0" max="100" value="50"><output>50%</output></span></label>
+            <h3 class="set-sec">Кнопки</h3>
+            <div id="padBinds"></div>
+            <div class="set-foot"><button type="button" class="btn set-btn" id="padReset">Сбросить до стандартных</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+   </div>
+
+   <!-- Калибровка дисплея (HDRCalibrationScreen): во весь экран, узор и ползунок по шагам.
+        HDR — пиковая яркость, уровень чёрного, белая точка; без HDR — яркость -->
+   <div class="calib" id="calib" hidden>
+     <header class="calib-top">
+       <span class="calib-kicker">Калибровка дисплея</span>
+       <ol class="calib-steps" id="calibSteps"></ol>
+       <button type="button" class="icon-btn" id="calibCancel" title="Отмена"><svg><use href="#i-close"/></svg></button>
+     </header>
+     <div class="calib-stage" id="calibStage">
+       <div class="calib-pattern" data-p="peak"><div class="calib-tile"><i class="calib-logo"></i></div></div>
+       <div class="calib-pattern" data-p="black">
+         <div class="calib-trio">
+           <figure><div class="calib-tile"><i class="calib-logo"></i></div><figcaption>Не виден</figcaption></figure>
+           <figure><div class="calib-tile"><i class="calib-logo"></i></div><figcaption>Едва заметен</figcaption></figure>
+           <figure><div class="calib-tile"><i class="calib-logo"></i></div><figcaption>Виден</figcaption></figure>
+         </div>
+       </div>
+       <div class="calib-pattern" data-p="paper">
+         <div class="calib-scene" id="calibScene">
+           <div class="calib-world"></div>
+           <div class="calib-card"><b>ШАХТЁР-774</b><i class="calib-hp"></i><span>$14 850</span></div>
+           <div class="calib-paper"></div>
+         </div>
+       </div>
+     </div>
+     <footer class="calib-foot">
+       <h2 id="calibTitle"></h2>
+       <p id="calibText"></p>
+       <div class="calib-slider">
+         <button type="button" class="icon-btn calib-step" id="calibMinus" title="Меньше">−</button>
+         <input type="range" id="calibRange">
+         <button type="button" class="icon-btn calib-step" id="calibPlus" title="Больше">+</button>
+         <output id="calibValue"></output>
+       </div>
+       <div class="calib-actions">
+         <button type="button" class="btn" id="calibReset">По умолчанию</button>
+         <span class="spacer"></span>
+         <button type="button" class="btn" id="calibBack">Назад</button>
+         <button type="button" class="btn btn--primary" id="calibNext">Далее</button>
+       </div>
+     </footer>
+   </div>
+
+    <i class="cutout" aria-hidden="true"></i>
+  </div>
+</main>
+
+<!-- Иконки: один набор, линия 1.75 на сетке 24 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="1.5"/><path d="M3.5 6.5 12 13l8.5-6.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7M12 19V5"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+    <symbol id="i-cut" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.12 8.12 12 12M20 4 8.12 15.88M14.8 14.8 20 20"/></symbol>
+    <symbol id="i-paste" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
+    <symbol id="i-multi" viewBox="0 0 24 24"><path d="M5 3a2 2 0 0 0-2 2M19 3a2 2 0 0 1 2 2M21 19a2 2 0 0 1-2 2M5 21a2 2 0 0 1-2-2M9 3h1M9 21h1M14 3h1M14 21h1M3 9v1M21 9v1M3 14v1M21 14v1"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7M7 3v4a1 1 0 0 0 1 1h7"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></symbol>
+    <symbol id="i-step-in" viewBox="0 0 24 24"><path d="M12 15V3M6 9l6 6 6-6M19 21H5"/></symbol>
+    <symbol id="i-step-over" viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7l3 2.7"/><circle cx="12" cy="20" r="1.5"/></symbol>
+    <symbol id="i-step-out" viewBox="0 0 24 24"><path d="m18 9-6-6-6 6M12 3v12M5 21h14"/></symbol>
+    <symbol id="i-break" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M3 6h.01M3 12h.01M3 18h.01M8 6h13M8 12h13M8 18h13"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.98-3.98L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-offline" viewBox="0 0 24 24"><path d="M12 20h.01M8.5 16.43a5 5 0 0 1 7 0M5 12.86a10 10 0 0 1 5.17-2.69M19 12.86a10 10 0 0 0-2-1.52M2 8.82a15 15 0 0 1 4.18-2.64M22 8.82a15 15 0 0 0-11.29-3.76M2 2l20 20"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-console" viewBox="0 0 24 24"><path d="M5 7l5 5-5 5"/><path d="M12 17h7"/></symbol>
+    <symbol id="i-buildings" viewBox="0 0 24 24"><path d="M4 20V9l6-4 6 4v11"/><path d="M16 12h4v8"/><path d="M8 20v-5h4v5"/><path d="M3 20h18"/></symbol>
+    <symbol id="i-respawn" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M5 5l7-3.5L19 5v6.5L12 15 5 11.5z"/><path d="M5 5l7 3.5L19 5M12 8.5V15"/><path d="M12 17v5.5M9.5 20L12 22.5l2.5-2.5"/></symbol>
+    <symbol id="i-prog" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/><path d="M10 7h4a3 3 0 0 1 3 3v4"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 11v6M14 11v6M7 7l1 13h8l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M5 5h14v10H10l-5 4z"/></symbol>
+    <symbol id="i-autodig" viewBox="0 0 24 24"><path d="M14 4l6 6-3 3-6-6z"/><path d="M11 7l-7 7 3 3 7-7"/><path d="M4 21a3 3 0 0 0 5 0"/></symbol>
+    <symbol id="i-geo" viewBox="0 0 24 24"><g transform="rotate(180 12 12)"><path d="M17 2.5L15 7.5"/><path d="M5 7.5h14v4a7 7 0 0 1-7 7H5z"/><path d="M5 18.5l1.2 2.5 1.3-2.5 1.2 2.5 1.3-2.5"/><path d="M7 7.5l1.6-3 2.4 1.2 1.6-2.2 2.4 4"/></g></symbol>
+    <symbol id="i-heal" viewBox="0 0 24 24"><path d="M9 4h6v5h5v6h-5v5H9v-5H4V9h5z"/></symbol>
+    <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8h14v-8"/><path d="M12 8v12"/><path d="M12 8c-1.5-3-5-4-5.5-2S9 8 12 8zM12 8c1.5-3 5-4 5.5-2S15 8 12 8z"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.3c2.1.7 3.5 2.8 3.5 5.7"/></symbol>
+    <symbol id="i-run" viewBox="0 0 24 24"><path d="M5 6l6 6-6 6M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-shift" viewBox="0 0 24 24"><path d="M12 4l7 8h-4v7H9v-7H5z"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-collapse" viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6M20 6v12"/></symbol>
+  </defs>
+</svg>
+
+<script src="js/world.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/screens.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/calibration.js"></script>
+<script src="js/map.js"></script>
+<script src="js/prog-data.js"></script>
+<script src="js/prog.js"></script>
+<script src="js/events.js"></script>
+<script src="js/i18n-data.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/gamepad.js"></script>
+</body>
+</html>

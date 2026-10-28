@@ -10,6 +10,25 @@ runtime-кодом игры. Все standalone-проекты в `tools/` исп
 - `Kern.DesignSystem` — анализ и генерация данных дизайн-системы.
 - `Kern.DisplayTests` — standalone-тесты display/HDR-поведения.
 
+### Локальный набор и GitHub Actions
+
+`bash scripts/run-ci.sh` запускает тесты ArchitectureLinter, source-only lint,
+DisplayTests, TerrainTests, WorldLightingExchangeTests и FrameHarness.Tests;
+затем собирает DesignSystem и GenerateCrystalFixtures с warnings as errors и
+запускает lighting transport, crystal и raster harnesses. Это standalone-проверки,
+а не запуск Unity или измерение GPU production-пути.
+
+В `.github/workflows/architecture-lint.yml` остался один ручной workflow
+(`workflow_dispatch`), job `unified-ci` отключён через `if: false`.
+Автоматических проверок push/PR, nightly soak и сборок игроков сейчас нет.
+
+`SettingsProbe` находится внутри `Kern.ArchitectureLinter/SettingsProbe`, правило
+`KERN-SETTINGS-PROBE`. Его код включается только при заданном `UnityManagedPath`
+и define `KERN_SETTINGS_PROBE`. Текущий csproj автоматически ищет Unity 6000.6.0f1,
+хотя версия проекта уже 6000.7.0b4; каталога отдельного `Kern.SettingsProbe` нет.
+Без define правило возвращает пустой результат, не выполняя reflection-проверки.
+Успешный source-only lint не подтверждает валидацию настроек этим probe.
+
 ## Планета и UI-ассеты
 
 - `Kern.UIAssets` — единая точка входа генерации UI-ассетов. Команды `all`,
@@ -34,6 +53,7 @@ before/after, опциональный JSON-экспорт существующ�
   правила OPT-1 для S0/S1/S4, отдельные CPU/GPU-бюджеты, PASS/FAIL/INCOMPLETE.
 - `Kern.TerrainBench` — бенчмарки terrain.
 - `Kern.TerrainTests` — standalone terrain tests.
+- `Kern.WorldLightingExchangeTests` — контракты и обмен Terrain/Lighting без Unity Editor.
 - `Kern.LightingTests` — lighting harness и fixtures.
 - `Kern.TerrainCrystalTests` — проверки кристаллической анимации из исходного проекта.
 - `Kern.TerrainRasterTests` — raster/contact-AO regression checks.

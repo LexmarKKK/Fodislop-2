@@ -360,7 +360,7 @@ binding code, and shader declaration blocks merge.
 ## 5. Coordinate, texture, and color invariants
 
 - World cell coordinates use the project's world-space convention. Server
-  top-left/Y-down coordinates convert only through `CoordinateUtils` and
+  top-left/Y-down coordinates convert only through `WorldCoordinateConverter` and
   `MapManager.WorldHeight`. Conversions MUST occur once at a named boundary.
 - Rectangles use documented half-open bounds. Integer cell coordinates, lighting
   texels, normalized UVs, and screen pixels MUST NOT share an untyped `Vector` API
@@ -574,9 +574,9 @@ allowlisted neutral contract; lifecycle, journal, and production-frame gates
 above pass. Remove this debt entry only in that PR.
 
 No stage may replace the concrete injection with an interface that mirrors
-`InvalidateRegion`, `InvalidateStaticCache`, `UpdateLighting`, or
-`CaptureBudgetViolationIfNeeded`. Such an API preserves command ownership in
-Terrain and fails `TL-API` even if the type is located in `Kern.Contracts`.
+`InvalidateRegion`, `InvalidateStaticCache`, `UpdateLighting`, or any other
+per-frame Lighting command entry point. Such an API preserves command ownership
+in Terrain and fails `TL-API` even if the type is located in `Kern.Contracts`.
 
 ## 10. Initial conformance debt
 

@@ -10,7 +10,9 @@
         "MinesServer.Networking",
         "MinesServer.Networking.Connection",
         "MinesServer.Networking.Connection.Client",
-        "VContainer"
+        "VContainer",
+        "Kern.Diagnostics",
+        "Kern.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
