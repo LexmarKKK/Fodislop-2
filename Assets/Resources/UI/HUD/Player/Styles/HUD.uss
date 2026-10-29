@@ -1312,6 +1312,18 @@
     margin-bottom: var(--space-3);
 }
 
+/* J2-C: картинка миссии (M3G из MissionInitPacket.ImageURI) слева от текста. */
+.hud-mission-body {
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.hud-mission-image {
+    flex-shrink: 0;
+    margin-right: var(--space-3);
+    -unity-background-scale-mode: scale-and-crop;
+}
+
 .hud-mission-track {
     height: var(--space-2);
     margin-bottom: var(--space-2);

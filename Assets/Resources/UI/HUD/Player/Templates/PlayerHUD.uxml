@@ -127,7 +127,10 @@
                 <ui:Label class="sci-fi-badge-gold" text="hud.mission_badge" />
                 <ui:Label name="MissionTitleLabel" class="hud-mission-title" text="---" />
             </ui:VisualElement>
-            <ui:Label name="MissionDescLabel" class="hud-mission-desc" text="---" />
+            <ui:VisualElement class="hud-mission-body">
+                <ui:VisualElement name="MissionImage" class="hud-mission-image is-hidden" picking-mode="Ignore" />
+                <ui:Label name="MissionDescLabel" class="hud-mission-desc" text="---" />
+            </ui:VisualElement>
             <ui:VisualElement class="sci-fi-bar-track hud-mission-track">
                 <ui:VisualElement name="MissionProgressFill" class="sci-fi-bar-fill-cyan" />
             </ui:VisualElement>
