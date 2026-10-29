@@ -769,6 +769,7 @@
   "network.error.outdated": "Версия: {0}\n{1}\nСкачать: {2}",
   "hud.tooltip.clan": "Клан",
   "hud.tooltip.dropbox": "Выбросить груз",
+  "hud.tooltip.donate": "Пополнить баланс донатом",
   "hud.tooltip.mconsole": "Серверная консоль",
   "mainmenu.tooltip.chronicle": "Хроника событий",
   "mainmenu.tooltip.settings": "Настройки системы",

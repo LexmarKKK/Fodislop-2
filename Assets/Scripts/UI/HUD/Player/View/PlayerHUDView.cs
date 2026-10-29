@@ -394,6 +394,11 @@ namespace Kern.UI.HUD
             _dropBoxButton = tree.Q<Button>("DropBoxButton") ??
                 throw new InvalidOperationException("[PlayerHUD] DropBoxButton is missing from PlayerHUD.uxml.");
             _dropBoxButton.clicked += () => _networkService?.Send(new DropBoxClickPacket());
+
+            var donateButton = tree.Q<Button>("DonateButton") ??
+                throw new InvalidOperationException("[PlayerHUD] DonateButton is missing from PlayerHUD.uxml.");
+            donateButton.clicked += () => _networkService?.Send(new ElementClickPacket("donate", 0, Array.Empty<StringPairPacket>()));
+
             _geologyLabel = tree.Q<Label>("GeologyLabel") ??
                 throw new InvalidOperationException("[PlayerHUD] GeologyLabel is missing from PlayerHUD.uxml.");
 
