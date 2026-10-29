@@ -677,6 +677,8 @@
   "hud.back": "Back",
   "programmator.list_title": "Programs",
   "programmator.create": "+ Create program",
+  "programmator.rename": "Rename",
+  "programmator.delete": "Delete",
   "programmator.new_program": "New program",
   "common.cancel": "Cancel",
   "common.create": "Create",

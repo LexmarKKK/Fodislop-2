@@ -674,6 +674,8 @@
   "hud.back": "返回",
   "programmator.list_title": "程序",
   "programmator.create": "+ 创建程序",
+  "programmator.rename": "重命名",
+  "programmator.delete": "删除",
   "programmator.new_program": "新程序",
   "common.cancel": "取消",
   "common.create": "创建",
