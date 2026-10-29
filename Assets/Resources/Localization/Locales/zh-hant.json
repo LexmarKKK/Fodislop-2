@@ -766,6 +766,7 @@
   "network.error.outdated": "版本：{0}\n{1}\n下載：{2}",
   "hud.tooltip.clan": "公會",
   "hud.tooltip.dropbox": "丟棄貨物",
+  "hud.tooltip.donate": "透過儲值贊助餘額",
   "hud.tooltip.mconsole": "伺服器控制台",
   "mainmenu.tooltip.chronicle": "活動編年史",
   "mainmenu.tooltip.settings": "系統設定",
