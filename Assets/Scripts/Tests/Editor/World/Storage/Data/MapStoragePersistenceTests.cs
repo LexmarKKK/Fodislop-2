@@ -252,6 +252,38 @@ public sealed class MapStoragePersistenceTests
         Assert.DoesNotThrow(storage.EndRegionBatch);
     }
 
+    // Два клиента на одной машине делят persistentDataPath: канонический файл
+    // держит первый инстанс, второй должен входить в мир через собственный
+    // per-instance кэш, а не падать на sharing violation при WorldInit.
+    [Test]
+    public void CanonicalMapHeldByAnotherInstance_InitWorldUsesPerInstanceCache()
+    {
+        string root = Path.Combine(Path.GetTempPath(), $"map_instance_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        string canonical = Path.Combine(root, "chronos.map");
+        File.WriteAllBytes(canonical, new byte[] { 1, 2, 3, 4 });
+        using var operations = new AsyncOperationSupervisor();
+        var storage = new MapStorage(operations, root);
+        try
+        {
+            using var foreign = new FileStream(
+                canonical, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+            Assert.DoesNotThrow(() => storage.InitWorld("chronos", width: 64, height: 32));
+            Assert.That(Path.GetFileName(storage.MapFilePath), Does.Contain(".instance-"));
+            Assert.That(Path.GetFileName(storage.BackupMapFilePath), Does.Contain(".instance-"));
+            Assert.That(storage.MapFilePath, Is.Not.EqualTo(canonical));
+        }
+        finally
+        {
+            storage.Dispose();
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
     [Test]
     public void EndBatchWithoutBegin_ThrowsInvalidOperation()
     {

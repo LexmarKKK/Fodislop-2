@@ -15,7 +15,9 @@ namespace Kern.Editor;
 
 public sealed class LocalizationDictionaryValidator : IPreprocessBuildWithReport
 {
-    private const string LocalizationDirectory = "Assets/Resources/Localization";
+    // Рантайм грузит словари как Resources "Localization/Locales/{lang}"
+    // (LocalizationService.LoadDictionary) — валидатор читает те же файлы.
+    private const string LocalizationDirectory = "Assets/Resources/Localization/Locales";
     private const string ReferenceLanguage = "ru";
     private static readonly string[] s_languages = new[] {
 "en", "ru", "zh", "zh-hant"

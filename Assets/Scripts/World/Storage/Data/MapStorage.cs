@@ -20,6 +20,7 @@ public class MapStorage : IWorldDataStorage, IWorldPersistence, IRegionBatchStor
 {
     private WorldLayer<CellType>? _cellLayer;
     private string? _mapFilePath;
+    private string? _backupMapFilePath;
     private readonly MapPersistenceGate _persistenceGate = new();
     private readonly IAsyncOperationSupervisor _operations;
 
@@ -65,8 +66,10 @@ public class MapStorage : IWorldDataStorage, IWorldPersistence, IRegionBatchStor
 
     public string MapFilePath => _mapFilePath ?? throw new InvalidOperationException("[MapStorage] Map file path is not initialized");
 
-    public string BackupMapFilePath => _isInitialized
-        ? Path.Combine(DataRoot, _worldCodeName + BackupMapSuffix)
+    // Фактический путь, выбранный при InitWorld: при занятом каноническом
+    // файле это per-instance кэш, а не реконструкция из имени мира.
+    public string BackupMapFilePath => _isInitialized && _backupMapFilePath != null
+        ? _backupMapFilePath
         : throw new InvalidOperationException("[MapStorage] Map file path is not initialized");
 
     public static async UniTask PrepareWorldCacheAsync(
@@ -91,8 +94,8 @@ public class MapStorage : IWorldDataStorage, IWorldPersistence, IRegionBatchStor
         }
 
         string safeWorldCodeName = MapStorageDiskWriter.SanitizeWorldCodeName(worldCodeName);
-        string mapPath = Path.Combine(Application.persistentDataPath, safeWorldCodeName + MapExtension);
-        string backupPath = Path.Combine(Application.persistentDataPath, safeWorldCodeName + BackupMapSuffix);
+        (string mapPath, string backupPath, _) =
+            ResolveWorldLayerPaths(Application.persistentDataPath, safeWorldCodeName);
         await MapStorageDiskWriter.PrepareWorldLayerFileAsync(
             mapPath,
             widthChunks,
@@ -246,8 +249,8 @@ public class MapStorage : IWorldDataStorage, IWorldPersistence, IRegionBatchStor
             throw new ArgumentOutOfRangeException($"[MapStorage] Invalid chunk calculation: {widthChunks}x{heightChunks}");
         }
 
-        string path = Path.Combine(DataRoot, worldCodeName + MapExtension);
-        string backupPath = Path.Combine(DataRoot, worldCodeName + BackupMapSuffix);
+        (string path, string backupPath, bool instanceFallback) =
+            ResolveWorldLayerPaths(DataRoot, worldCodeName);
         Stopwatch openTimer = Stopwatch.StartNew();
         try
         {
@@ -264,23 +267,53 @@ public class MapStorage : IWorldDataStorage, IWorldPersistence, IRegionBatchStor
             }
 
             _mapFilePath = path;
+            _backupMapFilePath = backupPath;
             _isInitialized = true;
             IsDisposed = false;
             Revision++;
             UnityEngine.Debug.Log(
                 $"[MapStorage] Opened world '{worldCodeName}' ({width}x{height}; " +
                 $"{widthChunks}x{heightChunks} chunks) at '{path}' in {openTimer.ElapsedMilliseconds} ms.");
+            if (instanceFallback)
+            {
+                UnityEngine.Debug.LogWarning(
+                    $"[MapStorage] '{worldCodeName}{MapExtension}' is held by another client instance — " +
+                    $"using per-instance cache '{Path.GetFileName(path)}'.");
+            }
         }
         catch (Exception exception)
         {
             _cellLayer = null;
             _mapFilePath = null;
+            _backupMapFilePath = null;
             _isInitialized = false;
             UnityEngine.Debug.LogError(
                 $"[MapStorage] Failed to initialize world '{worldCodeName}' " +
                 $"({width}x{height}) at '{path}' after {openTimer.ElapsedMilliseconds} ms: {exception}");
             throw;
         }
+    }
+
+    // Второй клиент на той же машине: persistentDataPath общий, а слой карты
+    // эксклюзивен — занятый канонический файл заменяется per-instance кэшем.
+    // Сервер авторитетен, локальный файл — только зеркало для быстрого
+    // перезахода, поэтому расхождение зеркал безопасно.
+    private static (string MapPath, string BackupPath, bool InstanceFallback) ResolveWorldLayerPaths(
+        string dataRoot,
+        string safeWorldCodeName)
+    {
+        string mapPath = Path.Combine(dataRoot, safeWorldCodeName + MapExtension);
+        string backupPath = Path.Combine(dataRoot, safeWorldCodeName + BackupMapSuffix);
+        if (!MapStorageDiskWriter.IsHeldByAnotherInstance(mapPath))
+        {
+            return (mapPath, backupPath, false);
+        }
+
+        string instanceSuffix = $".instance-{Process.GetCurrentProcess().Id}";
+        return (
+            Path.Combine(dataRoot, safeWorldCodeName + instanceSuffix + MapExtension),
+            Path.Combine(dataRoot, safeWorldCodeName + instanceSuffix + BackupMapSuffix),
+            true);
     }
 
     public bool IsInitialized() => _isInitialized;
@@ -627,6 +660,7 @@ public class MapStorage : IWorldDataStorage, IWorldPersistence, IRegionBatchStor
                 _worldWidth = 0;
                 _worldHeight = 0;
                 _mapFilePath = null;
+                _backupMapFilePath = null;
                 IsDisposed = true;
                 _disposeAsyncInProgress = false;
                 Revision++;
@@ -657,6 +691,7 @@ public class MapStorage : IWorldDataStorage, IWorldPersistence, IRegionBatchStor
             _worldWidth = 0;
             _worldHeight = 0;
             _mapFilePath = null;
+            _backupMapFilePath = null;
             IsDisposed = true;
             Revision++;
         }

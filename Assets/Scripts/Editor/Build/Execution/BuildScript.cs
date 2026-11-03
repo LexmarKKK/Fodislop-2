@@ -46,6 +46,17 @@ public static class BuildScript
     public static void BuildWindows() =>
         BuildPlayerArtifact(BuildTarget.StandaloneWindows64, $"Build/Windows/{ProductName}.exe");
 
+    // Локальные смоки и приёмки: development-сборка не проходит валидатор
+    // альфа-релиза (ProductionServerEndpointValidator), поэтому соберётся
+    // с текущим девелопмент-дефолтом транспорта; реальный сервер
+    // выбирается в окне выбора сервера и сохраняется в конфиге.
+    [MenuItem("Kern/Build/Windows 64 (development)")]
+    public static void BuildWindowsDevelopment() =>
+        BuildPlayerArtifact(
+            BuildTarget.StandaloneWindows64,
+            $"Build/Windows-Development/{ProductName}.exe",
+            development: true);
+
     [MenuItem("Kern/Build/Linux 64")]
     public static void BuildLinux() =>
         BuildPlayerArtifact(BuildTarget.StandaloneLinux64, $"Build/Linux/{ProductName}");

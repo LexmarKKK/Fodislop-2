@@ -125,7 +125,7 @@
       "Published": "Cells/AliveViol.png"
     },
     {
-      "Source": "Cells/Structures/Support/Support.png",
+      "Source": "Cells/Construction/Support/Support.png",
       "Published": "Cells/Support.png"
     },
     {
@@ -165,7 +165,7 @@
       "Published": "Cells/AliveWhite.gif"
     },
     {
-      "Source": "Cells/Rock/G/GRock.png",
+      "Source": "Cells/Rock/GRock/GRock.png",
       "Published": "Cells/GRock.png"
     },
     {
@@ -191,10 +191,6 @@
     {
       "Source": "Cells/Boulders/BlackBoulder/BlackBoulder2.png",
       "Published": "Cells/BlackBoulder2.png"
-    },
-    {
-      "Source": "Cells/Liquids/Acid/Yellow/YellowAcid.gif",
-      "Published": "Cells/YellowAcid.gif"
     },
     {
       "Source": "Cells/Construction/QuadBlock/QuadBlock.png",
@@ -235,10 +231,6 @@
     {
       "Source": "Cells/Rock/Black/BlackRock.png",
       "Published": "Cells/BlackRock.png"
-    },
-    {
-      "Source": "Cells/Liquids/Acid/Purple/PurpleAcid.gif",
-      "Published": "Cells/PurpleAcid.gif"
     },
     {
       "Source": "Cells/Crystals/Green/XGreen.png",
@@ -285,7 +277,7 @@
       "Published": "Cells/AliveRed.png"
     },
     {
-      "Source": "Cells/Rock/DeepObsidian/DeepObsidianRock.png",
+      "Source": "Cells/Rock/DeepObsidian/DeepObsidian.png",
       "Published": "Cells/DeepObsidianRock.png"
     },
     {
@@ -321,10 +313,6 @@
       "Published": "Cells/Green.png"
     },
     {
-      "Source": "Cells/Liquids/Acid/Blue/BlueAcid.gif",
-      "Published": "Cells/BlueAcid.gif"
-    },
-    {
       "Source": "Cells/Crystals/Red/XRed.png",
       "Published": "Cells/XRed.png"
     },
@@ -337,20 +325,12 @@
       "Published": "Cells/AliveWhite.png"
     },
     {
-      "Source": "Cells/Liquids/Acid/Gray/GrayAcid.gif",
-      "Published": "Cells/GrayAcid.gif"
-    },
-    {
       "Source": "Cells/Roads/Polymer/PolymerRoad.png",
       "Published": "Cells/PolymerRoad.png"
     },
     {
       "Source": "Cells/Biological/Violet/AliveViolet.gif",
       "Published": "Cells/AliveViolet.gif"
-    },
-    {
-      "Source": "Cells/Rock/Hypnosis/119.png",
-      "Published": "Cells/119.png"
     },
     {
       "Source": "Cells/Sand/Rusty/RustySand.png",
@@ -483,10 +463,6 @@
     {
       "Source": "Tail/default/default.png",
       "Published": "Tail/default.png"
-    },
-    {
-      "Source": "VFX/destroy/destroy.png",
-      "Published": "VFX/destroy.png"
     },
     {
       "Source": "VFX/bz/bz.png",
@@ -771,6 +747,106 @@
     {
       "Source": "Cells/Liquids/Acid/Yellow/YellowAcid.png",
       "Published": "Cells/YellowAcid.png"
+    },
+    {
+      "Source": "Pack/Gun/1/1.png",
+      "Published": "Pack/Gun/1.png"
+    },
+    {
+      "Source": "Pack/Gun/2/2.png",
+      "Published": "Pack/Gun/2.png"
+    },
+    {
+      "Source": "Pack/Gun/3/3.png",
+      "Published": "Pack/Gun/3.png"
+    },
+    {
+      "Source": "Pack/Gun/4/4.png",
+      "Published": "Pack/Gun/4.png"
+    },
+    {
+      "Source": "Pack/Jobs/0/0.png",
+      "Published": "Pack/Jobs/0.png"
+    },
+    {
+      "Source": "Pack/Observatory/0/0.png",
+      "Published": "Pack/Observatory/0.png"
+    },
+    {
+      "Source": "Pack/Resp/1/1.png",
+      "Published": "Pack/Resp/1.png"
+    },
+    {
+      "Source": "Pack/Storage/1/1.png",
+      "Published": "Pack/Storage/1.png"
+    },
+    {
+      "Source": "Pack/Storage/2/2.png",
+      "Published": "Pack/Storage/2.png"
+    },
+    {
+      "Source": "Pack/Storage/3/3.png",
+      "Published": "Pack/Storage/3.png"
+    },
+    {
+      "Source": "Pack/Storage/4/4.png",
+      "Published": "Pack/Storage/4.png"
+    },
+    {
+      "Source": "Pack/Storage/5/5.png",
+      "Published": "Pack/Storage/5.png"
+    },
+    {
+      "Source": "Pack/Storage/6/6.png",
+      "Published": "Pack/Storage/6.png"
+    },
+    {
+      "Source": "Pack/Storage/7/7.png",
+      "Published": "Pack/Storage/7.png"
+    },
+    {
+      "Source": "Pack/Teleport/1/1.png",
+      "Published": "Pack/Teleport/1.png"
+    },
+    {
+      "Source": "Skin/Capsule/Capsule.png",
+      "Published": "Skin/Capsule.png"
+    },
+    {
+      "Source": "Skin/DarkCapsule/DarkCapsule.png",
+      "Published": "Skin/DarkCapsule.png"
+    },
+    {
+      "Source": "Skin/Fatty/Fatty.png",
+      "Published": "Skin/Fatty.png"
+    },
+    {
+      "Source": "Skin/Medic/Medic.png",
+      "Published": "Skin/Medic.png"
+    },
+    {
+      "Source": "Skin/Mosquito/Mosquito.png",
+      "Published": "Skin/Mosquito.png"
+    },
+    {
+      "Source": "Skin/Widow/Widow.png",
+      "Published": "Skin/Widow.png"
+    },
+    {
+      "Source": "Skin/greenSkin/greenSkin.png",
+      "Published": "Skin/greenSkin.png"
+    },
+    {
+      "Source": "Skin/orangeSkin/orangeSkin.png",
+      "Published": "Skin/orangeSkin.png"
+    },
+    {
+      "Source": "Skin/purpleSkin/purpleSkin.png",
+      "Published": "Skin/purpleSkin.png"
+    },
+    {
+      "Source": "Skin/redSkin/redSkin.png",
+      "Published": "Skin/redSkin.png"
     }
   ]
 }

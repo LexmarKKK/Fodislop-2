@@ -171,7 +171,7 @@ PlayerSettings:
   enableFrameTimingStats: 0
   enableOpenGLProfilerGPURecorders: 1
   allowHDRDisplaySupport: 1
-  useHDRDisplay: 1
+  useHDRDisplay: 0
   hdrBitDepth: 0
   m_ColorGamuts: 00000000i
   targetPixelDensity: 30
@@ -677,14 +677,18 @@ PlayerSettings:
   platformArchitecture: {}
   scriptingBackend:
     Android: 1
+    Standalone: 0
   il2cppCompilerConfiguration:
     Android: 0
+    Standalone: 0
   il2cppCodeGeneration:
     Android: 1
+    Standalone: 1
   il2cppLTOMode: {}
   il2cppStacktraceInformation: {}
   managedStrippingLevel:
     Android: 4
+    Standalone: 4
   incrementalIl2cppBuild: {}
   suppressCommonWarnings: 1
   allowUnsafeCode: 0
@@ -695,6 +699,7 @@ PlayerSettings:
   gcWBarrierValidation: 0
   managedCodeVariant:
     Android: 1
+    Standalone: 1
   apiCompatibilityLevelPerPlatform: {}
   editorAssembliesCompatibilityLevel: 1
   m_RenderingPath: 1

@@ -38,6 +38,35 @@ internal static class MapStorageDiskWriter
         CopyAtomically(mapPath, backupPath);
     }
 
+    // Два клиента на одной машине делят Application.persistentDataPath, но
+    // слой карты открывается эксклюзивно (WorldLayer.OpenMapFile —
+    // FileShare.None). Проба на открытие отличает файл, занятый другим
+    // инстансом, от ещё не созданного: чтение с FileShare.Read против
+    // чужого эксклюзивного хендла тоже даёт sharing violation.
+    internal static bool IsHeldByAnotherInstance(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var probe = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            return false;
+        }
+        catch (IOException)
+        {
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Канонический файл этому инстансу всё равно недоступен —
+            // отдельный кэш лучше падения входа в мир.
+            return true;
+        }
+    }
+
     internal static WorldLayer<CellType> OpenWorldLayer(
         string path,
         int widthChunks,

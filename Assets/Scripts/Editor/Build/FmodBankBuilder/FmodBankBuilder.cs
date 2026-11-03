@@ -105,7 +105,15 @@ public sealed class FmodBankBuilder : IPreprocessBuildWithReport
         var fmodCliPath = ResolveFmodStudioCliPath();
         if (fmodCliPath == null)
         {
-            throw new BuildFailedException("FMOD Studio command-line compiler was not found. Install FMOD Studio before building.");
+            // FMOD Studio установлен не на каждой машине сборки. Без CLI
+            // перекомпилировать KernAudio.fspro нельзя — собираемся на
+            // банках, уже лежащих в KernAudio/Build/Desktop; обязательные
+            // банки ниже остаются обязательными. Обновить звук проекта
+            // без установки FMOD Studio нельзя.
+            LogWarning(
+                "FMOD Studio CLI not found — skipping compilation, using existing banks from "
+                + FmodSourceBuildPath + ". Install FMOD Studio to pick up KernAudio project changes.");
+            return;
         }
 
         string fmodProjectDirectory = Path.GetDirectoryName(fsproPath)
@@ -188,6 +196,8 @@ public sealed class FmodBankBuilder : IPreprocessBuildWithReport
     }
 
     private static void Log(string message) => Debug.Log($"[FmodBankBuilder] {message}");
+
+    private static void LogWarning(string message) => Debug.LogWarning($"[FmodBankBuilder] {message}");
 
     private static void Fail(bool throwOnFailure, string message)
     {
