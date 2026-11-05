@@ -2,6 +2,7 @@
 
 using System.Linq;
 using Kern.Core.Interfaces;
+using Kern.Core.Models;
 using MinesServer.Networking.Server.Packets.Inventory;
 
 namespace Kern.Networking.Processing;
@@ -48,8 +49,30 @@ public sealed class InventoryProcessor :
         _model.MergeChanges(packet.Changes);
     }
 
-    public void Process(SelectItemPacket packet) =>
+    public void Process(SelectItemPacket packet)
+    {
         _model.ApplyItemMetadata(packet.Item, packet.Name, packet.Description);
+        _model.ApplyItemPlacement(BuildPlacement(packet));
+    }
+
+    // Нулевая геометрия — контракт «предмет не устанавливается» (бомбы,
+    // расходники): превью строят только настоящие сетки из items.json.
+    private static ItemPlacement? BuildPlacement(SelectItemPacket packet)
+    {
+        if (packet.DX == 0 || packet.DY == 0 || packet.Highlight.Length == 0)
+        {
+            return null;
+        }
+
+        int cellCount = packet.DX * packet.DY;
+        var cells = new bool[cellCount];
+        for (int index = 0; index < cellCount && index < packet.Highlight.Length; index++)
+        {
+            cells[index] = packet.Highlight[index];
+        }
+
+        return new ItemPlacement(packet.DX, packet.DY, packet.Distance, packet.Rotating, cells);
+    }
 
     public void Process(DeselectItemPacket packet) =>
         _model.ClearSelection();

@@ -42,6 +42,13 @@ public interface IInventoryState
     /// <summary>Applies the server-provided name/description to a held item.</summary>
     void ApplyItemMetadata(ItemType item, string name, string description);
 
+    /// <summary>
+    /// Applies the placement geometry of the selected item from
+    /// <c>SelectItemPacket (18)</c>; null clears the preview (deselection or
+    /// zero-geometry item).
+    /// </summary>
+    void ApplyItemPlacement(ItemPlacement? placement);
+
     /// <summary>Clears the selection locally (no client packet is sent).</summary>
     void ClearSelection();
 }

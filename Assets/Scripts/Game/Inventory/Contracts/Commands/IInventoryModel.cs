@@ -27,6 +27,12 @@ public interface IInventoryModel
     /// <summary>The currently selected type, or null.</summary>
     ItemType? SelectedItem { get; }
 
+    /// <summary>Placement geometry of the selected item from SelectItemPacket (18), or null.</summary>
+    ItemPlacement? Placement { get; }
+
+    /// <summary>Raised when the placement preview of the selected item changes.</summary>
+    event Action? OnPlacementChanged;
+
     /// <summary>True when an item is selected and still held with quantity &gt; 0.</summary>
     bool HasSelectedItem { get; }
 

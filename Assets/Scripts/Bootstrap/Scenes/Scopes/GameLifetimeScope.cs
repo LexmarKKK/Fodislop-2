@@ -149,6 +149,7 @@ namespace Kern.Bootstrap.Scenes
                 .AsSelf()
                 .As<IAsyncOperationSupervisor>();
             builder.Register<InventoryModel>(Lifetime.Singleton).AsImplementedInterfaces().AsSelf();
+            builder.RegisterEntryPoint<ItemPlacementHighlightPresenter>();
             builder.Register<PlayerStatsModel>(Lifetime.Singleton).AsImplementedInterfaces().AsSelf();
             builder.Register<LightingGeometryRegistry>(Lifetime.Singleton);
             builder.Register<Kern.World.Streaming.WorldViewTransition>(Lifetime.Singleton);

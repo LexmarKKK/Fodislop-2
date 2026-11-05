@@ -27,11 +27,13 @@ public class InventoryModel : IInventoryModel, IInventoryState, IBatchAwareProce
     private readonly Dictionary<ItemType, ItemData> _items = new();
 
     private ItemType? _selectedItem;
+    private ItemPlacement? _placement;
     private int _batchDepth;
     private bool _hasPendingItemsChanged;
 
     public event Action? OnItemsChanged;
     public event Action<ItemType?>? OnSelectedChanged;
+    public event Action? OnPlacementChanged;
 
     public void BeginBatch()
     {
@@ -67,6 +69,8 @@ public class InventoryModel : IInventoryModel, IInventoryState, IBatchAwareProce
     public IReadOnlyList<ItemType> OrderedTypes => _order;
 
     public ItemType? SelectedItem => _selectedItem;
+
+    public ItemPlacement? Placement => _placement;
 
     public bool HasSelectedItem =>
         _selectedItem is { } selected &&
@@ -179,6 +183,28 @@ public class InventoryModel : IInventoryModel, IInventoryState, IBatchAwareProce
         NotifyItemsChanged();
     }
 
+    public void ApplyItemPlacement(ItemPlacement? placement)
+    {
+        if (EqualityComparer<ItemPlacement?>.Default.Equals(_placement, placement))
+        {
+            return;
+        }
+
+        _placement = placement;
+        OnPlacementChanged?.Invoke();
+    }
+
+    private void ClearPlacement()
+    {
+        if (_placement == null)
+        {
+            return;
+        }
+
+        _placement = null;
+        OnPlacementChanged?.Invoke();
+    }
+
     public void Select(ItemType type)
     {
         if (!_items.TryGetValue(type, out ItemData? item) || item.Quantity <= 0)
@@ -211,6 +237,7 @@ public class InventoryModel : IInventoryModel, IInventoryState, IBatchAwareProce
         }
 
         _selectedItem = null;
+        ClearPlacement();
         OnSelectedChanged?.Invoke(null);
 
         if (_networkService == null)
@@ -230,6 +257,7 @@ public class InventoryModel : IInventoryModel, IInventoryState, IBatchAwareProce
         }
 
         _selectedItem = null;
+        ClearPlacement();
         OnSelectedChanged?.Invoke(null);
     }
 
@@ -276,6 +304,7 @@ public class InventoryModel : IInventoryModel, IInventoryState, IBatchAwareProce
         }
 
         _selectedItem = null;
+        ClearPlacement();
         OnSelectedChanged?.Invoke(null);
         return true;
     }
