@@ -21,18 +21,21 @@ public sealed class PlayerHUDPopups
     private readonly Action<OpenHelpClickPacket> _sendHelpRequest;
     private readonly Action<OpenBuildingsClickPacket> _sendBuildingsRequest;
     private readonly Action<SendLocalChatMessagePacket> _sendLocalChat;
+    private readonly Action<OpenClanClickPacket> _sendOpenClan;
     private VisualElement? _respawnPopup;
 
     public PlayerHUDPopups(
         Action<SuicidePacket> sendSuicide,
         Action<OpenHelpClickPacket> sendHelpRequest,
         Action<OpenBuildingsClickPacket> sendBuildingsRequest,
-        Action<SendLocalChatMessagePacket> sendLocalChat)
+        Action<SendLocalChatMessagePacket> sendLocalChat,
+        Action<OpenClanClickPacket> sendOpenClan)
     {
         _sendSuicide = sendSuicide;
         _sendHelpRequest = sendHelpRequest;
         _sendBuildingsRequest = sendBuildingsRequest;
         _sendLocalChat = sendLocalChat;
+        _sendOpenClan = sendOpenClan;
     }
 
     public void Initialize(VisualElement root)
@@ -75,5 +78,12 @@ public sealed class PlayerHUDPopups
             Debug.Log("[MConsole] Клик: отправляю SendLocalChatMessagePacket(\"console\")");
             _sendLocalChat(new SendLocalChatMessagePacket(MConsoleLocalChatCommand));
         };
+
+        // Клан (рядом с консолью): сервер на OpenClanClickPacket отдаёт окно
+        // клана участнику, а игроку без клана — окно создания клана
+        // (Session.Clan → Clan.OpenCreateWindow, залог 1000 кредитов).
+        Button clanCreateButton = root.Q<Button>("ClanCreateButton") ??
+            throw new InvalidOperationException("[PlayerHUD] ClanCreateButton is missing from PlayerHUD.uxml.");
+        clanCreateButton.clicked += () => _sendOpenClan(new OpenClanClickPacket());
     }
 }

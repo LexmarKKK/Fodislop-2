@@ -773,6 +773,7 @@
   "hud.tooltip.dropbox": "Выбросить груз",
   "hud.tooltip.donate": "Пополнить баланс донатом",
   "hud.tooltip.mconsole": "Серверная консоль",
+  "hud.tooltip.clan_create": "Создание клана",
   "mainmenu.tooltip.chronicle": "Хроника событий",
   "mainmenu.tooltip.settings": "Настройки системы",
   "mainmenu.tooltip.repair": "Проверка файлов",

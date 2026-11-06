@@ -773,6 +773,7 @@
   "hud.tooltip.dropbox": "Drop cargo",
   "hud.tooltip.donate": "Top up balance with donation",
   "hud.tooltip.mconsole": "MConsole",
+  "hud.tooltip.clan_create": "Create clan",
   "mainmenu.tooltip.chronicle": "Event chronicle",
   "mainmenu.tooltip.settings": "System settings",
   "mainmenu.tooltip.repair": "Verify files",

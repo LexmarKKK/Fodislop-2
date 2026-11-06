@@ -105,6 +105,11 @@ ClientHelloPacket(int ClientVersion, string OS, int OSVersion,
 и `HardwareFingerprint` — метаданные наступаемости/диагностики: сервер не
 должен ветвиться на них нигде (ни авторизация, ни геймплей, ни лимиты).
 
+Аудит 03.11 (O2-S, сервер `NewMinesServer`): ветвлений по `OS`/`OSVersion` нет;
+`ClientVersion` — только гейт `CheckClientVersion` → `OutdatedClientPacket`;
+`HardwareFingerprint` сохраняется как `hw_hash` для телеметрии и текста
+причины мультилогин-кика (A4-S) — решения/права от него не зависят.
+
 ### 1.5. Программа робота
 
 `SaveProgramPacket(ProgramId, SaveAndRun, Program, Breakpoints)` — произвольный

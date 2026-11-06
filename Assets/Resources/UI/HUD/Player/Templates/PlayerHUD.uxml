@@ -85,12 +85,13 @@
         <ui:Button name="ProgramRunButton" class="hud-btn-action hud-program-run-btn" text="▶" tooltip="hud.tooltip.program_start" picking-mode="Position" />
 
         <!-- ════════════ КНОПКИ ВЕРХНЕГО РЯДА: FAQ / ЗДАНИЯ / РЕСПАВН / MCONSOLE ════════════ -->
-        <!-- Порядок от правого верхнего угла влево: Помощь, Мои здания, Респаун, Серверная консоль.
+        <!-- Порядок от правого верхнего угла влево: Помощь, Мои здания, Респаун, Серверная консоль, Клан.
              Размер 32x32 и спрайты заданы в HUD.uss, классами hud-btn-top-row, текста нет. -->
         <ui:Button name="FaqButton" class="hud-btn-action hud-btn-top-row hud-btn-top-row--faq" picking-mode="Position" />
         <ui:Button name="BuildingsButton" class="hud-btn-action hud-btn-top-row hud-btn-top-row--buildings" picking-mode="Position" />
         <ui:Button name="RespawnButton" class="hud-btn-action hud-btn-top-row hud-btn-top-row--respawn" picking-mode="Position" />
         <ui:Button name="MConsoleButton" class="hud-btn-action hud-btn-top-row hud-btn-top-row--mconsole" tooltip="hud.tooltip.mconsole" picking-mode="Position" />
+        <ui:Button name="ClanCreateButton" class="hud-btn-action hud-btn-top-row hud-btn-top-row--clan" tooltip="hud.tooltip.clan_create" picking-mode="Position" />
 
         <!-- ════════════ НАВЫКИ И ПРОГРЕСС (справа снизу) ════════════ -->
         <ui:VisualElement name="SkillContainer" class="hud-skill-container" picking-mode="Ignore" />

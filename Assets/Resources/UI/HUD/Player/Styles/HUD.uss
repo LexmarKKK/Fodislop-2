@@ -995,6 +995,10 @@
     right: 124px;
     background-image: url("project://database/Assets/Textures/UI/Commands/console/console.svg");
 }
+.hud-btn-top-row--clan {
+    right: 162px;
+    background-image: url("project://database/Assets/Textures/UI/Commands/clan/clan.svg");
+}
 
 /* Hover-подложка темы перекрыла бы спрайт - на иконках её нет. */
 .hud-btn-top-row:hover { background-color: rgba(0, 0, 0, 0); }

@@ -770,6 +770,7 @@
   "hud.tooltip.dropbox": "丢弃货物",
   "hud.tooltip.donate": "通过捐赠充值余额",
   "hud.tooltip.mconsole": "服务器控制台",
+  "hud.tooltip.clan_create": "创建氏族",
   "mainmenu.tooltip.chronicle": "活动编年史",
   "mainmenu.tooltip.settings": "系统设置",
   "mainmenu.tooltip.repair": "校验文件",

@@ -450,6 +450,7 @@ namespace Kern.UI.HUD
                 packet => _networkService?.SendAction(packet),
                 packet => _networkService?.Send(packet),
                 packet => _networkService?.Send(packet),
+                packet => _networkService?.Send(packet),
                 packet => _networkService?.Send(packet));
             _popups.Initialize(tree);
 

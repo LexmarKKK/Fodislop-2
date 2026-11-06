@@ -28,9 +28,12 @@ public sealed class ConnectionTransportFactory
         ClientConfig? config = _clientConfigManager.Config;
         if (config == null)
         {
-            Debug.LogWarning(
-                "[Connection] Client config is not initialized yet; using the Bootstrap-registered DummyConnection.");
-            return _dummyConnection;
+            // A8-C: молча уходить в оффлайн нельзя — кривой bootstrap обязан
+            // падать сразу, чтобы игрок увидел экран ошибки подключения,
+            // а не фантомный мир. Оффлайн остаётся только явным выбором
+            // из окна выбора сервера (UseDummyConnection в конфиге).
+            throw new InvalidOperationException(
+                "[Connection] Client config is not initialized; refusing to fall back to the offline stub.");
         }
 
         ConnectionSettings settings = config.Connection;
