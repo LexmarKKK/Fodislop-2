@@ -24,7 +24,7 @@ using Kern.Networking.Authentication;
 
 namespace Kern.Networking.Connection
 {
-    public class ConnectionManager : MonoBehaviour, IConnectionService, IWorldRegionRequester, IAssetTransferProgress
+    public class ConnectionManager : MonoBehaviour, IConnectionService, IWorldRegionRequester
     {
 
         public IServerConnection? Connection { get; private set; }
@@ -193,8 +193,6 @@ namespace Kern.Networking.Connection
         }
 
         public long ReceivedBytes => Connection is ITransportTraffic traffic ? traffic.ReceivedBytes : 0;
-
-        public long ReceivedAssetBytes => Connection is IAssetTransferProgress progress ? progress.ReceivedAssetBytes : 0;
 
         public void HoldInboundPackets()
         {

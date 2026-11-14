@@ -179,31 +179,22 @@ public sealed class RobotAssetLoader
         string filename,
         CancellationToken cancellationToken)
     {
-        // Мир строится с многосекундным провисом главного треда: 5-секундный
-        // таймаут запроса срабатывает прямо во время провиса, и опциональная
-        // текстура (скин, хвост) теряется. Три попытки с паузами покрывают
-        // типичный провис сборки мира.
-        for (var attempt = 1; ; attempt++)
+        // Таймаута у активного соединения нет: ответ обязан прийти, а его
+        // отсутствие фейлит запрос разрывом транспорта. Здесь остаётся
+        // только мягкая трактовка провала опциональной текстуры.
+        try
         {
-            try
-            {
-                return await loader.GetTextureAsync(filename, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                return null;
-            }
-            catch (Exception exception)
-            {
-                if (attempt >= 3 || cancellationToken.IsCancellationRequested)
-                {
-                    Debug.LogWarning(
-                        $"{TAG} Optional texture '{filename}' was skipped: {exception.Message}");
-                    return null;
-                }
-
-                await UniTask.Delay(TimeSpan.FromSeconds(attempt), cancellationToken: cancellationToken);
-            }
+            return await loader.GetTextureAsync(filename, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning(
+                $"{TAG} Optional texture '{filename}' was skipped: {exception.Message}");
+            return null;
         }
     }
 }

@@ -205,36 +205,27 @@ namespace Kern.Game.Entities.Buildings
             UpdateClanPosition();
         }
 
-        // Мир строится с многосекундным провисом главного треда: 5-секундный
-        // таймаут запроса срабатывает во время провиса, и текстура здания
-        // теряется до следующего взаимодействия. Три попытки с паузами
-        // покрывают типичный провис сборки мира.
+        // Таймаута у активного соединения нет: ответ обязан прийти, а его
+        // отсутствие фейлит запрос разрывом транспорта. Здесь остаётся
+        // только мягкая трактовка провала опциональной текстуры.
         private static async UniTask<Texture2D?> TryLoadOptionalTextureAsync(
             IAssetLoader loader,
             string filename,
             CancellationToken cancellationToken)
         {
-            for (var attempt = 1; ; attempt++)
+            try
             {
-                try
-                {
-                    return await loader.GetTextureAsync(filename, cancellationToken);
-                }
-                catch (OperationCanceledException)
-                {
-                    return null;
-                }
-                catch (Exception exception)
-                {
-                    if (attempt >= 3 || cancellationToken.IsCancellationRequested)
-                    {
-                        Debug.LogWarning(
-                            $"[Building] Optional texture '{filename}' was skipped: {exception.Message}");
-                        return null;
-                    }
-
-                    await UniTask.Delay(TimeSpan.FromSeconds(attempt), cancellationToken: cancellationToken);
-                }
+                return await loader.GetTextureAsync(filename, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(
+                    $"[Building] Optional texture '{filename}' was skipped: {exception.Message}");
+                return null;
             }
         }
 
